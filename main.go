@@ -5,46 +5,34 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"time"
 
 	"github.com/pion/dtls/v2"
-	"github.com/willcliffy/kilnwood-game-server/hub"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"github.com/willcliffy/kilnwood-game-server/game"
 )
 
 func main() {
-	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 4444}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Everything below is the pion-DTLS API
-	certificate, err := tls.LoadX509KeyPair(
-		"cert/server.pub.pem",
-		"cert/server.pem")
-	if err != nil {
-		panic(err)
-	}
-
-	rootCertificate, err := LoadCertificate("cert/server.pub.pem")
-	if err != nil {
-		panic(err)
-	}
-
-	certPool := x509.NewCertPool()
-	cert, err := x509.ParseCertificate(rootCertificate.Certificate[0])
-	if err != nil {
-		panic(err)
-	}
-
-	certPool.AddCert(cert)
+	// Loggeroni and cheese
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimestampFieldName = "t"
+	zerolog.LevelFieldName = "l"
+	zerolog.MessageFieldName = "m"
+	zerolog.CallerFieldName = "c"
+	log.Logger = log.With().Caller().Logger()
 
 	// Prepare the configuration of the DTLS connection
+	cert, certPool := loadCertAndCertPool()
 	config := &dtls.Config{
-		Certificates:         []tls.Certificate{certificate},
+		Certificates:         []tls.Certificate{cert},
 		ExtendedMasterSecret: dtls.RequireExtendedMasterSecret,
 		ClientAuth:           dtls.RequireAndVerifyClientCert,
 		ClientCAs:            certPool,
@@ -55,69 +43,91 @@ func main() {
 	}
 
 	// Connect to a DTLS server
+	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 4444}
 	listener, err := dtls.Listen("udp", addr, config)
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err)
 	}
 
 	defer func() {
 		if err := listener.Close(); err != nil {
-			panic(err)
+			log.Fatal().Err(err)
 		}
 	}()
 
-	fmt.Println("Listening")
+	log.Info().Msg("Listening")
 
-	// Simulate a chat session
-	hub := hub.NewHub()
+	// For now, there is one game and it's constantly running
+	// TODO - implement lobbies, multiple games, etc
+	game := game.NewGame()
+	game.Start()
+	defer game.Stop()
 
+	messageBroker := NewMessageBroker()
 	go func() {
 		for {
-			// Wait for a connection.
 			conn, err := listener.Accept()
 			if err != nil {
-				panic(err)
+				log.Fatal().Err(err)
+			} else if conn == nil {
+				continue
 			}
 
-			// defer conn.Close() // TODO: graceful shutdown
+			dtlsConn, ok := conn.(*dtls.Conn)
+			if !ok {
+				log.Fatal().Msgf("Connection to %v was not DTLS!", conn)
+			}
 
-			// conn is of type net.Conn but can be cast to dtls.Conn:
-			// dtlsConn := conn.(*dtls.Conn)
-
-			// Register the connection with the chat hub
-			hub.Register(conn)
+			// It is the messageBroker's responsibility to close the connection
+			messageBroker.RegisterClient(dtlsConn)
 		}
 	}()
 
-	// Start chatting
-	hub.Chat()
+	// Gracefully handle shutdown signal, block until done
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown
 }
 
-func LoadCertificate(path string) (*tls.Certificate, error) {
-	rawData, err := os.ReadFile(filepath.Clean(path))
+func loadCertAndCertPool() (tls.Certificate, *x509.CertPool) {
+	certificate, err := tls.LoadX509KeyPair(
+		"cert/server.pub.pem",
+		"cert/server.pem")
 	if err != nil {
-		return nil, err
+		log.Fatal().Err(err)
 	}
 
-	var certificate tls.Certificate
+	rawRootCertData, err := os.ReadFile(filepath.Clean("cert/server.pub.pem"))
+	if err != nil {
+		log.Fatal().Err(err)
+	}
 
+	var rootCertificate tls.Certificate
 	for {
-		block, rest := pem.Decode(rawData)
+		block, rest := pem.Decode(rawRootCertData)
 		if block == nil {
 			break
 		}
 
 		if block.Type != "CERTIFICATE" {
-			panic("block is not cert")
+			log.Fatal().Msg("block is not cert")
 		}
 
-		certificate.Certificate = append(certificate.Certificate, block.Bytes)
-		rawData = rest
+		rootCertificate.Certificate = append(rootCertificate.Certificate, block.Bytes)
+		rawRootCertData = rest
 	}
 
-	if len(certificate.Certificate) == 0 {
-		panic("no cert found")
+	if len(rootCertificate.Certificate) == 0 {
+		log.Fatal().Msg("no cert found")
 	}
 
-	return &certificate, nil
+	certPool := x509.NewCertPool()
+	cert, err := x509.ParseCertificate(rootCertificate.Certificate[0])
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	certPool.AddCert(cert)
+
+	return certificate, certPool
 }

@@ -13,8 +13,9 @@ import (
 
 	"github.com/pion/dtls/v2"
 	"github.com/pion/dtls/v2/examples/util"
-	"github.com/willcliffy/kilnwood-game-server/hub"
 )
+
+const bufSize = 8192
 
 func main() {
 	// Prepare the IP to connect to
@@ -67,7 +68,7 @@ func main() {
 
 	// Simulate a chat session
 	go func() {
-		b := make([]byte, hub.BufSize)
+		b := make([]byte, bufSize)
 
 		for {
 			n, err := dtlsConn.Read(b)
