@@ -22,7 +22,7 @@ func NewMoveAction(sourcePlayer string, x, y int) *MoveAction {
 func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
 	if len(msg) != 4 {
 		return nil, fmt.Errorf("invalid MoveAction, expected 4 segments but got %d", len(msg))
-	} else if msg[0] != ActionType_Move {
+	} else if ActionType(msg[0]) != ActionType_Move {
 		return nil, fmt.Errorf("incorrect ActionType, expected %s but got %s", ActionType_Move, msg[0])
 	}
 
@@ -45,18 +45,18 @@ func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
 	return NewMoveAction(msg[1], int(locX), int(locY)), nil
 }
 
-func (m MoveAction) ID() string {
-	return fmt.Sprintf("%v:%s:%d:%d", m.Type(), m.source, m.locationX, m.locationY)
+func (self MoveAction) ID() string {
+	return fmt.Sprintf("%v:%s:%d:%d", self.Type(), self.source, self.locationX, self.locationY)
 }
 
-func (m MoveAction) Type() ActionType {
+func (self MoveAction) Type() ActionType {
 	return ActionType_Move
 }
 
-func (m MoveAction) SourcePlayer() string {
-	return m.source
+func (self MoveAction) SourcePlayer() string {
+	return self.source
 }
 
-func (m MoveAction) TargetPlayer() *string {
+func (self MoveAction) TargetPlayer() *string {
 	return nil
 }

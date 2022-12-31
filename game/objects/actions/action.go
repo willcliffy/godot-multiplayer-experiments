@@ -11,9 +11,11 @@ import (
 type ActionType string
 
 const (
-	ActionType_CancelAction = "C"
-	ActionType_Move         = "m"
-	ActionType_Attack       = "a"
+	ActionType_CancelAction ActionType = "C"
+	ActionType_JoinGame     ActionType = "J"
+
+	ActionType_Move   ActionType = "m"
+	ActionType_Attack ActionType = "a"
 )
 
 type Action interface {
@@ -30,13 +32,15 @@ func ParseActionFromMessage(msg string) (Action, error) {
 	}
 
 	log.Debug().Msgf("parsing message: %v", split)
-	switch split[0] {
+	switch ActionType(split[0]) {
 	case ActionType_CancelAction:
 		return nil, fmt.Errorf("cancelling actions nyi")
 	case ActionType_Move:
 		return NewMoveActionFromMessage(split...)
 	case ActionType_Attack:
 		return NewAttackActionFromMessage(split...)
+	case ActionType_JoinGame:
+		return NewJoinGameActionFromMessage(split...)
 	}
 
 	return nil, nil

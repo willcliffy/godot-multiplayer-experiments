@@ -17,6 +17,10 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game"
 )
 
+const (
+	PORT = 4444
+)
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -27,9 +31,11 @@ func main() {
 	zerolog.LevelFieldName = "l"
 	zerolog.MessageFieldName = "m"
 	zerolog.CallerFieldName = "c"
-	log.Logger = log.With().Caller().Logger()
+	log.Logger = log.With().
+		Caller().
+		Logger()
 
-	// Prepare the configuration of the DTLS connection
+	// Set up Cert and Cert Pool - this is used in our DTLS connections
 	cert, certPool := loadCertAndCertPool()
 	config := &dtls.Config{
 		Certificates:         []tls.Certificate{cert},
@@ -42,8 +48,7 @@ func main() {
 		},
 	}
 
-	// Connect to a DTLS server
-	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 4444}
+	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: PORT}
 	listener, err := dtls.Listen("udp", addr, config)
 	if err != nil {
 		log.Fatal().Err(err)
@@ -55,7 +60,12 @@ func main() {
 		}
 	}()
 
-	log.Info().Msg("Listening")
+	log.Info().Msgf("Listening on port: %d", PORT)
+
+	// TODO - how does message broker communicate with game(s)
+
+	messageBroker := NewMessageBroker()
+	defer messageBroker.Close()
 
 	// For now, there is one game and it's constantly running
 	// TODO - implement lobbies, multiple games, etc
@@ -63,7 +73,8 @@ func main() {
 	game.Start()
 	defer game.Stop()
 
-	messageBroker := NewMessageBroker()
+	messageBroker.RegisterGame(game)
+
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -78,14 +89,19 @@ func main() {
 				log.Fatal().Msgf("Connection to %v was not DTLS!", conn)
 			}
 
-			// It is the messageBroker's responsibility to close the connection
-			messageBroker.RegisterClient(dtlsConn)
+			// We pass off the connection to messagebroker, who is now responsible for closing it
+			messageBroker.RegisterConnection(dtlsConn)
 		}
 	}()
 
 	// Gracefully handle shutdown signal, block until done
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt)
+	shutdown := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+		<-sigint
+		close(shutdown)
+	}()
 	<-shutdown
 }
 

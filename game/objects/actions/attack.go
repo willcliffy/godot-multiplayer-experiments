@@ -17,7 +17,7 @@ func NewAttackAction(sourcePlayer, targetPlayer string) *AttackAction {
 func NewAttackActionFromMessage(msg ...string) (*AttackAction, error) {
 	if len(msg) != 3 {
 		return nil, fmt.Errorf("invalid AttackAction, expected 3 segments but got %d", len(msg))
-	} else if msg[0] != ActionType_Attack {
+	} else if ActionType(msg[0]) != ActionType_Attack {
 		return nil, fmt.Errorf("incorrect ActionType, expected %s but got %s", ActionType_Attack, msg[0])
 	}
 
@@ -29,18 +29,18 @@ func NewAttackActionFromMessage(msg ...string) (*AttackAction, error) {
 	return NewAttackAction(msg[1], msg[2]), nil
 }
 
-func (m AttackAction) ID() string {
-	return fmt.Sprintf("%v:%s:%s", m.Type(), m.source, m.target)
+func (self AttackAction) ID() string {
+	return fmt.Sprintf("%v:%s:%s", self.Type(), self.source, self.target)
 }
 
-func (m AttackAction) Type() ActionType {
+func (self AttackAction) Type() ActionType {
 	return ActionType_Attack
 }
 
-func (m AttackAction) SourcePlayer() string {
-	return m.source
+func (self AttackAction) SourcePlayer() string {
+	return self.source
 }
 
-func (m AttackAction) TargetPlayer() *string {
-	return &m.target
+func (self AttackAction) TargetPlayer() *string {
+	return &self.target
 }

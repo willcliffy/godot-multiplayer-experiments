@@ -1,10 +1,14 @@
 package game
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/willcliffy/kilnwood-game-server/game/actions"
+	gamemap "github.com/willcliffy/kilnwood-game-server/game/map"
+	"github.com/willcliffy/kilnwood-game-server/game/objects"
+	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
+	"github.com/willcliffy/kilnwood-game-server/game/player"
 	"github.com/willcliffy/kilnwood-game-server/util"
 )
 
@@ -14,54 +18,110 @@ type Game struct {
 	clock       *time.Ticker
 	done        chan bool
 	actionQueue []actions.Action
+	gameMap     *gamemap.GameMap
+	players     []*player.Player
 }
 
 func NewGame() *Game {
 	return &Game{}
 }
 
-func (g *Game) Start() {
-	g.clock = time.NewTicker(gameTick)
-	g.done = make(chan bool)
-	g.actionQueue = make([]actions.Action, 0, 16)
-	go g.run()
+func (self *Game) Start() {
+	self.clock = time.NewTicker(gameTick)
+	self.done = make(chan bool)
+	self.actionQueue = make([]actions.Action, 0, 16)
+	self.gameMap = gamemap.NewGameMap()
+	go self.run()
 }
 
-func (g *Game) Stop() {
-	g.clock.Stop()
-	g.done <- true
+func (self *Game) Stop() {
+	self.done <- true
+	self.clock.Stop()
 }
 
-func (g *Game) run() {
+func (self *Game) run() {
 	for {
 		select {
-		case <-g.done:
-			return
-		case _ = <-g.clock.C:
-			log.Debug().Msgf("Tick. Queue length: %v", len(g.actionQueue))
-			g.ProcessQueue()
+		case <-self.done:
+			break
+		case _ = <-self.clock.C:
+			// log.Debug().Msgf("Tick. Queue length: %v", len(self.actionQueue))
+			self.processQueue()
+			fmt.Printf("logging map\n")
+			mapText := self.gameMap.DEBUG_DisplayGameMapText()
+			for _, row := range mapText {
+				fmt.Println(row)
+			}
 		}
 	}
 }
 
-func (g *Game) QueueAction(a actions.Action) {
-	g.actionQueue = append(g.actionQueue, a)
+func (self *Game) OnPlayerJoin(a *actions.JoinGameAction) {
+	// TODO - allow specifying team
+	var team objects.Team
+	if len(self.players) < 2 {
+		team = objects.Team_Red
+	} else {
+		team = objects.Team_Blue
+	}
+
+	player := player.NewPlayer(a.SourcePlayer(), a.Class, team)
+	self.gameMap.AddPlayer(player)
+	self.gameMap.SpawnPlayer(player)
+	self.players = append(self.players, player)
 }
 
-func (g *Game) DequeueAction(a actions.Action) {
-	// inefficient, but simple and preserves order
-	for i, action := range g.actionQueue {
+func (self *Game) QueueAction(a actions.Action) {
+	// TODO - validate the action in the context of the game before appending?
+	// This is a design decision, not a requirement - the action can just fail on the next tick
+	self.actionQueue = append(self.actionQueue, a)
+}
+
+func (self *Game) DequeueAction(a actions.Action) {
+	// inefficient but simple and preserves order
+	for i, action := range self.actionQueue {
 		if action.ID() == a.ID() {
-			util.RemoveElementFromSlice(g.actionQueue, i)
+			util.RemoveElementFromSlice(self.actionQueue, i)
 		}
 	}
 }
 
-func (g *Game) ProcessQueue() {
-	for _, action := range g.actionQueue {
-		log.Info().Msgf("Processed action: %v", action)
-		// TODO - actually process event
+func (self *Game) processQueue() {
+	for _, action := range self.actionQueue {
+		switch action.Type() {
+		case actions.ActionType_Move:
+			moveAction, ok := action.(actions.MoveAction)
+			if !ok {
+				log.Error().Msgf("Discarded action: could not cast %s to MoveAction", action.ID())
+				continue
+			}
+
+			err := self.gameMap.ApplyMovement(moveAction)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
+				continue
+			}
+		case actions.ActionType_Attack:
+			attackAction, ok := action.(actions.AttackAction)
+			if !ok {
+				log.Error().Msgf("Discarded action: could not cast %s to AttackAction", action.ID())
+				continue
+			}
+
+			err := self.gameMap.ApplyAttack(attackAction)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed action: could not apply AttackAction")
+				continue
+			}
+		case actions.ActionType_CancelAction:
+			log.Error().Msg("cancel action nyi")
+			continue
+		default:
+			log.Error().Msgf("got bad action in process queue: %s", action.ID())
+			continue
+		}
 	}
 
-	g.actionQueue = make([]actions.Action, 0, 16)
+	// reset actionQueue for the next tick
+	self.actionQueue = make([]actions.Action, 0, 16)
 }
