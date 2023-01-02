@@ -3,6 +3,9 @@ package actions
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/rs/zerolog/log"
+	"github.com/willcliffy/kilnwood-game-server/game/objects"
 )
 
 type MoveAction struct {
@@ -42,6 +45,7 @@ func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
 		return nil, err
 	}
 
+	log.Debug().Msgf("returning move action")
 	return NewMoveAction(msg[1], int(locX), int(locY)), nil
 }
 
@@ -59,4 +63,8 @@ func (self MoveAction) SourcePlayer() string {
 
 func (self MoveAction) TargetPlayer() *string {
 	return nil
+}
+
+func (self MoveAction) ToPosition() objects.Position {
+	return *objects.New2DPosition(self.locationX, self.locationY)
 }

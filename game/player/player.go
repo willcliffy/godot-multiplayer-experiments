@@ -7,7 +7,7 @@ import (
 type Player struct {
 	id        string
 	Name      string
-	class     CharacterClass
+	class     *CharacterClass
 	Team      objects.Team
 	targetPos *objects.Position
 }
@@ -21,14 +21,22 @@ func NewPlayer(name, classType string, team objects.Team) *Player {
 	return &Player{name, name, class, team, nil}
 }
 
-func (p Player) ID() string {
+func (p Player) Id() string {
 	return p.id
+}
+
+func (p *Player) SetTargetLocation(location objects.Position) {
+	p.targetPos = &location
+}
+
+func (p *Player) SetPlayerState(state objects.PlayerState) {
+
 }
 
 func (p Player) DEBUG_Tile() [3][3]string {
 	return [3][3]string{
-		{"  /", "===", "\\  "},
-		{" | ", p.Name[:3], " | "},
-		{"  \\", "===", "/  "},
+		{" / ", " = ", " \\ "},
+		{"| ", p.Name, " |"},
+		{" \\ ", " = ", " / "},
 	}
 }

@@ -13,13 +13,19 @@ import (
 const BufSize = 8192
 
 type MessageBroker struct {
-	conns map[string]*dtls.Conn
-	games []*game.Game
-	lock  sync.RWMutex
+	conns     map[string]*dtls.Conn
+	playerIds map[string]string
+	games     []*game.Game
+	lock      sync.RWMutex
 }
 
 func NewMessageBroker() *MessageBroker {
-	return &MessageBroker{conns: make(map[string]*dtls.Conn)}
+	return &MessageBroker{
+		conns:     make(map[string]*dtls.Conn),
+		playerIds: make(map[string]string),
+		games:     make([]*game.Game, 1),
+		lock:      sync.RWMutex{},
+	}
 }
 
 func (self *MessageBroker) Close() {
@@ -51,6 +57,7 @@ func (self *MessageBroker) unregisterConnection(conn net.Conn) {
 	defer self.lock.Unlock()
 
 	delete(self.conns, conn.RemoteAddr().String())
+	delete(self.playerIds, conn.RemoteAddr().String())
 
 	if err := conn.Close(); err != nil {
 		log.Error().Msgf("Failed to disconnect from %v: %v", conn.RemoteAddr().String(), err)
@@ -75,20 +82,33 @@ func (self *MessageBroker) clientReadLoop(conn net.Conn) {
 			continue
 		}
 
-		log.Debug().Msgf("Server got message: %v\n", action)
+		addr := conn.RemoteAddr().String()
 
-		self.broadcastMessage(buf[:n])
+		log.Debug().Msgf("Server got message %s from %s\n", action.ID, addr)
+
+		playerId, playerConnected := self.playerIds[addr]
+		if playerConnected && playerId != action.SourcePlayer() {
+			log.Info().Msgf("Discarding action - player action coming from another address")
+			continue
+		}
 
 		if action.Type() == actions.ActionType_JoinGame {
+			if playerConnected {
+				continue // Player already connected, fail silently? TODO
+			}
+			self.lock.Lock()
 			self.games[0].OnPlayerJoin(action.(*actions.JoinGameAction))
+			self.playerIds[addr] = action.SourcePlayer()
+			self.lock.Unlock()
 			continue
 		}
 
 		// todo - support multiple games/lobbies?
-		self.games[0].QueueAction(action)
-
+		self.lock.Lock()
+		_ = self.games[0].QueueAction(action)
+		self.lock.Unlock()
 		// todo - determine whether or not to broadcast messages to game
-
+		self.broadcastMessage(buf[:n])
 	}
 }
 
@@ -105,5 +125,8 @@ func (self *MessageBroker) broadcastMessage(msg []byte) {
 }
 
 func (self *MessageBroker) RegisterGame(game *game.Game) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
 	self.games = append(self.games, game)
 }

@@ -45,9 +45,7 @@ func (self *Game) run() {
 		case <-self.done:
 			break
 		case _ = <-self.clock.C:
-			// log.Debug().Msgf("Tick. Queue length: %v", len(self.actionQueue))
 			self.processQueue()
-			fmt.Printf("logging map\n")
 			mapText := self.gameMap.DEBUG_DisplayGameMapText()
 			for _, row := range mapText {
 				fmt.Println(row)
@@ -66,15 +64,24 @@ func (self *Game) OnPlayerJoin(a *actions.JoinGameAction) {
 	}
 
 	player := player.NewPlayer(a.SourcePlayer(), a.Class, team)
-	self.gameMap.AddPlayer(player)
-	self.gameMap.SpawnPlayer(player)
+
+	_ = self.gameMap.AddPlayer(player)
 	self.players = append(self.players, player)
+
+	err := self.gameMap.SpawnPlayer(player)
+	if err != nil {
+		self.gameMap.RemovePlayer(player.Id())
+		util.RemoveElementFromSlice(self.players, len(self.players)-1)
+		return
+	}
 }
 
-func (self *Game) QueueAction(a actions.Action) {
+func (self *Game) QueueAction(a actions.Action) error {
+	log.Debug().Msgf("queuing action: %v", a)
 	// TODO - validate the action in the context of the game before appending?
 	// This is a design decision, not a requirement - the action can just fail on the next tick
 	self.actionQueue = append(self.actionQueue, a)
+	return nil
 }
 
 func (self *Game) DequeueAction(a actions.Action) {
@@ -90,7 +97,7 @@ func (self *Game) processQueue() {
 	for _, action := range self.actionQueue {
 		switch action.Type() {
 		case actions.ActionType_Move:
-			moveAction, ok := action.(actions.MoveAction)
+			moveAction, ok := action.(*actions.MoveAction)
 			if !ok {
 				log.Error().Msgf("Discarded action: could not cast %s to MoveAction", action.ID())
 				continue
