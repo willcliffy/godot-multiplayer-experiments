@@ -1,6 +1,7 @@
 package game
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -12,18 +13,22 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/util"
 )
 
-const gameTick = 2500 * time.Millisecond
+const gameTick = 10000 * time.Millisecond
 
 type Game struct {
 	clock       *time.Ticker
+	tick        int
 	done        chan bool
 	actionQueue []actions.Action
 	gameMap     *gamemap.GameMap
 	players     []*player.Player
+	broadcaster util.Broadcaster
 }
 
-func NewGame() *Game {
-	return &Game{}
+func NewGame(b util.Broadcaster) *Game {
+	return &Game{
+		broadcaster: b,
+	}
 }
 
 func (self *Game) Start() {
@@ -44,12 +49,26 @@ func (self *Game) run() {
 		select {
 		case <-self.done:
 			break
-		case _ = <-self.clock.C:
-			self.processQueue()
+		case <-self.clock.C:
+			processed := self.processQueue()
+
+			payload, _ := json.Marshal(struct {
+				Tick   int
+				Events []actions.Action
+			}{
+				Tick:   self.tick,
+				Events: processed,
+			})
+
+			err := self.broadcaster.Broadcast("TODO - gameId", payload)
+			log.Warn().Err(err).Msgf("failed to broadcast")
+
 			mapText := self.gameMap.DEBUG_DisplayGameMapText()
 			for _, row := range mapText {
 				fmt.Println(row)
 			}
+
+			self.tick += 1
 		}
 	}
 }
@@ -70,7 +89,7 @@ func (self *Game) OnPlayerJoin(a *actions.JoinGameAction) {
 
 	err := self.gameMap.SpawnPlayer(player)
 	if err != nil {
-		self.gameMap.RemovePlayer(player.Id())
+		_ = self.gameMap.RemovePlayer(player.Id())
 		util.RemoveElementFromSlice(self.players, len(self.players)-1)
 		return
 	}
@@ -87,19 +106,21 @@ func (self *Game) QueueAction(a actions.Action) error {
 func (self *Game) DequeueAction(a actions.Action) {
 	// inefficient but simple and preserves order
 	for i, action := range self.actionQueue {
-		if action.ID() == a.ID() {
+		if action.Id() == a.Id() {
 			util.RemoveElementFromSlice(self.actionQueue, i)
 		}
 	}
 }
 
-func (self *Game) processQueue() {
+func (self *Game) processQueue() []actions.Action {
+	processed := make([]actions.Action, 0)
+
 	for _, action := range self.actionQueue {
 		switch action.Type() {
 		case actions.ActionType_Move:
 			moveAction, ok := action.(*actions.MoveAction)
 			if !ok {
-				log.Error().Msgf("Discarded action: could not cast %s to MoveAction", action.ID())
+				log.Error().Msgf("Discarded action: could not cast %s to MoveAction", action.Id())
 				continue
 			}
 
@@ -108,10 +129,12 @@ func (self *Game) processQueue() {
 				log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 				continue
 			}
+
+			processed = append(processed, moveAction)
 		case actions.ActionType_Attack:
 			attackAction, ok := action.(actions.AttackAction)
 			if !ok {
-				log.Error().Msgf("Discarded action: could not cast %s to AttackAction", action.ID())
+				log.Error().Msgf("Discarded action: could not cast %s to AttackAction", action.Id())
 				continue
 			}
 
@@ -120,15 +143,19 @@ func (self *Game) processQueue() {
 				log.Error().Err(err).Msgf("Failed action: could not apply AttackAction")
 				continue
 			}
+
+			processed = append(processed, attackAction)
 		case actions.ActionType_CancelAction:
 			log.Error().Msg("cancel action nyi")
 			continue
 		default:
-			log.Error().Msgf("got bad action in process queue: %s", action.ID())
+			log.Error().Msgf("got bad action in process queue: %s", action.Id())
 			continue
 		}
 	}
 
 	// reset actionQueue for the next tick
 	self.actionQueue = make([]actions.Action, 0, 16)
+
+	return processed
 }

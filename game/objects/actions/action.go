@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 type ActionType string
@@ -19,7 +17,8 @@ const (
 )
 
 type Action interface {
-	ID() string
+	MarshalJSON() ([]byte, error)
+	Id() string
 	Type() ActionType
 	SourcePlayer() string
 	TargetPlayer() *string
@@ -31,7 +30,6 @@ func ParseActionFromMessage(msg string) (Action, error) {
 		return nil, errors.New("empty message")
 	}
 
-	log.Debug().Msgf("parsing message: %v", split)
 	switch ActionType(split[0]) {
 	case ActionType_CancelAction:
 		return nil, fmt.Errorf("cancelling actions nyi")
@@ -41,7 +39,7 @@ func ParseActionFromMessage(msg string) (Action, error) {
 		return NewAttackActionFromMessage(split...)
 	case ActionType_JoinGame:
 		return NewJoinGameActionFromMessage(split...)
+	default:
+		return nil, errors.New("invalid message")
 	}
-
-	return nil, nil
 }

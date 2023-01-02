@@ -30,7 +30,11 @@ func NewJoinGameActionFromMessage(msg ...string) (*JoinGameAction, error) {
 	return NewJoinGameAction(msg[1], msg[3]), nil
 }
 
-func (self JoinGameAction) ID() string {
+func (self JoinGameAction) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", self.Id())), nil
+}
+
+func (self JoinGameAction) Id() string {
 	return fmt.Sprintf("%v:%s:nil:%s", self.Type(), self.source, self.Class)
 }
 

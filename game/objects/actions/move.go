@@ -49,7 +49,11 @@ func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
 	return NewMoveAction(msg[1], int(locX), int(locY)), nil
 }
 
-func (self MoveAction) ID() string {
+func (self MoveAction) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", self.Id())), nil
+}
+
+func (self MoveAction) Id() string {
 	return fmt.Sprintf("%v:%s:%d:%d", self.Type(), self.source, self.locationX, self.locationY)
 }
 

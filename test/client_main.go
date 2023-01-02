@@ -75,10 +75,10 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+
 			fmt.Printf("Got message: %s\n", string(b[:n]))
 			if string(b[0]) == "d" {
 				fmt.Println("Server disconnected")
-				break
 			}
 		}
 	}()

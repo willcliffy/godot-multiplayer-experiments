@@ -69,7 +69,7 @@ func main() {
 
 	// For now, there is one game and it's constantly running
 	// TODO - implement lobbies, multiple games, etc
-	game := game.NewGame()
+	game := game.NewGame(messageBroker)
 	game.Start()
 	defer game.Stop()
 
@@ -79,14 +79,16 @@ func main() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Fatal().Err(err)
+				log.Error().Err(err)
+				continue
 			} else if conn == nil {
 				continue
 			}
 
 			dtlsConn, ok := conn.(*dtls.Conn)
 			if !ok {
-				log.Fatal().Msgf("Connection to %v was not DTLS!", conn)
+				log.Error().Msgf("Connection to %v was not DTLS!", conn)
+				continue
 			}
 
 			// We pass off the connection to messagebroker, who is now responsible for closing it

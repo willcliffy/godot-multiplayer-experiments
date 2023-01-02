@@ -1,6 +1,7 @@
 package player
 
 import (
+	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 )
 
@@ -15,6 +16,7 @@ type Player struct {
 func NewPlayer(name, classType string, team objects.Team) *Player {
 	class, ok := CharacterClassFromType(classType)
 	if !ok {
+		log.Warn().Msgf("Could not parse character class: %v", classType)
 		return nil
 	}
 
@@ -36,7 +38,7 @@ func (p *Player) SetPlayerState(state objects.PlayerState) {
 func (p Player) DEBUG_Tile() [3][3]string {
 	return [3][3]string{
 		{" / ", " = ", " \\ "},
-		{"| ", p.Name, " |"},
+		{"|  ", p.Name, "  |"},
 		{" \\ ", " = ", " / "},
 	}
 }

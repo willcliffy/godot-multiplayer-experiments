@@ -23,7 +23,7 @@ func NewMessageBroker() *MessageBroker {
 	return &MessageBroker{
 		conns:     make(map[string]*dtls.Conn),
 		playerIds: make(map[string]string),
-		games:     make([]*game.Game, 1),
+		games:     make([]*game.Game, 0, 1),
 		lock:      sync.RWMutex{},
 	}
 }
@@ -84,7 +84,7 @@ func (self *MessageBroker) clientReadLoop(conn net.Conn) {
 
 		addr := conn.RemoteAddr().String()
 
-		log.Debug().Msgf("Server got message %s from %s\n", action.ID, addr)
+		log.Debug().Msgf("Server got message %s from %s\n", action.Id(), addr)
 
 		playerId, playerConnected := self.playerIds[addr]
 		if playerConnected && playerId != action.SourcePlayer() {
@@ -129,4 +129,11 @@ func (self *MessageBroker) RegisterGame(game *game.Game) {
 	defer self.lock.Unlock()
 
 	self.games = append(self.games, game)
+}
+
+// This satisfies the util.Broadcaster interface
+func (self *MessageBroker) Broadcast(gameId string, payload []byte) error {
+	// todo - support multiple games
+	self.broadcastMessage(payload)
+	return nil
 }

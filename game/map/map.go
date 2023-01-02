@@ -51,7 +51,16 @@ func NewGameMap() *GameMap {
 }
 
 func (self *GameMap) AddPlayer(p *player.Player) error {
-	// TODO - check if in here already. check if too many players
+	if len(self.players) >= 4 {
+		return errors.New("game is full")
+	}
+
+	for _, player := range self.players {
+		if player.Id() == p.Id() {
+			return errors.New("player already in game")
+		}
+	}
+
 	self.players = append(self.players, p)
 	p.SetPlayerState(objects.PlayerState_Vibing)
 	return nil
@@ -61,6 +70,7 @@ func (self *GameMap) RemovePlayer(id string) error {
 	for i, player := range self.players {
 		if player.Id() == id {
 			util.RemoveElementFromSlice(self.players, i)
+			delete(self.playerLocations, id)
 		}
 	}
 
@@ -76,10 +86,6 @@ func (self *GameMap) SpawnPlayer(p *player.Player) error {
 	}
 
 	for _, player := range self.players {
-		if player.Name == p.Name {
-			return errors.New("player already spawned")
-		}
-
 		if player.Team == p.Team {
 			if p.Team == objects.Team_Red {
 				spawn = Spawn_RedTwo

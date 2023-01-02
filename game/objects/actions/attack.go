@@ -29,7 +29,11 @@ func NewAttackActionFromMessage(msg ...string) (*AttackAction, error) {
 	return NewAttackAction(msg[1], msg[2]), nil
 }
 
-func (self AttackAction) ID() string {
+func (self AttackAction) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", self.Id())), nil
+}
+
+func (self AttackAction) Id() string {
 	return fmt.Sprintf("%v:%s:%s", self.Type(), self.source, self.target)
 }
 
