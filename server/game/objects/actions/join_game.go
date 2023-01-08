@@ -22,8 +22,8 @@ func NewJoinGameActionFromMessage(msg ...string) (*JoinGameAction, error) {
 		return nil, fmt.Errorf("incorrect ActionType, expected %s but got %s", ActionType_JoinGame, msg[0])
 	}
 
-	if msg[1] == "" || msg[3] == "" {
-		return nil, fmt.Errorf("missing name or class: %s, %s", msg[1], msg[3])
+	if msg[3] == "" {
+		return nil, fmt.Errorf("missing class: %s", msg[3])
 	}
 
 	// validating that source and target are in game is not the responsibility of this function
@@ -35,7 +35,7 @@ func (self JoinGameAction) MarshalJSON() ([]byte, error) {
 }
 
 func (self JoinGameAction) Id() string {
-	return fmt.Sprintf("%v:%s:nil:%s", self.Type(), self.source, self.Class)
+	return fmt.Sprintf("%v:%s::%s", self.Type(), self.source, self.Class)
 }
 
 func (self JoinGameAction) Type() ActionType {

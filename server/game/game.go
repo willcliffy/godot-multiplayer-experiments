@@ -61,8 +61,9 @@ func (self *Game) run() {
 			})
 
 			err := self.broadcaster.Broadcast("TODO - gameId", payload)
-			log.Warn().Err(err).Msgf("failed to broadcast")
-
+			if err != nil {
+				log.Warn().Err(err).Msgf("failed to broadcast")
+			}
 			mapText := self.gameMap.DEBUG_DisplayGameMapText()
 			for _, row := range mapText {
 				fmt.Println(row)

@@ -4,7 +4,6 @@ import (
 	"net"
 	"sync"
 
-	"github.com/pion/dtls/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/game"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
@@ -13,7 +12,7 @@ import (
 const BufSize = 8192
 
 type MessageBroker struct {
-	conns     map[string]*dtls.Conn
+	conns     map[string]net.Conn
 	playerIds map[string]string
 	games     []*game.Game
 	lock      sync.RWMutex
@@ -21,7 +20,7 @@ type MessageBroker struct {
 
 func NewMessageBroker() *MessageBroker {
 	return &MessageBroker{
-		conns:     make(map[string]*dtls.Conn),
+		conns:     make(map[string]net.Conn),
 		playerIds: make(map[string]string),
 		games:     make([]*game.Game, 0, 1),
 		lock:      sync.RWMutex{},
@@ -41,7 +40,7 @@ func (self *MessageBroker) Close() {
 	}
 }
 
-func (self *MessageBroker) RegisterConnection(conn *dtls.Conn) {
+func (self *MessageBroker) RegisterConnection(conn net.Conn) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
