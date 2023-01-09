@@ -6,24 +6,24 @@ import (
 )
 
 type Player struct {
-	id        string
+	id        uint64
 	Name      string
 	class     *CharacterClass
 	Team      objects.Team
 	targetPos *objects.Position
 }
 
-func NewPlayer(name, classType string, team objects.Team) *Player {
+func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Player {
 	class, ok := CharacterClassFromType(classType)
 	if !ok {
 		log.Warn().Msgf("Could not parse character class: %v", classType)
 		return nil
 	}
 
-	return &Player{name, name, class, team, nil}
+	return &Player{playerId, name, class, team, nil}
 }
 
-func (p Player) Id() string {
+func (p Player) Id() uint64 {
 	return p.id
 }
 

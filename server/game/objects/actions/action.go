@@ -20,11 +20,9 @@ type Action interface {
 	MarshalJSON() ([]byte, error)
 	Id() string
 	Type() ActionType
-	SourcePlayer() string
-	TargetPlayer() *string
 }
 
-func ParseActionFromMessage(msg string) (Action, error) {
+func ParseActionFromMessage(playerId uint64, msg string) (Action, error) {
 	split := strings.Split(strings.TrimSpace(msg), ":")
 	if len(split) == 1 {
 		return nil, errors.New("empty message")
@@ -34,11 +32,11 @@ func ParseActionFromMessage(msg string) (Action, error) {
 	case ActionType_CancelAction:
 		return nil, fmt.Errorf("cancelling actions nyi")
 	case ActionType_Move:
-		return NewMoveActionFromMessage(split...)
+		return NewMoveActionFromMessage(playerId, split...)
 	case ActionType_Attack:
-		return NewAttackActionFromMessage(split...)
+		return NewAttackActionFromMessage(playerId, split...)
 	case ActionType_JoinGame:
-		return NewJoinGameActionFromMessage(split...)
+		return NewJoinGameActionFromMessage(playerId, split...)
 	default:
 		return nil, errors.New("invalid message")
 	}

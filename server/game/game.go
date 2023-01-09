@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/willcliffy/kilnwood-game-server/broadcast"
 	gamemap "github.com/willcliffy/kilnwood-game-server/game/map"
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
@@ -13,29 +14,37 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/util"
 )
 
-const gameTick = 10000 * time.Millisecond
+const gameTick = 3000 * time.Millisecond
 
 type Game struct {
-	clock       *time.Ticker
-	tick        int
-	done        chan bool
-	actionQueue []actions.Action
-	gameMap     *gamemap.GameMap
-	players     []*player.Player
-	broadcaster util.Broadcaster
+	id              uint64
+	clock           *time.Ticker
+	tick            int
+	done            chan bool
+	actionsQueued   []actions.Action
+	movementsQueued map[uint64]actions.MoveAction
+	gameMap         *gamemap.GameMap
+	players         map[uint64]*player.Player
+	broadcaster     broadcast.MessageBroadcaster
 }
 
-func NewGame(b util.Broadcaster) *Game {
+func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 	return &Game{
-		broadcaster: b,
+		id:              gameId,
+		done:            make(chan bool),
+		actionsQueued:   make([]actions.Action, 0, 16),
+		movementsQueued: make(map[uint64]actions.MoveAction),
+		gameMap:         gamemap.NewGameMap(),
+		broadcaster:     broadcaster,
 	}
+}
+
+func (self Game) Id() string {
+	return fmt.Sprint(self.id)
 }
 
 func (self *Game) Start() {
 	self.clock = time.NewTicker(gameTick)
-	self.done = make(chan bool)
-	self.actionQueue = make([]actions.Action, 0, 16)
-	self.gameMap = gamemap.NewGameMap()
 	go self.run()
 }
 
@@ -53,20 +62,18 @@ func (self *Game) run() {
 			processed := self.processQueue()
 
 			payload, _ := json.Marshal(struct {
+				Type   string
 				Tick   int
 				Events []actions.Action
 			}{
+				Type:   "tick",
 				Tick:   self.tick,
 				Events: processed,
 			})
 
-			err := self.broadcaster.Broadcast("TODO - gameId", payload)
+			err := self.broadcaster.BroadcastToGame(self.id, payload)
 			if err != nil {
 				log.Warn().Err(err).Msgf("failed to broadcast")
-			}
-			mapText := self.gameMap.DEBUG_DisplayGameMapText()
-			for _, row := range mapText {
-				fmt.Println(row)
 			}
 
 			self.tick += 1
@@ -74,7 +81,56 @@ func (self *Game) run() {
 	}
 }
 
-func (self *Game) OnPlayerJoin(a *actions.JoinGameAction) {
+func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
+	action, err := actions.ParseActionFromMessage(playerId, string(message))
+	if err != nil {
+		return err
+	}
+
+	if action.Type() != actions.ActionType_JoinGame {
+		return self.QueueAction(playerId, action)
+	}
+
+	spawn, err := self.OnPlayerJoin(playerId, action.(*actions.JoinGameAction))
+	if err != nil {
+		log.Warn().Err(err).Msgf("err on player join")
+	}
+
+	msg := struct {
+		Type     string
+		PlayerId string
+		Spawn    objects.Position
+	}{
+		Type:     "join-response",
+		PlayerId: fmt.Sprint(playerId),
+		Spawn:    spawn,
+	}
+
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	err = self.broadcaster.BroadcastToPlayer(playerId, payload)
+	if err != nil {
+		return err
+	}
+
+	msg.Type = "join-broadcast"
+	payload, err = json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	err = self.broadcaster.BroadcastToGame(self.id, payload)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (self *Game) OnPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, error) {
 	// TODO - allow specifying team
 	var team objects.Team
 	if len(self.players) < 2 {
@@ -83,32 +139,48 @@ func (self *Game) OnPlayerJoin(a *actions.JoinGameAction) {
 		team = objects.Team_Blue
 	}
 
-	player := player.NewPlayer(a.SourcePlayer(), a.Class, team)
+	if _, ok := self.players[playerId]; ok {
+		if playerPosition, ok := self.gameMap.GetPlayerPosition(playerId); ok {
+			return playerPosition, nil
+		}
+	}
 
-	_ = self.gameMap.AddPlayer(player)
-	self.players = append(self.players, player)
+	player := player.NewPlayer(playerId, "", a.Class, team)
 
-	err := self.gameMap.SpawnPlayer(player)
+	err := self.gameMap.AddPlayer(player)
+	if err != nil {
+		return objects.Position{}, err
+	}
+
+	self.players[playerId] = player
+
+	spawn, err := self.gameMap.SpawnPlayer(player)
 	if err != nil {
 		_ = self.gameMap.RemovePlayer(player.Id())
-		util.RemoveElementFromSlice(self.players, len(self.players)-1)
-		return
+		delete(self.players, player.Id())
+		return objects.Position{}, err
 	}
+
+	return spawn, nil
 }
 
-func (self *Game) QueueAction(a actions.Action) error {
+func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
 	log.Debug().Msgf("queuing action: %v", a)
-	// TODO - validate the action in the context of the game before appending?
-	// This is a design decision, not a requirement - the action can just fail on the next tick
-	self.actionQueue = append(self.actionQueue, a)
+
+	if a.Type() == actions.ActionType_Move {
+		self.movementsQueued[playerId] = a.(actions.MoveAction)
+		return nil
+	}
+
+	self.actionsQueued = append(self.actionsQueued, a)
 	return nil
 }
 
 func (self *Game) DequeueAction(a actions.Action) {
 	// inefficient but simple and preserves order
-	for i, action := range self.actionQueue {
+	for i, action := range self.actionsQueued {
 		if action.Id() == a.Id() {
-			util.RemoveElementFromSlice(self.actionQueue, i)
+			self.actionsQueued = util.RemoveElementFromSlice(self.actionsQueued, i)
 		}
 	}
 }
@@ -116,22 +188,8 @@ func (self *Game) DequeueAction(a actions.Action) {
 func (self *Game) processQueue() []actions.Action {
 	processed := make([]actions.Action, 0)
 
-	for _, action := range self.actionQueue {
+	for _, action := range self.actionsQueued {
 		switch action.Type() {
-		case actions.ActionType_Move:
-			moveAction, ok := action.(*actions.MoveAction)
-			if !ok {
-				log.Error().Msgf("Discarded action: could not cast %s to MoveAction", action.Id())
-				continue
-			}
-
-			err := self.gameMap.ApplyMovement(moveAction)
-			if err != nil {
-				log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
-				continue
-			}
-
-			processed = append(processed, moveAction)
 		case actions.ActionType_Attack:
 			attackAction, ok := action.(actions.AttackAction)
 			if !ok {
@@ -155,8 +213,18 @@ func (self *Game) processQueue() []actions.Action {
 		}
 	}
 
+	for _, move := range self.movementsQueued {
+		err := self.gameMap.ApplyMovement(&move)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
+			continue
+		}
+
+		processed = append(processed, move)
+	}
+
 	// reset actionQueue for the next tick
-	self.actionQueue = make([]actions.Action, 0, 16)
+	self.actionsQueued = make([]actions.Action, 0, 16)
 
 	return processed
 }

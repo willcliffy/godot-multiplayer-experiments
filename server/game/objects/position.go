@@ -2,10 +2,10 @@ package objects
 
 type Position struct {
 	X int
-	Y int
+	Z int
 	//z int
 }
 
-func New2DPosition(x, y int) *Position {
-	return &Position{x, y}
+func New2DPosition(x, z int) *Position {
+	return &Position{x, z}
 }

@@ -9,6 +9,8 @@ import (
 	"github.com/pion/udp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sony/sonyflake"
+	"github.com/willcliffy/kilnwood-game-server/broadcast"
 	"github.com/willcliffy/kilnwood-game-server/game"
 )
 
@@ -44,18 +46,19 @@ func main() {
 
 	log.Info().Msgf("Listening on port: %d", PORT)
 
-	// TODO - how does message broker communicate with game(s)
-
-	messageBroker := NewMessageBroker()
+	messageBroker := broadcast.NewMessageBroker()
 	defer messageBroker.Close()
+
+	gameIdGenerator := sonyflake.NewSonyflake(sonyflake.Settings{})
+	gameId, _ := gameIdGenerator.NextID()
+
+	// TODO - support for mulitple games
+	newGame := game.NewGame(uint64(gameId), messageBroker)
+	newGame.Start()
 
 	// For now, there is one game and it's constantly running
 	// TODO - implement lobbies, multiple games, etc
-	game := game.NewGame(messageBroker)
-	game.Start()
-	defer game.Stop()
-
-	messageBroker.RegisterGame(game)
+	messageBroker.RegisterGame(gameId, newGame)
 
 	go func() {
 		for {

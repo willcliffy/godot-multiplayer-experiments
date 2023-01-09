@@ -4,25 +4,22 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 )
 
 type MoveAction struct {
-	source    string
-	locationX int
-	locationY int
+	PlayerId uint64
+	Position objects.Position
 }
 
-func NewMoveAction(sourcePlayer string, x, y int) *MoveAction {
+func NewMoveAction(playerId uint64, x, z int) *MoveAction {
 	return &MoveAction{
-		source:    sourcePlayer,
-		locationX: x,
-		locationY: y,
+		PlayerId: playerId,
+		Position: objects.Position{X: x, Z: z},
 	}
 }
 
-func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
+func NewMoveActionFromMessage(playerId uint64, msg ...string) (*MoveAction, error) {
 	if len(msg) != 4 {
 		return nil, fmt.Errorf("invalid MoveAction, expected 4 segments but got %d", len(msg))
 	} else if ActionType(msg[0]) != ActionType_Move {
@@ -35,18 +32,22 @@ func NewMoveActionFromMessage(msg ...string) (*MoveAction, error) {
 		return nil, fmt.Errorf("x or y coordinate not provided: %s, %s", msg[2], msg[3])
 	}
 
+	id, err := strconv.ParseUint(msg[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	locX, err := strconv.ParseInt(msg[2], 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	locY, err := strconv.ParseInt(msg[3], 10, 64)
+	locZ, err := strconv.ParseInt(msg[3], 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug().Msgf("returning move action")
-	return NewMoveAction(msg[1], int(locX), int(locY)), nil
+	return NewMoveAction(id, int(locX), int(locZ)), nil
 }
 
 func (self MoveAction) MarshalJSON() ([]byte, error) {
@@ -54,21 +55,13 @@ func (self MoveAction) MarshalJSON() ([]byte, error) {
 }
 
 func (self MoveAction) Id() string {
-	return fmt.Sprintf("%v:%s:%d:%d", self.Type(), self.source, self.locationX, self.locationY)
+	return fmt.Sprintf("%v:%d:%d:%d", self.Type(), self.PlayerId, self.Position.X, self.Position.Z)
 }
 
 func (self MoveAction) Type() ActionType {
 	return ActionType_Move
 }
 
-func (self MoveAction) SourcePlayer() string {
-	return self.source
-}
-
-func (self MoveAction) TargetPlayer() *string {
-	return nil
-}
-
 func (self MoveAction) ToPosition() objects.Position {
-	return *objects.New2DPosition(self.locationX, self.locationY)
+	return *objects.New2DPosition(self.Position.X, self.Position.Z)
 }

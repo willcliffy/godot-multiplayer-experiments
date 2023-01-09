@@ -2,7 +2,6 @@ package gamemap
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
@@ -16,16 +15,16 @@ const (
 )
 
 var (
-	Spawn_RedOne  = objects.Position{X: 1, Y: 1}
-	Spawn_RedTwo  = objects.Position{X: 9, Y: 1}
-	Spawn_BlueOne = objects.Position{X: 1, Y: 9}
-	Spawn_BlueTwo = objects.Position{X: 9, Y: 9}
+	Spawn_RedOne  = objects.Position{X: 1, Z: 1}
+	Spawn_RedTwo  = objects.Position{X: 9, Z: 1}
+	Spawn_BlueOne = objects.Position{X: 1, Z: 9}
+	Spawn_BlueTwo = objects.Position{X: 9, Z: 9}
 )
 
 type GameMap struct {
 	tiles           [][]Tile
 	players         []*player.Player
-	playerLocations map[string]objects.Position
+	playerLocations map[uint64]objects.Position
 }
 
 func NewGameMap() *GameMap {
@@ -41,12 +40,10 @@ func NewGameMap() *GameMap {
 		}
 	}
 
-	fmt.Printf("%v\n", len(tiles))
-
 	return &GameMap{
 		tiles:           tiles,
 		players:         make([]*player.Player, 0, 4),
-		playerLocations: make(map[string]objects.Position),
+		playerLocations: make(map[uint64]objects.Position),
 	}
 }
 
@@ -66,7 +63,7 @@ func (self *GameMap) AddPlayer(p *player.Player) error {
 	return nil
 }
 
-func (self *GameMap) RemovePlayer(id string) error {
+func (self *GameMap) RemovePlayer(id uint64) error {
 	for i, player := range self.players {
 		if player.Id() == id {
 			util.RemoveElementFromSlice(self.players, i)
@@ -77,7 +74,7 @@ func (self *GameMap) RemovePlayer(id string) error {
 	return nil
 }
 
-func (self *GameMap) SpawnPlayer(p *player.Player) error {
+func (self *GameMap) SpawnPlayer(p *player.Player) (objects.Position, error) {
 	var spawn objects.Position
 	if p.Team == objects.Team_Red {
 		spawn = Spawn_RedOne
@@ -99,7 +96,7 @@ func (self *GameMap) SpawnPlayer(p *player.Player) error {
 	p.SetTargetLocation(spawn)
 	p.SetPlayerState(objects.PlayerState_Alive)
 
-	return nil
+	return spawn, nil
 }
 
 func (self *GameMap) DespawnPlayer() error {
@@ -107,12 +104,17 @@ func (self *GameMap) DespawnPlayer() error {
 }
 
 func (self *GameMap) ApplyMovement(movement *actions.MoveAction) error {
-	self.playerLocations[movement.SourcePlayer()] = movement.ToPosition()
+	self.playerLocations[movement.PlayerId] = movement.ToPosition()
 	return nil
 }
 
 func (self *GameMap) ApplyAttack(attack actions.AttackAction) error {
 	return errors.New("nyi")
+}
+
+func (self *GameMap) GetPlayerPosition(playerId uint64) (objects.Position, bool) {
+	loc, ok := self.playerLocations[playerId]
+	return loc, ok
 }
 
 func (self GameMap) DEBUG_CopyTiles() [][]Tile {
@@ -134,7 +136,7 @@ func (self GameMap) DEBUG_DisplayGameMapText() []string {
 	tiles := self.DEBUG_CopyTiles()
 	for _, player := range self.players {
 		loc := self.playerLocations[player.Id()]
-		tiles[loc.X][loc.Y] = player.DEBUG_Tile()
+		tiles[loc.X][loc.Z] = player.DEBUG_Tile()
 	}
 
 	var res []string

@@ -1,20 +1,25 @@
 package actions
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/rs/zerolog/log"
+)
 
 type AttackAction struct {
-	source string
-	target string
+	sourcePlayerId uint64
+	targetPlayerId uint64
 }
 
-func NewAttackAction(sourcePlayer, targetPlayer string) *AttackAction {
+func NewAttackAction(sourcePlayerId, targetPlayerId uint64) *AttackAction {
 	return &AttackAction{
-		source: sourcePlayer,
-		target: targetPlayer,
+		sourcePlayerId: sourcePlayerId,
+		targetPlayerId: targetPlayerId,
 	}
 }
 
-func NewAttackActionFromMessage(msg ...string) (*AttackAction, error) {
+func NewAttackActionFromMessage(playerId uint64, msg ...string) (*AttackAction, error) {
 	if len(msg) != 3 {
 		return nil, fmt.Errorf("invalid AttackAction, expected 3 segments but got %d", len(msg))
 	} else if ActionType(msg[0]) != ActionType_Attack {
@@ -25,8 +30,23 @@ func NewAttackActionFromMessage(msg ...string) (*AttackAction, error) {
 		return nil, fmt.Errorf("missing source or target for attack: %s, %s", msg[1], msg[2])
 	}
 
+	sourceId, err := strconv.ParseUint(msg[1], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	if sourceId != playerId {
+		log.Warn().Msgf("address does not match player Id. address tied to '%d' but message claims to be from '%d'", playerId, sourceId)
+		return nil, fmt.Errorf("hax")
+	}
+
+	targetId, err := strconv.ParseUint(msg[2], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	// validating that source and target are in game is not the responsibility of this function
-	return NewAttackAction(msg[1], msg[2]), nil
+	return NewAttackAction(sourceId, targetId), nil
 }
 
 func (self AttackAction) MarshalJSON() ([]byte, error) {
@@ -34,17 +54,9 @@ func (self AttackAction) MarshalJSON() ([]byte, error) {
 }
 
 func (self AttackAction) Id() string {
-	return fmt.Sprintf("%v:%s:%s", self.Type(), self.source, self.target)
+	return fmt.Sprintf("%v:%d:%d", self.Type(), self.sourcePlayerId, self.targetPlayerId)
 }
 
 func (self AttackAction) Type() ActionType {
 	return ActionType_Attack
-}
-
-func (self AttackAction) SourcePlayer() string {
-	return self.source
-}
-
-func (self AttackAction) TargetPlayer() *string {
-	return &self.target
 }
