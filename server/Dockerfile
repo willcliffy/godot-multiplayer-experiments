@@ -15,5 +15,5 @@ COPY --from=builder /app/dist/app .
 
 RUN apk add --no-cache bash make
 
-EXPOSE 8080
+EXPOSE 4444
 CMD /app/app
