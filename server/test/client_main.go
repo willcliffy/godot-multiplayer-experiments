@@ -15,7 +15,7 @@ const bufSize = 8192
 
 func main() {
 	// Prepare the IP to connect to
-	addr := &net.UDPAddr{IP: net.ParseIP("34.23.147.124"), Port: 10001}
+	addr := &net.UDPAddr{IP: net.ParseIP("35.227.75.95"), Port: 10001}
 
 	udpConn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
