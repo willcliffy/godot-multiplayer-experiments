@@ -1,0 +1,15 @@
+name: kilnwood
+gameserver:
+  enabled: true
+  name: kilnwood-gameserver
+  host: 
+  deployment:
+    replicas: 2
+    image: willcliffy/kilnwood
+    tag: dev
+    requests:
+      cpu: "100m"
+      memory: "100Mi"
+    limits:
+      cpu: "100m"
+      memory: "100Mi"
