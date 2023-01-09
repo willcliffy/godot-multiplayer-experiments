@@ -9,7 +9,7 @@ spec:
   type: LoadBalancer
   ports:
   - name: udp
-    port: 80
+    port: 10001
     targetPort: 10001
     protocol: UDP
   selector:
