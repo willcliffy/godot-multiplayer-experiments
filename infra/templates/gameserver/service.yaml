@@ -6,6 +6,7 @@ metadata:
   labels:
     app: "{{ .Values.gameserver.name }}"
 spec:
+  type: LoadBalancer
   ports:
   - name: udp
     port: 80
