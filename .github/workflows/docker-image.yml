@@ -19,8 +19,9 @@ jobs:
     - name: Build and Push Docker Image
       if: success()
       run: |
-        docker build server/ --file ./server/Dockerfile -t willcliffy/kilnwood:$GITHUB_SHA -t willcliffy/kilnwood:latest
+        docker build server/ --file ./server/Dockerfile -t willcliffy/kilnwood:$GITHUB_SHA -t willcliffy/kilnwood:latest -t willcliffy/kilnwood:dev
         docker push willcliffy/kilnwood:$GITHUB_SHA
+        docker push willcliffy/kilnwood:dev
         docker push willcliffy/kilnwood:latest
     - name: Install helm
       if: success()
@@ -34,6 +35,7 @@ jobs:
         GCLOUD_KEY: ${{ secrets.GCLOUD_KEY }}
       run: |
         echo "$GCLOUD_KEY" | base64 --decode > ${HOME}/gcloud.json
+        cat ${HOME}/gcloud.json
         gcloud auth activate-service-account --key-file=${HOME}/gcloud.json
         gcloud auth configure-docker
         gcloud container clusters get-credentials kilnwood --zone us-east1-c --project kilnwood
