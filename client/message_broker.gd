@@ -6,7 +6,7 @@ var id = 0
 
 
 func _ready():
-	var err = udp.connect_to_host("kilnwood-production.up.railway.app", 4444)
+	var err = udp.connect_to_host("34.23.147.124", 10001)
 	if err:
 		print("error connecting to host: ", err)
 		return
