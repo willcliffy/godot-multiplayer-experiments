@@ -4,7 +4,7 @@ gameserver:
   name: kilnwood-gameserver
   host: 
   deployment:
-    replicas: 2
+    replicas: 1
     image: willcliffy/kilnwood
     tag: dev
     requests:
