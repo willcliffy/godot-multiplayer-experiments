@@ -14,15 +14,8 @@ import (
 const bufSize = 8192
 
 func main() {
-	ips, err := net.LookupIP("kilnwood-production.up.railway.app")
-	if err != nil {
-		panic(err)
-	} else if len(ips) < 1 {
-		panic("not enough names")
-	}
-
 	// Prepare the IP to connect to
-	addr := &net.UDPAddr{IP: ips[0], Port: 4444}
+	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 31102}
 
 	udpConn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {

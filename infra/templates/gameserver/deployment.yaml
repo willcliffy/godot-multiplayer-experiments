@@ -22,6 +22,6 @@ spec:
         image: "{{ .Values.gameserver.deployment.image }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 4444
+        - containerPort: 10001
           protocol: UDP
 {{ end }}
