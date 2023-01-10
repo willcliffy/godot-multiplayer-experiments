@@ -2,7 +2,7 @@ name: kilnwood
 gameserver:
   enabled: true
   name: kilnwood-gameserver
-  host: 
+  host:
   deployment:
     replicas: 1
     image: willcliffy/kilnwood
