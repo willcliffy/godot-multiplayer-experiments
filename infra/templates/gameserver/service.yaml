@@ -10,8 +10,8 @@ spec:
   selector:
     app: "{{ .Values.gameserver.name }}"
   ports:
-  - name: udp
-    port: 8080
-    targetPort: 8080
-    protocol: UDP
+  - name: socket
+    port: 9900
+    targetPort: 9900
+    protocol: TCP
 {{ end }}
