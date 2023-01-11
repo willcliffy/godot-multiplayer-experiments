@@ -35,6 +35,7 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		actionsQueued:   make([]actions.Action, 0, 16),
 		movementsQueued: make(map[uint64]actions.MoveAction),
 		gameMap:         gamemap.NewGameMap(),
+		players:         make(map[uint64]*player.Player),
 		broadcaster:     broadcaster,
 	}
 }
@@ -82,6 +83,8 @@ func (self *Game) run() {
 }
 
 func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
+	log.Debug().Msgf("message received from player '%v': %v", playerId, string(message))
+
 	action, err := actions.ParseActionFromMessage(playerId, string(message))
 	if err != nil {
 		return err

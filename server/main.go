@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"net"
-	"os"
-	"os/signal"
+	"net/http"
 
-	"github.com/pion/udp"
+	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sony/sonyflake"
@@ -15,7 +13,7 @@ import (
 )
 
 const (
-	PORT = 8080
+	PORT = "9900"
 )
 
 func main() {
@@ -25,63 +23,35 @@ func main() {
 	// Loggeroni and cheese
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.TimestampFieldName = "t"
-	zerolog.LevelFieldName = "l"
-	zerolog.MessageFieldName = "m"
-	zerolog.CallerFieldName = "c"
 	log.Logger = log.With().
 		Caller().
 		Logger()
 
-	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: PORT}
-	listener, err := udp.Listen("udp", addr)
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-
-	defer func() {
-		if err := listener.Close(); err != nil {
-			log.Fatal().Err(err)
-		}
-	}()
-
-	log.Info().Msgf("Listening on port: %d", PORT)
-
 	messageBroker := broadcast.NewMessageBroker()
 	defer messageBroker.Close()
 
-	gameIdGenerator := sonyflake.NewSonyflake(sonyflake.Settings{})
-	gameId, _ := gameIdGenerator.NextID()
+	wsUpgrader := websocket.Upgrader{}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		c, err := wsUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Error().Err(err).Send()
+			return
+		}
+		messageBroker.HandleConnection(c)
+	})
 
 	// TODO - support for mulitple games
+	gameIdGenerator := sonyflake.NewSonyflake(sonyflake.Settings{})
+	gameId, _ := gameIdGenerator.NextID()
 	newGame := game.NewGame(uint64(gameId), messageBroker)
 	newGame.Start()
 
-	// For now, there is one game and it's constantly running
-	// TODO - implement lobbies, multiple games, etc
-	messageBroker.RegisterGame(gameId, newGame)
+	messageBroker.RegisterGame(newGame)
 
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Error().Err(err)
-				continue
-			} else if conn == nil {
-				continue
-			}
-
-			// We pass off the connection to messagebroker, who is now responsible for closing it
-			messageBroker.RegisterConnection(conn)
-		}
-	}()
-
-	// Gracefully handle shutdown signal, block until done
-	shutdown := make(chan struct{})
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt)
-		<-sigint
-		close(shutdown)
-	}()
-	<-shutdown
+	log.Info().Msgf("Listening on port: %s", PORT)
+	err := http.ListenAndServe("localhost:"+PORT, nil)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("error in ListenAndServe")
+	}
 }

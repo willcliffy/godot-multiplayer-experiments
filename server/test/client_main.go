@@ -15,7 +15,7 @@ const bufSize = 8192
 
 func main() {
 	// Prepare the IP to connect to
-	addr, err := net.ResolveUDPAddr("udp", "35.227.75.95:8080")
+	addr, err := net.ResolveUDPAddr("udp", "localhost:9900")
 	if err != nil {
 		panic(err)
 	}
@@ -25,11 +25,7 @@ func main() {
 		panic(err)
 	}
 
-	defer func() {
-		if err := udpConn.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	defer udpConn.Close()
 
 	fmt.Println("Connected; type 'exit' to shutdown gracefully")
 
@@ -39,7 +35,7 @@ func main() {
 		b := make([]byte, bufSize)
 
 		for {
-			n, err := udpConn.Read(b)
+			n, _, err := udpConn.ReadFromUDP(b)
 			if err != nil {
 				panic(err)
 			}
