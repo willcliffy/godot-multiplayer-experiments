@@ -2,16 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ .Values.gameserver.name }}"
+  name: "{{ .Values.gameserver.name }}-service"
   labels:
     app: "{{ .Values.gameserver.name }}"
 spec:
-  type: LoadBalancer
   selector:
     app: "{{ .Values.gameserver.name }}"
   ports:
-  - name: socket
-    port: 9900
-    targetPort: 9900
+  - name: websocket
     protocol: TCP
+    port: 80
+    targetPort: 9900
 {{ end }}

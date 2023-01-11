@@ -32,7 +32,7 @@ func main() {
 
 	wsUpgrader := websocket.Upgrader{}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/connect", func(w http.ResponseWriter, r *http.Request) {
 		c, err := wsUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Error().Err(err).Send()

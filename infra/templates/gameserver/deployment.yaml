@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ .Values.gameserver.name }}"
+  name: "{{ .Values.gameserver.name }}-deploy"
   labels:
     app: "{{ .Values.gameserver.name }}"
 spec:
@@ -22,6 +22,6 @@ spec:
         image: "{{ .Values.gameserver.deployment.image }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 9900
-          protocol: TCP
+        - name: websocket
+          containerPort: 9900
 {{ end }}
