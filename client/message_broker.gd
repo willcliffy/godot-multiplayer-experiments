@@ -1,6 +1,6 @@
 extends Node
 
-export var websocket_url = "ws://localhost:9900"
+export var websocket_url = "ws://34.73.191.166:9900"
 var _client = WebSocketClient.new()
 
 var connected = false
@@ -14,7 +14,6 @@ func _ready():
 	_client.connect("data_received", self, "_on_data")
 
 	var err = _client.connect_to_url(websocket_url)
-	print("connect_to_url: ", err)
 	if err != OK:
 		print("Unable to connect")
 		set_process(false)
@@ -25,7 +24,6 @@ func _closed(was_clean = false):
 
 func _connected(_proto = ""):
 	var err = _client.get_peer(1).put_packet("J:::f".to_utf8())
-	print("_connected, put_packet: ", err)
 	if err:
 		print("failed to connect: ", err)
 		return
@@ -36,11 +34,9 @@ func _process(_delta):
 	_client.poll()
 
 func _on_data():
-	print("data received")
 	if not connected: return
 	var packet = _client.get_peer(1).get_packet()
 
-	print(packet)
 	if not packet: return
 	var json = JSON.parse(packet.get_string_from_utf8())
 	if json.error:
@@ -49,6 +45,8 @@ func _on_data():
 	if not json.result or not json.result.has("Type"):
 		print("unexpected json from server: ", json.result)
 		return
+		
+	print(packet.get_string_from_utf8())
 	
 	match json.result.Type:
 		"join-response":

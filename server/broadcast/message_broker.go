@@ -9,7 +9,7 @@ import (
 )
 
 type MessageBroker struct {
-	lock sync.RWMutex
+	lock sync.Mutex
 
 	games map[uint64]MessageReceiver
 
@@ -21,7 +21,7 @@ func NewMessageBroker() *MessageBroker {
 	return &MessageBroker{
 		playerConns: make(map[uint64]*websocket.Conn),
 		games:       make(map[uint64]MessageReceiver),
-		lock:        sync.RWMutex{},
+		lock:        sync.Mutex{},
 
 		playerIdGenerator: sonyflake.NewSonyflake(sonyflake.Settings{}),
 	}
@@ -34,22 +34,24 @@ func (self *MessageBroker) Close() {
 		_ = self.BroadcastToGame(gameId, []byte("d:all"))
 	}
 
+	log.Debug().Msgf("Locking")
 	self.lock.Lock()
+	log.Debug().Msgf("Locked")
 	defer self.lock.Unlock()
 
 	for _, conn := range self.playerConns {
 		_ = conn.Close()
 	}
+	log.Debug().Msgf("Unlocking")
 }
 
 func (self *MessageBroker) HandleConnection(conn *websocket.Conn) {
 	self.lock.Lock()
-	defer self.lock.Unlock()
-
 	playerId, _ := self.playerIdGenerator.NextID()
 	self.playerConns[playerId] = conn
+	self.lock.Unlock()
 
-	log.Info().Msgf("Connected to new player assigned id: '%s'", playerId)
+	log.Info().Msgf("Connected to new player assigned id: '%d'", playerId)
 	self.clientReadLoop(playerId, conn)
 }
 
@@ -98,8 +100,8 @@ func (self *MessageBroker) RegisterGame(game MessageReceiver) uint64 {
 func (self *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
 	log.Debug().Msgf("broadcasting to game '%v' payload '%v'", gameId, string(payload))
 
-	self.lock.RLock()
-	defer self.lock.RUnlock()
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
 	// todo - support multiple games. This blasts to all
 	for _, conn := range self.playerConns {
@@ -113,10 +115,10 @@ func (self *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error 
 
 // This satisfies the util.Broadcaster interface
 func (self *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) error {
-	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, payload)
+	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, string(payload))
 
-	self.lock.RLock()
-	defer self.lock.RUnlock()
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
 	if conn, ok := self.playerConns[playerId]; ok {
 		if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {

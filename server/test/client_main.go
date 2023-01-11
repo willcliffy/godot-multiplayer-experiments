@@ -4,28 +4,30 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"net"
+	"log"
+	"net/url"
 	"os"
+	"os/signal"
 	"strings"
 
+	"github.com/gorilla/websocket"
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 )
 
 const bufSize = 8192
 
 func main() {
-	// Prepare the IP to connect to
-	addr, err := net.ResolveUDPAddr("udp", "localhost:9900")
-	if err != nil {
-		panic(err)
-	}
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
 
-	udpConn, err := net.DialUDP("udp", nil, addr)
-	if err != nil {
-		panic(err)
-	}
+	u := url.URL{Scheme: "ws", Host: "localhost:9900", Path: "/"}
+	log.Printf("connecting to %s", u.String())
 
-	defer udpConn.Close()
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	defer conn.Close()
 
 	fmt.Println("Connected; type 'exit' to shutdown gracefully")
 
@@ -35,10 +37,11 @@ func main() {
 		b := make([]byte, bufSize)
 
 		for {
-			n, _, err := udpConn.ReadFromUDP(b)
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				panic(err)
 			}
+			print(string(msg))
 			if len(id) == 0 {
 				if string(b[0]) == "d" {
 					fmt.Println("Server disconnected")
@@ -50,7 +53,7 @@ func main() {
 					Spawn    objects.Position
 				}{}
 
-				err := json.Unmarshal(b[:n], &x)
+				err := json.Unmarshal(msg, &x)
 				if err != nil {
 					panic(err)
 				}
@@ -72,8 +75,7 @@ func main() {
 			return
 		}
 
-		_, err = udpConn.Write([]byte(text))
-		if err != nil {
+		if err = conn.WriteMessage(websocket.TextMessage, []byte(text)); err != nil {
 			panic(err)
 		}
 	}

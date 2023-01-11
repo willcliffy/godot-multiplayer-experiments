@@ -53,6 +53,7 @@ func (self *GameMap) AddPlayer(p *player.Player) error {
 	}
 
 	for _, player := range self.players {
+		print(player)
 		if player.Id() == p.Id() {
 			return errors.New("player already in game")
 		}
