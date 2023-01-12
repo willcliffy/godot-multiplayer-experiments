@@ -50,7 +50,7 @@ func main() {
 	messageBroker.RegisterGame(newGame)
 
 	log.Info().Msgf("Listening on port: %s", PORT)
-	if err := http.ListenAndServe("localhost:"+PORT, nil); err != nil {
+	if err := http.ListenAndServe(":"+PORT, nil); err != nil {
 		log.Fatal().Err(err).Msgf("error in ListenAndServe")
 	}
 }

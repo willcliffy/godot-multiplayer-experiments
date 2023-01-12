@@ -20,12 +20,14 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	u := url.URL{Scheme: "ws", Host: "34.74.193.245", Path: "/connect"}
+	u := url.URL{Scheme: "ws", Host: "35.237.209.28:80", Path: "/connect"}
 	log.Printf("connecting to %s", u.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		//resBytes, err := io.ReadAll(res.Body)
+		//log.Printf("res: %v %v", err, string(resBytes))
+		log.Fatal("dial: ", err)
 	}
 	defer conn.Close()
 

@@ -1,11 +1,10 @@
 extends Node
 
-export var websocket_url = "ws://34.73.191.166:9900"
+export var websocket_url = "ws://kilnwood-game.com/connect"
 var _client = WebSocketClient.new()
 
 var connected = false
 var id = 0
-
 
 func _ready():
 	_client.connect("connection_closed", self, "_closed")
