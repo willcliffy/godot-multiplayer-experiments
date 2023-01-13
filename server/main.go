@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	PORT = "9900"
+	PORT = "8080"
 )
 
 func main() {
@@ -32,7 +33,14 @@ func main() {
 
 	wsUpgrader := websocket.Upgrader{}
 
-	http.HandleFunc("/connect", func(w http.ResponseWriter, r *http.Request) {
+	router := chi.NewRouter()
+
+	router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
 		c, err := wsUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Error().Err(err).Send()
@@ -49,8 +57,13 @@ func main() {
 
 	messageBroker.RegisterGame(newGame)
 
+	server := http.Server{
+		Addr:    ":" + PORT,
+		Handler: router,
+	}
+
 	log.Info().Msgf("Listening on port: %s", PORT)
-	if err := http.ListenAndServe(":"+PORT, nil); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal().Err(err).Msgf("error in ListenAndServe")
 	}
 }

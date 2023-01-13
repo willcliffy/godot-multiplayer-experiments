@@ -1,6 +1,6 @@
 extends Node
 
-export var websocket_url = "ws://kilnwood-game.com/connect"
+export var websocket_url = "ws://localhost:8080/connect"
 var _client = WebSocketClient.new()
 
 var connected = false

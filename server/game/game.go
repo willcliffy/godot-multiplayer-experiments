@@ -22,7 +22,7 @@ type Game struct {
 	tick            int
 	done            chan bool
 	actionsQueued   []actions.Action
-	movementsQueued map[uint64]actions.MoveAction
+	movementsQueued map[uint64]*actions.MoveAction
 	gameMap         *gamemap.GameMap
 	players         map[uint64]*player.Player
 	broadcaster     broadcast.MessageBroadcaster
@@ -33,7 +33,7 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		id:              gameId,
 		done:            make(chan bool),
 		actionsQueued:   make([]actions.Action, 0, 16),
-		movementsQueued: make(map[uint64]actions.MoveAction),
+		movementsQueued: make(map[uint64]*actions.MoveAction),
 		gameMap:         gamemap.NewGameMap(),
 		players:         make(map[uint64]*player.Player),
 		broadcaster:     broadcaster,
@@ -134,7 +134,7 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 }
 
 func (self *Game) OnPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, error) {
-	// TODO - allow specifying team
+	// TODO - allow specifying  team
 	var team objects.Team
 	if len(self.players) < 2 {
 		team = objects.Team_Red
@@ -171,7 +171,7 @@ func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
 	log.Debug().Msgf("queuing action: %v", a)
 
 	if a.Type() == actions.ActionType_Move {
-		self.movementsQueued[playerId] = a.(actions.MoveAction)
+		self.movementsQueued[playerId] = a.(*actions.MoveAction)
 		return nil
 	}
 
@@ -217,7 +217,7 @@ func (self *Game) processQueue() []actions.Action {
 	}
 
 	for _, move := range self.movementsQueued {
-		err := self.gameMap.ApplyMovement(&move)
+		err := self.gameMap.ApplyMovement(move)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -228,6 +228,7 @@ func (self *Game) processQueue() []actions.Action {
 
 	// reset actionQueue for the next tick
 	self.actionsQueued = make([]actions.Action, 0, 16)
+	self.movementsQueued = make(map[uint64]*actions.MoveAction)
 
 	return processed
 }
