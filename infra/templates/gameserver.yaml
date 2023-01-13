@@ -8,7 +8,7 @@ spec:
   - host: ws.kilnwood-game.com
     http:
       paths:
-      - path: /
+      - path: /*
         pathType: Prefix
         backend:
           service:
