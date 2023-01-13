@@ -37,7 +37,7 @@ func main() {
 
 	router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		_, _ = w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok\n"))
 	})
 
 	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {

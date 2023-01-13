@@ -23,7 +23,11 @@ jobs:
         docker push willcliffy/kilnwood:$GITHUB_SHA
         docker push willcliffy/kilnwood:dev
         docker push willcliffy/kilnwood:latest
-    - name: Install helm
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Helm
       if: success()
       run: |
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
