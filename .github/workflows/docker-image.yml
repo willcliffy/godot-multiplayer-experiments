@@ -37,5 +37,5 @@ jobs:
         echo "$GCLOUD_KEY" | base64 --decode > ${HOME}/gcloud.json
         gcloud auth activate-service-account --key-file=${HOME}/gcloud.json
         gcloud auth configure-docker
-        gcloud container clusters get-credentials kilnwood --zone us-east1-c --project kilnwood
+        gcloud container clusters get-credentials kilnwood-na --zone us-east1-c --project kilnwood
         helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --wait

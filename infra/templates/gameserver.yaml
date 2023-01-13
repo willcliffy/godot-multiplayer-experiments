@@ -35,7 +35,7 @@ spec:
   type: NodePort
   ports:
     - port: 80
-      targetPort: 9900
+      targetPort: 8080
       protocol: TCP
 ---
 apiVersion: apps/v1
@@ -61,18 +61,18 @@ spec:
         image: {{ .Values.gameserver.deployment.image }}
         imagePullPolicy: Always
         ports:
-        - containerPort: 9900
+        - containerPort: 8080
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 9900
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 9900
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 3
 {{ end }}

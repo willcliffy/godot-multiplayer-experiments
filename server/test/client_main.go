@@ -29,6 +29,7 @@ func main() {
 		//log.Printf("res: %v %v", err, string(resBytes))
 		log.Fatal("dial: ", err)
 	}
+
 	defer conn.Close()
 
 	fmt.Println("Connected; type 'exit' to shutdown gracefully")
