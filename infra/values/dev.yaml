@@ -5,5 +5,5 @@ gameserver:
   host:
   deployment:
     replicas: 1
-    image: willcliffy/kilnwood
+    image: willcliffy/kilnwood:latest
     tag: dev
