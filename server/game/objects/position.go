@@ -1,11 +1,11 @@
 package objects
 
-type Position struct {
+type Location struct {
 	X int
 	Z int
 	//z int
 }
 
-func New2DPosition(x, z int) *Position {
-	return &Position{x, z}
+func New2DLocation(x, z int) *Location {
+	return &Location{x, z}
 }

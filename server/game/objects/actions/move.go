@@ -9,13 +9,13 @@ import (
 
 type MoveAction struct {
 	PlayerId uint64
-	Position objects.Position
+	Location objects.Location
 }
 
 func NewMoveAction(playerId uint64, x, z int) *MoveAction {
 	return &MoveAction{
 		PlayerId: playerId,
-		Position: objects.Position{X: x, Z: z},
+		Location: objects.Location{X: x, Z: z},
 	}
 }
 
@@ -55,13 +55,13 @@ func (self MoveAction) MarshalJSON() ([]byte, error) {
 }
 
 func (self MoveAction) Id() string {
-	return fmt.Sprintf("%v:%d:%d:%d", self.Type(), self.PlayerId, self.Position.X, self.Position.Z)
+	return fmt.Sprintf("%v:%d:%d:%d", self.Type(), self.PlayerId, self.Location.X, self.Location.Z)
 }
 
 func (self MoveAction) Type() ActionType {
 	return ActionType_Move
 }
 
-func (self MoveAction) ToPosition() objects.Position {
-	return *objects.New2DPosition(self.Position.X, self.Position.Z)
+func (self MoveAction) ToLocation() objects.Location {
+	return *objects.New2DLocation(self.Location.X, self.Location.Z)
 }

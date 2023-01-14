@@ -53,7 +53,7 @@ func main() {
 				x := struct {
 					Type     string
 					PlayerId string
-					Spawn    objects.Position
+					Spawn    objects.Location
 				}{}
 
 				err := json.Unmarshal(msg, &x)

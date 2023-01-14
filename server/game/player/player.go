@@ -10,7 +10,7 @@ type Player struct {
 	Name                 string
 	class                *CharacterClass
 	Team                 objects.Team
-	targetPos            *objects.Position
+	Location             objects.Location
 	ticksSinceLastAction int
 }
 
@@ -21,19 +21,19 @@ func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Play
 		return nil
 	}
 
-	return &Player{playerId, name, class, team, nil, 0}
+	return &Player{playerId, name, class, team, objects.Location{}, 0}
 }
 
 func (p Player) Id() uint64 {
 	return p.id
 }
 
-func (p *Player) SetTargetLocation(location objects.Position) {
-	p.targetPos = &location
+func (p *Player) SetTargetLocation(location objects.Location) {
+	p.Location = location
 }
 
-func (p Player) GetTargetLocation() objects.Position {
-	return *p.targetPos
+func (p Player) GetTargetLocation() objects.Location {
+	return p.Location
 }
 
 func (p *Player) SetPlayerState(state objects.PlayerState) {}

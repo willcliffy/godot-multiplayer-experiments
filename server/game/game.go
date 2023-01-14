@@ -123,45 +123,38 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		return err
 	}
 
-	playerPosition, playerSpawned := self.gameMap.GetPlayerPosition(playerId)
-	if playerInGame && !playerSpawned {
-		playerPosition, err = self.gameMap.SpawnPlayer(p)
-		if err != nil {
-			_ = self.gameMap.RemovePlayer(p.Id())
-			delete(self.players, p.Id())
-			return err
-		}
-	}
-
 	type PlayerListEntry struct {
 		PlayerId string
 		Team     objects.Team
-		Position objects.Position
+		Location objects.Location
 	}
 
 	playerList := make([]PlayerListEntry, 0, 2)
 
 	for pId, p := range self.players {
-		if p != nil && pId != playerId {
-			playerList = append(playerList, PlayerListEntry{
-				PlayerId: fmt.Sprint(pId),
-				Team:     p.Team,
-				Position: p.GetTargetLocation(),
-			})
+		if p == nil || pId == playerId {
+			continue
 		}
+
+		playerList = append(playerList, PlayerListEntry{
+			PlayerId: fmt.Sprint(pId),
+			Team:     p.Team,
+			Location: p.Location,
+		})
+
 	}
 
 	msg := struct {
 		Type     string
 		PlayerId string
 		Team     objects.Team
-		Spawn    objects.Position
+		Spawn    objects.Location
 		Others   []PlayerListEntry
 	}{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
 		Team:     team,
-		Spawn:    playerPosition,
+		Spawn:    p.Location,
 		Others:   playerList,
 	}
 
