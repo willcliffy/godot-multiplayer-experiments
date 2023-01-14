@@ -7,17 +7,17 @@ onready var HEADMESH : MeshInstance = $Robot/RobotArmature/Skeleton/BoneAttachme
 
 const SPEED = 3
 
-var material : SpatialMaterial = null;
-
 var moving = false
 
 func set_team(team):
 	if team == 1: # Red team
-		material = HEADMESH.get_surface_material(1)#.duplicate()
-		print(material.albedo_color)
-		HEADMESH.set_surface_material(1, material)
+		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
+		material.albedo_color = Color(1, 0.25, 0.25)
+		HEADMESH.set_surface_material(0, material)
 	else: # blue team
-		pass
+		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
+		material.albedo_color = Color(0.25, 0.25, 1)
+		HEADMESH.set_surface_material(0, material)
 
 func _physics_process(delta):
 	if Input.is_action_just_pressed("exit"):

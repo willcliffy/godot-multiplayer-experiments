@@ -65,6 +65,10 @@ func (self *MessageBroker) UnregisterConnection(playerId uint64) {
 
 	delete(self.playerConns, playerId)
 
+	for _, game := range self.games {
+		game.OnPlayerDisconnected(playerId)
+	}
+
 	log.Debug().Msgf("Disconnected from %v", playerId)
 }
 

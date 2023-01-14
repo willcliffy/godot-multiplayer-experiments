@@ -6,11 +6,12 @@ import (
 )
 
 type Player struct {
-	id        uint64
-	Name      string
-	class     *CharacterClass
-	Team      objects.Team
-	targetPos *objects.Position
+	id                   uint64
+	Name                 string
+	class                *CharacterClass
+	Team                 objects.Team
+	targetPos            *objects.Position
+	ticksSinceLastAction int
 }
 
 func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Player {
@@ -20,7 +21,7 @@ func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Play
 		return nil
 	}
 
-	return &Player{playerId, name, class, team, nil}
+	return &Player{playerId, name, class, team, nil, 0}
 }
 
 func (p Player) Id() uint64 {
@@ -35,9 +36,7 @@ func (p Player) GetTargetLocation() objects.Position {
 	return *p.targetPos
 }
 
-func (p *Player) SetPlayerState(state objects.PlayerState) {
-
-}
+func (p *Player) SetPlayerState(state objects.PlayerState) {}
 
 func (p Player) DEBUG_Tile() [3][3]string {
 	return [3][3]string{

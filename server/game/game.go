@@ -19,7 +19,7 @@ const gameTick = 3000 * time.Millisecond
 type Game struct {
 	id              uint64
 	clock           *time.Ticker
-	tick            int
+	tick            uint8
 	done            chan bool
 	actionsQueued   []actions.Action
 	movementsQueued map[uint64]*actions.MoveAction
@@ -64,7 +64,7 @@ func (self *Game) run() {
 
 			payload, _ := json.Marshal(struct {
 				Type   string
-				Tick   int
+				Tick   uint8
 				Events []actions.Action
 			}{
 				Type:   "tick",
@@ -153,6 +153,11 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	}
 
 	return nil
+}
+
+// This satisfies the `MessageReceiver` interface, which the MessageBroker uses
+func (self *Game) OnPlayerDisconnected(playerId uint64) {
+	delete(self.players, playerId)
 }
 
 func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, objects.Team, error) {

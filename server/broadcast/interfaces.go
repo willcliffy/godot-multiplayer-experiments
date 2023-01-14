@@ -7,4 +7,5 @@ type MessageBroadcaster interface {
 
 type MessageReceiver interface {
 	OnMessageReceived(uint64, []byte) error
+	OnPlayerDisconnected(uint64)
 }

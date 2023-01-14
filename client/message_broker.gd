@@ -53,21 +53,22 @@ func _on_data():
 		"join-response":
 			print(packet.get_string_from_utf8())
 			id = json.result.PlayerId
-
 			$"../Player".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
 			$"../Player".set_team(json.result.Team)
 			for player in json.result.Others:
-				print(player)
+				$"../Opponent1".translation = Vector3(player.Position.X, 0, player.Position.Z)
+				$"../Opponent1".set_team(player.Team)
+				$"../Opponent1".visible = true
 		"join-broadcast":
 			if json.result.PlayerId == id: return
 			print(packet.get_string_from_utf8())
-			$"../Opponent".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
-			$"../Opponent".visible = true
+			$"../Opponent1".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
+			$"../Opponent1".set_team(json.result.Team)
+			$"../Opponent1".visible = true
 		"tick":
 			if len(json.result.Events) == 0: return
 			print(packet.get_string_from_utf8())
 			process_tick(json.result.Events)
-
 
 func process_tick(events):
 	for event in events:
@@ -78,7 +79,6 @@ func process_tick(events):
 				$"../Opponent".set_moving(Vector3(split_event[2], 0, split_event[3]))
 			"a": print("attack nyi")
 		print(event)
-
 
 func on_player_move(position):
 	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{z}".format({"id": id, "x": position.x, "z": position.z}).to_utf8())
