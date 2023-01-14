@@ -11,7 +11,6 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
 	"github.com/willcliffy/kilnwood-game-server/game/player"
-	"github.com/willcliffy/kilnwood-game-server/util"
 )
 
 const gameTick = 3000 * time.Millisecond
@@ -93,13 +92,44 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 		return err
 	}
 
-	if action.Type() != actions.ActionType_JoinGame {
-		return self.QueueAction(playerId, action)
+	if action.Type() == actions.ActionType_JoinGame {
+		return self.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
 	}
 
-	spawn, team, err := self.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
+	return self.QueueAction(playerId, action)
+}
+
+// This satisfies the `MessageReceiver` interface, which the MessageBroker uses
+func (self *Game) OnPlayerDisconnected(playerId uint64) {
+	delete(self.players, playerId)
+}
+
+func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
+	// TODO - allow specifying team
+	team := objects.Team_Red
+	if len(self.players) == 0 {
+		team = objects.Team_Blue
+	}
+
+	p, playerInGame := self.players[playerId]
+	if !playerInGame {
+		p = player.NewPlayer(playerId, "", a.Class, team)
+		self.players[playerId] = p
+	}
+
+	err := self.gameMap.AddPlayer(p)
 	if err != nil {
-		log.Warn().Err(err).Msgf("err on player join")
+		return err
+	}
+	playerPosition, playerSpawned := self.gameMap.GetPlayerPosition(playerId)
+	if playerInGame && !playerSpawned {
+		playerPosition, err = self.gameMap.SpawnPlayer(p)
+		delete(self.players, playerId)
+		if err != nil {
+			_ = self.gameMap.RemovePlayer(p.Id())
+			delete(self.players, p.Id())
+			return err
+		}
 	}
 
 	type PlayerListEntry struct {
@@ -108,10 +138,10 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 		Position objects.Position
 	}
 
-	var playerlist []PlayerListEntry
+	var playerList []PlayerListEntry
 
 	for playerId, player := range self.players {
-		playerlist = append(playerlist, PlayerListEntry{
+		playerList = append(playerList, PlayerListEntry{
 			PlayerId: fmt.Sprint(playerId),
 			Team:     player.Team,
 			Position: player.GetTargetLocation(),
@@ -128,8 +158,8 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
 		Team:     team,
-		Spawn:    spawn,
-		Others:   playerlist,
+		Spawn:    playerPosition,
+		Others:   playerList,
 	}
 
 	payload, err := json.Marshal(msg)
@@ -157,43 +187,6 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	return nil
 }
 
-// This satisfies the `MessageReceiver` interface, which the MessageBroker uses
-func (self *Game) OnPlayerDisconnected(playerId uint64) {
-	delete(self.players, playerId)
-}
-
-func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, objects.Team, error) {
-	// TODO - allow specifying team
-	team := objects.Team_Red
-	if len(self.players) == 0 {
-		team = objects.Team_Blue
-	}
-
-	if _, ok := self.players[playerId]; ok {
-		if playerPosition, ok := self.gameMap.GetPlayerPosition(playerId); ok {
-			return playerPosition, team, nil
-		}
-	}
-
-	player := player.NewPlayer(playerId, "", a.Class, team)
-
-	err := self.gameMap.AddPlayer(player)
-	if err != nil {
-		return objects.Position{}, team, err
-	}
-
-	self.players[playerId] = player
-
-	spawn, err := self.gameMap.SpawnPlayer(player)
-	if err != nil {
-		_ = self.gameMap.RemovePlayer(player.Id())
-		delete(self.players, player.Id())
-		return objects.Position{}, team, err
-	}
-
-	return spawn, team, nil
-}
-
 func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
 	log.Debug().Msgf("queuing action: %v", a)
 
@@ -204,15 +197,6 @@ func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
 
 	self.actionsQueued = append(self.actionsQueued, a)
 	return nil
-}
-
-func (self *Game) DequeueAction(a actions.Action) {
-	// inefficient but simple and preserves order
-	for i, action := range self.actionsQueued {
-		if action.Id() == a.Id() {
-			self.actionsQueued = util.RemoveElementFromSlice(self.actionsQueued, i)
-		}
-	}
 }
 
 func (self *Game) processQueue() []actions.Action {

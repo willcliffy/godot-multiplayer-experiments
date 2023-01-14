@@ -48,14 +48,14 @@ func NewGameMap() *GameMap {
 }
 
 func (self *GameMap) AddPlayer(p *player.Player) error {
-	if len(self.players) >= 4 {
-		return errors.New("game is full")
-	}
+	// if len(self.players) >= 2 {
+	// 	return errors.New("game is full")
+	// }
 
 	for _, player := range self.players {
-		print(player)
 		if player.Id() == p.Id() {
-			return errors.New("player already in game")
+			//return errors.New("player already in game")
+			return nil
 		}
 	}
 
