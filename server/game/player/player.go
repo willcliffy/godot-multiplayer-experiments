@@ -31,6 +31,10 @@ func (p *Player) SetTargetLocation(location objects.Position) {
 	p.targetPos = &location
 }
 
+func (p Player) GetTargetLocation() objects.Position {
+	return *p.targetPos
+}
+
 func (p *Player) SetPlayerState(state objects.PlayerState) {
 
 }

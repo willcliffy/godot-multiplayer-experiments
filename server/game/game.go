@@ -99,14 +99,30 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 		log.Warn().Err(err).Msgf("err on player join")
 	}
 
+	type PlayerListEntry struct {
+		PlayerId string
+		Position objects.Position
+	}
+
+	var playerlist []PlayerListEntry
+
+	for p, j := range self.players {
+		playerlist = append(playerlist, PlayerListEntry{
+			PlayerId: fmt.Sprint(p),
+			Position: j.GetTargetLocation(),
+		})
+	}
+
 	msg := struct {
 		Type     string
 		PlayerId string
 		Spawn    objects.Position
+		Others   []PlayerListEntry
 	}{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
 		Spawn:    spawn,
+		Others:   playerlist,
 	}
 
 	payload, err := json.Marshal(msg)
