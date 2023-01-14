@@ -60,7 +60,11 @@ func (self *Game) run() {
 		case <-self.done:
 			break
 		case <-self.clock.C:
+			self.tick += 1
 			processed := self.processQueue()
+			if len(processed) == 0 {
+				continue
+			}
 
 			payload, _ := json.Marshal(struct {
 				Type   string
@@ -76,8 +80,6 @@ func (self *Game) run() {
 			if err != nil {
 				log.Warn().Err(err).Msgf("failed to broadcast")
 			}
-
-			self.tick += 1
 		}
 	}
 }
