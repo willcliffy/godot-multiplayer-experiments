@@ -5,6 +5,7 @@ var _client = WebSocketClient.new()
 
 var connected = false
 var id = 0
+var team = 0
 
 func _ready():
 	_client.connect("connection_closed", self, "_closed")
@@ -33,10 +34,13 @@ func _process(_delta):
 	_client.poll()
 
 func _on_data():
-	if not connected: return
-	var packet = _client.get_peer(1).get_packet()
+	if not connected:
+		return
 
-	if not packet: return
+	var packet = _client.get_peer(1).get_packet()
+	if not packet:
+		return
+
 	var json = JSON.parse(packet.get_string_from_utf8())
 	if json.error:
 		print("got error from json parse: ", json.error)
@@ -47,10 +51,16 @@ func _on_data():
 
 	match json.result.Type:
 		"join-response":
+			print(packet.get_string_from_utf8())
 			id = json.result.PlayerId
+
 			$"../Player".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
+			$"../Player".set_team(json.result.Team)
+			for player in json.result.Others:
+				print(player)
 		"join-broadcast":
 			if json.result.PlayerId == id: return
+			print(packet.get_string_from_utf8())
 			$"../Opponent".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
 			$"../Opponent".visible = true
 		"tick":

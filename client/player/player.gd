@@ -3,9 +3,21 @@ extends KinematicBody
 onready var agent : NavigationAgent = $NavigationAgent
 onready var animation_tree: AnimationTree = $AnimationTree
 
+onready var HEADMESH : MeshInstance = $Robot/RobotArmature/Skeleton/BoneAttachment2/Head
+
 const SPEED = 3
 
+var material : SpatialMaterial = null;
+
 var moving = false
+
+func set_team(team):
+	if team == 1: # Red team
+		material = HEADMESH.get_surface_material(1)#.duplicate()
+		print(material.albedo_color)
+		HEADMESH.set_surface_material(1, material)
+	else: # blue team
+		pass
 
 func _physics_process(delta):
 	if Input.is_action_just_pressed("exit"):
@@ -27,7 +39,6 @@ func _physics_process(delta):
 	var facing_direction = (translation - direction)
 	facing_direction.y = translation.y
 	$Robot.look_at(facing_direction, Vector3.UP)
-
 
 func set_moving(position):
 	moving = true

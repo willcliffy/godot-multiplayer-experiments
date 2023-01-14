@@ -82,6 +82,7 @@ func (self *Game) run() {
 	}
 }
 
+// This satisfies the `MessageReceiver` interface, which the MessageBroker uses
 func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	log.Debug().Msgf("message received from player '%v': %v", playerId, string(message))
 
@@ -94,33 +95,37 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 		return self.QueueAction(playerId, action)
 	}
 
-	spawn, err := self.OnPlayerJoin(playerId, action.(*actions.JoinGameAction))
+	spawn, team, err := self.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
 	if err != nil {
 		log.Warn().Err(err).Msgf("err on player join")
 	}
 
 	type PlayerListEntry struct {
 		PlayerId string
+		Team     objects.Team
 		Position objects.Position
 	}
 
 	var playerlist []PlayerListEntry
 
-	for p, j := range self.players {
+	for playerId, player := range self.players {
 		playerlist = append(playerlist, PlayerListEntry{
-			PlayerId: fmt.Sprint(p),
-			Position: j.GetTargetLocation(),
+			PlayerId: fmt.Sprint(playerId),
+			Team:     player.Team,
+			Position: player.GetTargetLocation(),
 		})
 	}
 
 	msg := struct {
 		Type     string
 		PlayerId string
+		Team     objects.Team
 		Spawn    objects.Position
 		Others   []PlayerListEntry
 	}{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
+		Team:     team,
 		Spawn:    spawn,
 		Others:   playerlist,
 	}
@@ -136,6 +141,7 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	}
 
 	msg.Type = "join-broadcast"
+	msg.Others = nil
 	payload, err = json.Marshal(msg)
 	if err != nil {
 		return err
@@ -149,18 +155,16 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	return nil
 }
 
-func (self *Game) OnPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, error) {
-	// TODO - allow specifying  team
-	var team objects.Team
-	if len(self.players) < 2 {
-		team = objects.Team_Red
-	} else {
+func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) (objects.Position, objects.Team, error) {
+	// TODO - allow specifying team
+	team := objects.Team_Red
+	if len(self.players) == 0 {
 		team = objects.Team_Blue
 	}
 
 	if _, ok := self.players[playerId]; ok {
 		if playerPosition, ok := self.gameMap.GetPlayerPosition(playerId); ok {
-			return playerPosition, nil
+			return playerPosition, team, nil
 		}
 	}
 
@@ -168,7 +172,7 @@ func (self *Game) OnPlayerJoin(playerId uint64, a *actions.JoinGameAction) (obje
 
 	err := self.gameMap.AddPlayer(player)
 	if err != nil {
-		return objects.Position{}, err
+		return objects.Position{}, team, err
 	}
 
 	self.players[playerId] = player
@@ -177,10 +181,10 @@ func (self *Game) OnPlayerJoin(playerId uint64, a *actions.JoinGameAction) (obje
 	if err != nil {
 		_ = self.gameMap.RemovePlayer(player.Id())
 		delete(self.players, player.Id())
-		return objects.Position{}, err
+		return objects.Position{}, team, err
 	}
 
-	return spawn, nil
+	return spawn, team, nil
 }
 
 func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
