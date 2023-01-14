@@ -13,7 +13,7 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 )
 
-const gameTick = 3000 * time.Millisecond
+const gameTick = 100 * time.Millisecond
 
 type Game struct {
 	id              uint64
