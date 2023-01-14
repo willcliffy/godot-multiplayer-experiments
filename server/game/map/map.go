@@ -64,11 +64,11 @@ func (self *GameMap) AddPlayer(p *player.Player) error {
 	return nil
 }
 
-func (self *GameMap) RemovePlayer(id uint64) error {
+func (self *GameMap) RemovePlayer(playerId uint64) error {
 	for i, player := range self.players {
-		if player.Id() == id {
+		if player.Id() == playerId {
 			util.RemoveElementFromSlice(self.players, i)
-			delete(self.playerLocations, id)
+			delete(self.playerLocations, playerId)
 		}
 	}
 

@@ -51,7 +51,7 @@ func main() {
 			log.Error().Err(err).Send()
 			return
 		}
-		messageBroker.HandleConnection(c)
+		messageBroker.RegisterAndHandleWebsocketConnection(c)
 	})
 
 	// TODO - support for mulitple games
@@ -60,7 +60,7 @@ func main() {
 	newGame := game.NewGame(uint64(gameId), messageBroker)
 	newGame.Start()
 
-	messageBroker.RegisterGame(newGame)
+	messageBroker.RegisterMessageReceiver(newGame)
 
 	server := http.Server{
 		Addr:    ":" + PORT,

@@ -45,7 +45,9 @@ func (self *MessageBroker) Close() {
 	log.Debug().Msgf("Unlocking")
 }
 
-func (self *MessageBroker) HandleConnection(conn *websocket.Conn) {
+// This satisfies the `MessageBroadcaster` interface
+// Note that this blocks the thread until the connection is broken
+func (self *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Conn) {
 	self.lock.Lock()
 	playerId, _ := self.playerIdGenerator.NextID()
 	self.playerConns[playerId] = conn
@@ -55,7 +57,7 @@ func (self *MessageBroker) HandleConnection(conn *websocket.Conn) {
 	self.clientReadLoop(playerId, conn)
 }
 
-func (self *MessageBroker) UnregisterConnection(playerId uint64) {
+func (self *MessageBroker) unregisterConnection(playerId uint64) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -72,11 +74,21 @@ func (self *MessageBroker) UnregisterConnection(playerId uint64) {
 	log.Debug().Msgf("Disconnected from %v", playerId)
 }
 
+// This satifies the MessageBroadcaster interface
+// This is the only allowed communication from the games to the MessageBroker
+func (self *MessageBroker) OnPlayerLeft(playerId uint64) {
+	if err := self.playerConns[playerId].Close(); err != nil {
+		log.Error().Err(err).Msgf("Failed to disconnect from %v", playerId)
+	}
+
+	delete(self.playerConns, playerId)
+}
+
 func (self *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			self.UnregisterConnection(playerId)
+			self.unregisterConnection(playerId)
 			return
 		}
 
@@ -90,7 +102,7 @@ func (self *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn)
 	}
 }
 
-func (self *MessageBroker) RegisterGame(game MessageReceiver) uint64 {
+func (self *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 

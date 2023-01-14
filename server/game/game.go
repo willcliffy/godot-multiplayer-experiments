@@ -119,6 +119,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 
 	err := self.gameMap.AddPlayer(p)
 	if err != nil {
+		delete(self.players, p.Id())
 		return err
 	}
 
@@ -141,15 +142,13 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	playerList := make([]PlayerListEntry, 0, 2)
 
 	for pId, p := range self.players {
-		if p == nil {
-			continue
+		if p != nil && pId != playerId {
+			playerList = append(playerList, PlayerListEntry{
+				PlayerId: fmt.Sprint(pId),
+				Team:     p.Team,
+				Position: p.GetTargetLocation(),
+			})
 		}
-
-		playerList = append(playerList, PlayerListEntry{
-			PlayerId: fmt.Sprint(pId),
-			Team:     p.Team,
-			Position: p.GetTargetLocation(),
-		})
 	}
 
 	msg := struct {
