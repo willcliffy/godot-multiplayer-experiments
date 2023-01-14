@@ -57,7 +57,8 @@ func _on_data():
 			$"../Player".set_team(json.result.Team)
 			if not json.result.Others: return
 			for player in json.result.Others:
-				$"../Opponent1".translation = Vector3(player.Position.X, 0, player.Position.Z)
+				print(player)
+				$"../Opponent1".translation = Vector3(player.Location.X, 0, player.Location.Z)
 				$"../Opponent1".set_team(player.Team)
 				$"../Opponent1".visible = true
 		"join-broadcast":
@@ -81,7 +82,7 @@ func process_tick(events):
 			"a": print("attack nyi")
 		print(event)
 
-func on_player_move(position):
-	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{z}".format({"id": id, "x": position.x, "z": position.z}).to_utf8())
+func on_player_move(location):
+	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{z}".format({"id": id, "x": location.x, "z": location.z}).to_utf8())
 	if err:
 		print(err)

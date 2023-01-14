@@ -40,7 +40,7 @@ func _physics_process(delta):
 	facing_direction.y = translation.y
 	$Robot.look_at(facing_direction, Vector3.UP)
 
-func set_moving(position):
+func set_moving(location):
 	moving = true
-	agent.set_target_location(position)
+	agent.set_target_location(location)
 	$AnimationTree.get("parameters/playback").travel("walk")
