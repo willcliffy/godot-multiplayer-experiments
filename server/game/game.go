@@ -121,10 +121,10 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	if err != nil {
 		return err
 	}
+
 	playerPosition, playerSpawned := self.gameMap.GetPlayerPosition(playerId)
 	if playerInGame && !playerSpawned {
 		playerPosition, err = self.gameMap.SpawnPlayer(p)
-		delete(self.players, playerId)
 		if err != nil {
 			_ = self.gameMap.RemovePlayer(p.Id())
 			delete(self.players, p.Id())
@@ -138,13 +138,17 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		Position objects.Position
 	}
 
-	var playerList []PlayerListEntry
+	playerList := make([]PlayerListEntry, 0, 2)
 
-	for playerId, player := range self.players {
+	for pId, p := range self.players {
+		if p == nil {
+			continue
+		}
+
 		playerList = append(playerList, PlayerListEntry{
-			PlayerId: fmt.Sprint(playerId),
-			Team:     player.Team,
-			Position: player.GetTargetLocation(),
+			PlayerId: fmt.Sprint(pId),
+			Team:     p.Team,
+			Position: p.GetTargetLocation(),
 		})
 	}
 

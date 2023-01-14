@@ -55,6 +55,7 @@ func _on_data():
 			id = json.result.PlayerId
 			$"../Player".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
 			$"../Player".set_team(json.result.Team)
+			if not json.result.Others: return
 			for player in json.result.Others:
 				$"../Opponent1".translation = Vector3(player.Position.X, 0, player.Position.Z)
 				$"../Opponent1".set_team(player.Team)
@@ -76,7 +77,7 @@ func process_tick(events):
 		match split_event[0]:
 			"m":
 				if split_event[1] == id: return
-				$"../Opponent".set_moving(Vector3(split_event[2], 0, split_event[3]))
+				$"../Opponent1".set_moving(Vector3(split_event[2], 0, split_event[3]))
 			"a": print("attack nyi")
 		print(event)
 
