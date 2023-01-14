@@ -35,9 +35,14 @@ func main() {
 
 	router := chi.NewRouter()
 
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("alive\n"))
+	})
+
 	router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		_, _ = w.Write([]byte("ok\n"))
+		_, _ = w.Write([]byte("alive\n"))
 	})
 
 	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {

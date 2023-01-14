@@ -5,10 +5,10 @@ metadata:
   name: {{ .Values.gameserver.name }}
 spec:
   rules:
-  - host: ws.kilnwood-game.com
+  - host: kilnwood-game.com
     http:
       paths:
-      - path: /*
+      - path: /
         pathType: Prefix
         backend:
           service:
@@ -28,13 +28,14 @@ kind: Service
 metadata:
   name: {{ .Values.gameserver.name }}
   annotations:
-    beta.cloud.google.com/backend-config: '{"ports": {"8080":"kilnwood-backend-config"}}'
+    cloud.google.com/backend-config: '{"ports": {"websocket":"kilnwood-backend-config"}}'
 spec:
+  type: ClusterIP
   selector:
     app: {{ .Values.gameserver.name }}
-  type: NodePort
   ports:
-    - port: 80
+    - name: websocket
+      port: 80
       targetPort: 8080
       protocol: TCP
 ---
