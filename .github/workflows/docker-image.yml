@@ -43,4 +43,4 @@ jobs:
         gcloud auth activate-service-account --key-file=${HOME}/gcloud.json
         gcloud auth configure-docker
         gcloud container clusters get-credentials kilnwood-na --zone us-east5-c --project kilnwood
-        helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --wait
+        helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --set gameserver.deployment.tag=$GITHUB_SHA --wait

@@ -46,7 +46,7 @@ metadata:
   labels:
     app: {{ .Values.gameserver.name }}
 spec:
-  replicas: {{ .Values.gameserver.deployment.replicas }}
+  replicas: {{ .Values.gameserver.deploy.replicas }}
   selector:
     matchLabels:
       app: {{ .Values.gameserver.name }}
@@ -59,7 +59,7 @@ spec:
       - name: registry-credentials
       containers:
       - name: {{ .Values.gameserver.name }}
-        image: {{ .Values.gameserver.deployment.image }}
+        image: "{{ .Values.gameserver.deploy.image }}:{{ .Values.gameserver.deploy.tag }}"
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

@@ -1,6 +1,6 @@
 extends Node
 
-export var websocket_url = "ws://localhost:8080/connect"
+export var websocket_url = "ws://kilnwood-game.com/connect"
 var _client = WebSocketClient.new()
 
 var connected = false
@@ -44,9 +44,7 @@ func _on_data():
 	if not json.result or not json.result.has("Type"):
 		print("unexpected json from server: ", json.result)
 		return
-		
-	print(packet.get_string_from_utf8())
-	
+
 	match json.result.Type:
 		"join-response":
 			id = json.result.PlayerId
@@ -56,6 +54,8 @@ func _on_data():
 			$"../Opponent".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
 			$"../Opponent".visible = true
 		"tick":
+			if len(json.result.Events) == 0: return
+			print(packet.get_string_from_utf8())
 			process_tick(json.result.Events)
 
 
@@ -71,6 +71,6 @@ func process_tick(events):
 
 
 func on_player_move(position):
-	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{y}".format({"id": id, "x": position.x, "y": position.y}).to_utf8())
+	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{z}".format({"id": id, "x": position.x, "z": position.z}).to_utf8())
 	if err:
 		print(err)

@@ -5,8 +5,7 @@ func _process(delta):
 	rotate_y(delta)
 
 func set_target(position):
-	position.y = 0.33
-	translation = position
+	translation = position + Vector3(0, 0.333, 0)
 	visible = true
 
 func on_arrived():
