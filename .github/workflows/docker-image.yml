@@ -15,6 +15,7 @@ jobs:
         with:
           version: v1.29
           args: --tests=false
+          working-directory: server
   build:
     runs-on: ubuntu-latest
     steps:
