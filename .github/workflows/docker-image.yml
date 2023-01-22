@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
@@ -44,13 +47,11 @@ jobs:
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
         chmod 700 get_helm.sh
         ./get_helm.sh
-    - name: Auth with Google Cloud
-      if: success()
-      uses: imjasonh/gke-auth@v0.2.0
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v1'
       with:
-        project: kilnwood
-        location: us-east5-c
-        cluster: kilnwood-na
+        workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+        service_account: 'gh-actions@kilnwood.iam.gserviceaccount.com'
     - name: Deploy
       if: success()
       run: helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --set gameserver.deploy.tag=$GITHUB_SHA --wait
