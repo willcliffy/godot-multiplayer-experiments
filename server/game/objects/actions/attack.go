@@ -8,14 +8,16 @@ import (
 )
 
 type AttackAction struct {
-	sourcePlayerId uint64
-	targetPlayerId uint64
+	SourcePlayerId uint64
+	TargetPlayerId uint64
+
+	damageDealt int
 }
 
 func NewAttackAction(sourcePlayerId, targetPlayerId uint64) *AttackAction {
 	return &AttackAction{
-		sourcePlayerId: sourcePlayerId,
-		targetPlayerId: targetPlayerId,
+		SourcePlayerId: sourcePlayerId,
+		TargetPlayerId: targetPlayerId,
 	}
 }
 
@@ -54,9 +56,17 @@ func (self AttackAction) MarshalJSON() ([]byte, error) {
 }
 
 func (self AttackAction) Id() string {
-	return fmt.Sprintf("%v:%d:%d", self.Type(), self.sourcePlayerId, self.targetPlayerId)
+	return fmt.Sprintf("%v:%d:%d:%d",
+		self.Type(),
+		self.SourcePlayerId,
+		self.TargetPlayerId,
+		self.damageDealt)
 }
 
 func (self AttackAction) Type() ActionType {
 	return ActionType_Attack
+}
+
+func (self *AttackAction) SetDamageDealt(damage int) {
+	self.damageDealt = damage
 }

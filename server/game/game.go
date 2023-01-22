@@ -207,11 +207,13 @@ func (self *Game) processQueue() []actions.Action {
 				continue
 			}
 
-			err := self.gameMap.ApplyAttack(attackAction)
+			dmg, err := self.gameMap.ApplyAttack(attackAction)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed action: could not apply AttackAction")
 				continue
 			}
+
+			attackAction.SetDamageDealt(dmg)
 
 			processed = append(processed, attackAction)
 		case actions.ActionType_CancelAction:

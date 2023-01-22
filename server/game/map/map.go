@@ -6,7 +6,6 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
 	"github.com/willcliffy/kilnwood-game-server/game/player"
-	"github.com/willcliffy/kilnwood-game-server/util"
 )
 
 const (
@@ -15,6 +14,8 @@ const (
 )
 
 var (
+	ErrPlayerNotInGame = errors.New("player not in game")
+
 	Spawn_RedOne  = objects.Location{X: 1, Z: 1}
 	Spawn_RedTwo  = objects.Location{X: 9, Z: 1}
 	Spawn_BlueOne = objects.Location{X: 1, Z: 9}
@@ -22,9 +23,8 @@ var (
 )
 
 type GameMap struct {
-	tiles           [][]Tile
-	players         []*player.Player
-	playerLocations map[uint64]objects.Location
+	tiles   [][]Tile
+	players map[uint64]*player.Player
 }
 
 func NewGameMap() *GameMap {
@@ -37,9 +37,8 @@ func NewGameMap() *GameMap {
 	}
 
 	return &GameMap{
-		tiles:           tiles,
-		players:         make([]*player.Player, 0, 4),
-		playerLocations: make(map[uint64]objects.Location),
+		tiles:   tiles,
+		players: make(map[uint64]*player.Player),
 	}
 }
 
@@ -55,18 +54,13 @@ func (self *GameMap) AddPlayer(p *player.Player) error {
 		}
 	}
 
-	self.players = append(self.players, p)
+	self.players[p.Id()] = p
 	p.SetPlayerState(objects.PlayerState_Vibing)
 	return nil
 }
 
 func (self *GameMap) RemovePlayer(playerId uint64) error {
-	for i, player := range self.players {
-		if player.Id() == playerId {
-			util.RemoveElementFromSlice(self.players, i)
-			delete(self.playerLocations, playerId)
-		}
-	}
+	delete(self.players, playerId)
 
 	return nil
 }
@@ -89,7 +83,6 @@ func (self *GameMap) SpawnPlayer(p *player.Player) (objects.Location, error) {
 		}
 	}
 
-	self.playerLocations[p.Id()] = spawn
 	p.SetTargetLocation(spawn)
 	p.SetPlayerState(objects.PlayerState_Alive)
 
@@ -101,10 +94,25 @@ func (self *GameMap) DespawnPlayer() error {
 }
 
 func (self *GameMap) ApplyMovement(movement *actions.MoveAction) error {
-	self.playerLocations[movement.PlayerId] = movement.ToLocation()
+	player, ok := self.players[movement.PlayerId]
+	if !ok {
+		return ErrPlayerNotInGame
+	}
+
+	player.Location = movement.ToLocation()
 	return nil
 }
 
-func (self *GameMap) ApplyAttack(attack actions.AttackAction) error {
-	return errors.New("nyi")
+func (self *GameMap) ApplyAttack(attack actions.AttackAction) (int, error) {
+	target, ok := self.players[attack.TargetPlayerId]
+	if !ok {
+		return 0, ErrPlayerNotInGame
+	}
+
+	source, ok := self.players[attack.SourcePlayerId]
+	if !ok {
+		return 0, ErrPlayerNotInGame
+	}
+
+	return target.Combat.ApplyDamage(source.Combat.AD), nil
 }
