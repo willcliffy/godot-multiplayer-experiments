@@ -33,6 +33,9 @@ func main() {
 
 	wsUpgrader := websocket.Upgrader{}
 
+	// This is a security risk and should be patched before prod
+	wsUpgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
 	router := chi.NewRouter()
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
