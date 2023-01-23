@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.gameserver.name }}
+spec:
+  rules:
+  - host: kilnwood-game.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.gameserver.name }}
+            port:
+              number: 80
+      - path: /game
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.client.name }}
+            port:
+              number: 80

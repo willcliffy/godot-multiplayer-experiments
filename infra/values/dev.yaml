@@ -1,4 +1,12 @@
 name: kilnwood
+client:
+  enabled: true
+  name: kilnwood-client
+  host:
+  deploy:
+    replicas: 1
+    image: willcliffy/kilnwood-client
+    tag: dev
 gameserver:
   enabled: true
   name: kilnwood-gameserver
