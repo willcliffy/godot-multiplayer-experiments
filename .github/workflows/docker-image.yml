@@ -54,6 +54,6 @@ jobs:
     - name: Deploy
       if: success()
       run: |
-        export KUBECONFIG="${{ secrets.KILNWOOD_NA_KUBECONFIG }}"
-        helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --set gameserver.deploy.tag=$GITHUB_SHA --wait
+        echo "${{ secrets.KILNWOOD_NA_KUBECONFIG }}" >> kubeconfig
+        helm --kubeconfig="kubeconfig" upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --set gameserver.deploy.tag=$GITHUB_SHA --wait
 
