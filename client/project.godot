@@ -75,6 +75,10 @@ Click={
  ]
 }
 
+[mono]
+
+project/assembly_name="Kilnwood Godot Client"
+
 [physics]
 
 common/physics_fps=120

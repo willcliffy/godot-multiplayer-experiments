@@ -10343,70 +10343,70 @@ transform = Transform( -1, 2.0612e-07, 3.00337e-07, 2.93497e-07, -0.0324217, 0.9
 mesh = SubResource( 35 )
 
 [node name="BoneAttachment2" parent="Player/Robot/RobotArmature/Skeleton" index="1"]
-transform = Transform( 0.967906, -0.0409341, -0.247957, 0.0520549, 0.997903, 0.0384583, 0.245863, -0.0501314, 0.968007, -0.0171258, 2.92852, -0.0112465 )
+transform = Transform( 0.998051, -0.0506581, -0.0364457, 0.052055, 0.997903, 0.0384581, 0.0344211, -0.0402803, 0.998595, -0.0171258, 3.00098, -0.0112465 )
 
 [node name="Head" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment2" index="0"]
 transform = Transform( 0.999996, 0.00280538, 0.000109057, -0.00280693, 0.99982, 0.0187636, -5.63984e-05, -0.0187638, 0.999824, -0.000895754, 0.647622, 0.0363968 )
 mesh = SubResource( 36 )
 
 [node name="BoneAttachment3" parent="Player/Robot/RobotArmature/Skeleton" index="2"]
-transform = Transform( 0.0367204, 0.426699, 0.903648, -0.175172, -0.887509, 0.426196, 0.983852, -0.173945, 0.0421563, 0.617283, 2.2534, -0.0168431 )
+transform = Transform( 0.0367204, 0.426699, 0.903648, -0.175172, -0.887509, 0.426196, 0.983852, -0.173945, 0.0421563, 0.617283, 2.32586, -0.0168431 )
 
 [node name="ArmL" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment3" index="0"]
 transform = Transform( -0.060992, 0.0680625, 0.995815, 0.998053, -0.00889861, 0.0617372, 0.0130633, 0.997641, -0.0673872, 0.0351455, -0.66781, -0.0759339 )
 mesh = SubResource( 37 )
 
 [node name="BoneAttachment4" parent="Player/Robot/RobotArmature/Skeleton" index="3"]
-transform = Transform( -0.911602, 0.411073, -1.73968e-06, -0.411073, -0.911602, -1.30385e-06, -2.40654e-06, -1.11759e-06, 0.999999, 0.582738, 2.33001, -0.0168431 )
+transform = Transform( -0.911602, 0.411073, -1.73968e-06, -0.411073, -0.911602, -1.30385e-06, -2.40654e-06, -1.11759e-06, 0.999999, 0.582738, 2.40247, -0.0168431 )
 
 [node name="ShoulderL" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment4" index="0"]
 transform = Transform( -0.0259365, -0.999663, -1.90041e-06, 0.999664, -0.0259365, -2.72006e-07, 2.22625e-07, -1.90682e-06, 1, -0.000381408, -0.000983135, -0.00415096 )
 mesh = SubResource( 38 )
 
 [node name="BoneAttachment5" parent="Player/Robot/RobotArmature/Skeleton" index="4"]
-transform = Transform( 0.209987, -0.437155, -0.874529, -0.256283, -0.887807, 0.382255, -0.943516, 0.143858, -0.298465, -0.681735, 2.23826, -0.0168431 )
+transform = Transform( 0.209987, -0.437155, -0.874529, -0.256283, -0.887807, 0.382255, -0.943516, 0.143858, -0.298465, -0.681735, 2.31072, -0.0168431 )
 
 [node name="ArmR" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment5" index="0"]
 transform = Transform( -0.0135961, -0.0601616, -0.218502, -0.226541, -0.00261857, 0.0148174, -0.00644643, 0.218909, -0.0598725, -0.00794093, 0.334939, -0.00472569 )
 mesh = SubResource( 39 )
 
 [node name="BoneAttachment6" parent="Player/Robot/RobotArmature/Skeleton" index="5"]
-transform = Transform( -0.898185, -0.439616, -1.31815e-06, 0.439616, -0.898185, -2.5332e-07, -1.18837e-06, -5.81145e-07, 1, -0.636816, 2.33004, -0.0168431 )
+transform = Transform( -0.898185, -0.439616, -1.31815e-06, 0.439616, -0.898185, -2.5332e-07, -1.18837e-06, -5.81145e-07, 1, -0.636816, 2.4025, -0.0168431 )
 
 [node name="ShoulderR" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment6" index="0"]
 transform = Transform( -0.00985825, 0.999951, -1.20065e-06, -0.999951, -0.00985825, -2.36985e-07, -2.4881e-07, 1.19825e-06, 1, 0.000351929, -0.000331268, -0.00415096 )
 mesh = SubResource( 6 )
 
 [node name="BoneAttachment7" parent="Player/Robot/RobotArmature/Skeleton" index="6"]
-transform = Transform( 0.985108, -0.0546321, -0.163025, 0.0106059, -0.927065, 0.374754, -0.171608, -0.370914, -0.912688, 0.684217, 0.88488, 0.206115 )
+transform = Transform( 0.98517, -0.0369743, -0.16755, 0.0100703, -0.962366, 0.271577, -0.171285, -0.269247, -0.947732, 0.667834, 0.917618, 0.111786 )
 
 [node name="LowerLegL" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment7" index="0"]
 transform = Transform( 0.999981, 0.00199892, 0.00578747, 0.00306511, -0.981674, -0.190541, 0.00530057, 0.190557, -0.981655, -0.00681803, 0.49898, -0.252089 )
 mesh = SubResource( 7 )
 
 [node name="BoneAttachment8" parent="Player/Robot/RobotArmature/Skeleton" index="7"]
-transform = Transform( 0.985108, 0.0882483, -0.147561, 0.0106057, -0.887785, -0.460142, -0.171608, 0.451721, -0.875514, 0.630296, 1.42732, -0.0698894 )
+transform = Transform( 0.98517, 0.0614352, -0.160206, 0.0100701, -0.952794, -0.303455, -0.171285, 0.297338, -0.939297, 0.630296, 1.49978, -0.0698894 )
 
 [node name="LegL" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment8" index="0"]
 transform = Transform( 0.999981, 0.0019989, 0.00578746, 0.000743429, -0.977855, 0.20928, 0.00607767, -0.209274, -0.977831, -0.00673987, 0.332479, -0.00286941 )
 mesh = SubResource( 8 )
 
 [node name="BoneAttachment9" parent="Player/Robot/RobotArmature/Skeleton" index="8"]
-transform = Transform( 0.96086, 0.0937003, 0.260707, -0.0112356, -0.927113, 0.374616, 0.276805, -0.362895, -0.889781, -0.727017, 0.884925, 0.198675 )
+transform = Transform( 0.96096, 0.0651914, 0.268898, -0.0106683, -0.962397, 0.271442, 0.276481, -0.263724, -0.92414, -0.700565, 0.917647, 0.106662 )
 
 [node name="LowerLegR" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment9" index="0"]
 transform = Transform( 0.999981, 0.00187108, 0.00586617, 0.00295499, -0.981663, -0.190604, 0.00540211, 0.190623, -0.981622, 0.00470805, 0.499, -0.251994 )
 mesh = SubResource( 9 )
 
 [node name="BoneAttachment10" parent="Player/Robot/RobotArmature/Skeleton" index="9"]
-transform = Transform( 0.96086, -0.137004, 0.240786, -0.0112354, -0.887712, -0.460268, 0.276805, 0.439544, -0.85452, -0.643307, 1.42732, -0.0698895 )
+transform = Transform( 0.960959, -0.0937121, 0.260335, -0.0106682, -0.952746, -0.303584, 0.276481, 0.288952, -0.916565, -0.643307, 1.49978, -0.0698895 )
 
 [node name="LegR" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment10" index="0"]
 transform = Transform( 0.999981, 0.001871, 0.00586668, 0.000798222, -0.984071, 0.177773, 0.006106, -0.17777, -0.984027, 0.00534529, 0.332518, 0.00620941 )
 mesh = SubResource( 10 )
 
 [node name="BoneAttachment11" parent="Player/Robot/RobotArmature/Skeleton" index="10"]
-transform = Transform( 1, 0, 7.15256e-07, 0, 1, 0, -7.15256e-07, 0, 1, 0.00205059, 1.3311, 0.112672 )
+transform = Transform( 1, 0, 7.15256e-07, 0, 1, 0, -7.15256e-07, 0, 1, 0.00205059, 1.40356, 0.112672 )
 
 [node name="Torso" parent="Player/Robot/RobotArmature/Skeleton/BoneAttachment11" index="0"]
 transform = Transform( 1, 0, -7.15256e-07, 0, 1, 0, 7.15256e-07, 0, 1, -0.00476612, 0.801258, -0.132253 )
@@ -10464,7 +10464,6 @@ transform = Transform( 1, 0, 0, 0, 0.753644, 0.657283, 0, -0.657283, 0.753644, 0
 
 [node name="Opponent1" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 8.20675, 5 )
-visible = false
 script = ExtResource( 4 )
 
 [node name="CollisionShape" type="CollisionShape" parent="Opponent1"]
@@ -10539,70 +10538,70 @@ transform = Transform( -1, 2.0612e-07, 3.00337e-07, 2.93497e-07, -0.0324217, 0.9
 mesh = SubResource( 35 )
 
 [node name="BoneAttachment2" parent="Opponent1/Robot/RobotArmature/Skeleton" index="1"]
-transform = Transform( 0.967906, -0.0409341, -0.247957, 0.0520549, 0.997903, 0.0384583, 0.245863, -0.0501314, 0.968007, -0.0171258, 2.92852, -0.0112465 )
+transform = Transform( 0.998051, -0.0506581, -0.0364457, 0.052055, 0.997903, 0.0384581, 0.0344211, -0.0402803, 0.998595, -0.0171258, 3.00098, -0.0112465 )
 
 [node name="Head" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment2" index="0"]
 transform = Transform( 0.999996, 0.00280538, 0.000109057, -0.00280693, 0.99982, 0.0187636, -5.63984e-05, -0.0187638, 0.999824, -0.000895754, 0.647622, 0.0363968 )
 mesh = SubResource( 36 )
 
 [node name="BoneAttachment3" parent="Opponent1/Robot/RobotArmature/Skeleton" index="2"]
-transform = Transform( 0.0367204, 0.426699, 0.903648, -0.175172, -0.887509, 0.426196, 0.983852, -0.173945, 0.0421563, 0.617283, 2.2534, -0.0168431 )
+transform = Transform( 0.0367204, 0.426699, 0.903648, -0.175172, -0.887509, 0.426196, 0.983852, -0.173945, 0.0421563, 0.617283, 2.32586, -0.0168431 )
 
 [node name="ArmL" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment3" index="0"]
 transform = Transform( -0.060992, 0.0680625, 0.995815, 0.998053, -0.00889861, 0.0617372, 0.0130633, 0.997641, -0.0673872, 0.0351455, -0.66781, -0.0759339 )
 mesh = SubResource( 37 )
 
 [node name="BoneAttachment4" parent="Opponent1/Robot/RobotArmature/Skeleton" index="3"]
-transform = Transform( -0.911602, 0.411073, -1.73968e-06, -0.411073, -0.911602, -1.30385e-06, -2.40654e-06, -1.11759e-06, 0.999999, 0.582738, 2.33001, -0.0168431 )
+transform = Transform( -0.911602, 0.411073, -1.73968e-06, -0.411073, -0.911602, -1.30385e-06, -2.40654e-06, -1.11759e-06, 0.999999, 0.582738, 2.40247, -0.0168431 )
 
 [node name="ShoulderL" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment4" index="0"]
 transform = Transform( -0.0259365, -0.999663, -1.90041e-06, 0.999664, -0.0259365, -2.72006e-07, 2.22625e-07, -1.90682e-06, 1, -0.000381408, -0.000983135, -0.00415096 )
 mesh = SubResource( 38 )
 
 [node name="BoneAttachment5" parent="Opponent1/Robot/RobotArmature/Skeleton" index="4"]
-transform = Transform( 0.209987, -0.437155, -0.874529, -0.256283, -0.887807, 0.382255, -0.943516, 0.143858, -0.298465, -0.681735, 2.23826, -0.0168431 )
+transform = Transform( 0.209987, -0.437155, -0.874529, -0.256283, -0.887807, 0.382255, -0.943516, 0.143858, -0.298465, -0.681735, 2.31072, -0.0168431 )
 
 [node name="ArmR" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment5" index="0"]
 transform = Transform( -0.0135961, -0.0601616, -0.218502, -0.226541, -0.00261857, 0.0148174, -0.00644643, 0.218909, -0.0598725, -0.00794093, 0.334939, -0.00472569 )
 mesh = SubResource( 39 )
 
 [node name="BoneAttachment6" parent="Opponent1/Robot/RobotArmature/Skeleton" index="5"]
-transform = Transform( -0.898185, -0.439616, -1.31815e-06, 0.439616, -0.898185, -2.5332e-07, -1.18837e-06, -5.81145e-07, 1, -0.636816, 2.33004, -0.0168431 )
+transform = Transform( -0.898185, -0.439616, -1.31815e-06, 0.439616, -0.898185, -2.5332e-07, -1.18837e-06, -5.81145e-07, 1, -0.636816, 2.4025, -0.0168431 )
 
 [node name="ShoulderR" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment6" index="0"]
 transform = Transform( -0.00985825, 0.999951, -1.20065e-06, -0.999951, -0.00985825, -2.36985e-07, -2.4881e-07, 1.19825e-06, 1, 0.000351929, -0.000331268, -0.00415096 )
 mesh = SubResource( 6 )
 
 [node name="BoneAttachment7" parent="Opponent1/Robot/RobotArmature/Skeleton" index="6"]
-transform = Transform( 0.985108, -0.0546321, -0.163025, 0.0106059, -0.927065, 0.374754, -0.171608, -0.370914, -0.912688, 0.684217, 0.88488, 0.206115 )
+transform = Transform( 0.98517, -0.0369743, -0.16755, 0.0100703, -0.962366, 0.271577, -0.171285, -0.269247, -0.947732, 0.667834, 0.917618, 0.111786 )
 
 [node name="LowerLegL" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment7" index="0"]
 transform = Transform( 0.999981, 0.00199892, 0.00578747, 0.00306511, -0.981674, -0.190541, 0.00530057, 0.190557, -0.981655, -0.00681803, 0.49898, -0.252089 )
 mesh = SubResource( 7 )
 
 [node name="BoneAttachment8" parent="Opponent1/Robot/RobotArmature/Skeleton" index="7"]
-transform = Transform( 0.985108, 0.0882483, -0.147561, 0.0106057, -0.887785, -0.460142, -0.171608, 0.451721, -0.875514, 0.630296, 1.42732, -0.0698894 )
+transform = Transform( 0.98517, 0.0614352, -0.160206, 0.0100701, -0.952794, -0.303455, -0.171285, 0.297338, -0.939297, 0.630296, 1.49978, -0.0698894 )
 
 [node name="LegL" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment8" index="0"]
 transform = Transform( 0.999981, 0.0019989, 0.00578746, 0.000743429, -0.977855, 0.20928, 0.00607767, -0.209274, -0.977831, -0.00673987, 0.332479, -0.00286941 )
 mesh = SubResource( 8 )
 
 [node name="BoneAttachment9" parent="Opponent1/Robot/RobotArmature/Skeleton" index="8"]
-transform = Transform( 0.96086, 0.0937003, 0.260707, -0.0112356, -0.927113, 0.374616, 0.276805, -0.362895, -0.889781, -0.727017, 0.884925, 0.198675 )
+transform = Transform( 0.96096, 0.0651914, 0.268898, -0.0106683, -0.962397, 0.271442, 0.276481, -0.263724, -0.92414, -0.700565, 0.917647, 0.106662 )
 
 [node name="LowerLegR" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment9" index="0"]
 transform = Transform( 0.999981, 0.00187108, 0.00586617, 0.00295499, -0.981663, -0.190604, 0.00540211, 0.190623, -0.981622, 0.00470805, 0.499, -0.251994 )
 mesh = SubResource( 9 )
 
 [node name="BoneAttachment10" parent="Opponent1/Robot/RobotArmature/Skeleton" index="9"]
-transform = Transform( 0.96086, -0.137004, 0.240786, -0.0112354, -0.887712, -0.460268, 0.276805, 0.439544, -0.85452, -0.643307, 1.42732, -0.0698895 )
+transform = Transform( 0.960959, -0.0937121, 0.260335, -0.0106682, -0.952746, -0.303584, 0.276481, 0.288952, -0.916565, -0.643307, 1.49978, -0.0698895 )
 
 [node name="LegR" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment10" index="0"]
 transform = Transform( 0.999981, 0.001871, 0.00586668, 0.000798222, -0.984071, 0.177773, 0.006106, -0.17777, -0.984027, 0.00534529, 0.332518, 0.00620941 )
 mesh = SubResource( 10 )
 
 [node name="BoneAttachment11" parent="Opponent1/Robot/RobotArmature/Skeleton" index="10"]
-transform = Transform( 1, 0, 7.15256e-07, 0, 1, 0, -7.15256e-07, 0, 1, 0.00205059, 1.3311, 0.112672 )
+transform = Transform( 1, 0, 7.15256e-07, 0, 1, 0, -7.15256e-07, 0, 1, 0.00205059, 1.40356, 0.112672 )
 
 [node name="Torso" parent="Opponent1/Robot/RobotArmature/Skeleton/BoneAttachment11" index="0"]
 transform = Transform( 1, 0, -7.15256e-07, 0, 1, 0, 7.15256e-07, 0, 1, -0.00476612, 0.801258, -0.132253 )
