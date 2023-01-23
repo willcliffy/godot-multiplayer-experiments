@@ -1,21 +1,4 @@
 {{ if .Values.gameserver.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Values.gameserver.name }}
-spec:
-  rules:
-  - host: kilnwood-game.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: {{ .Values.gameserver.name }}
-            port:
-              number: 80
----
 apiVersion: cloud.google.com/v1beta1
 kind: BackendConfig
 metadata:
@@ -36,7 +19,7 @@ spec:
   ports:
     - name: websocket
       port: 80
-      targetPort: 8080
+      targetPort: 3000
       protocol: TCP
 ---
 apiVersion: apps/v1
@@ -62,18 +45,18 @@ spec:
         image: "{{ .Values.gameserver.deploy.image }}:{{ .Values.gameserver.deploy.tag }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 3000
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8080
+            port: 3000
           initialDelaySeconds: 30
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 8080
+            port: 3000
           initialDelaySeconds: 30
           periodSeconds: 3
 {{ end }}
