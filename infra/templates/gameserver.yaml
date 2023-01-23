@@ -19,7 +19,7 @@ spec:
   ports:
     - name: websocket
       port: 80
-      targetPort: 3000
+      targetPort: 8080
       protocol: TCP
 ---
 apiVersion: apps/v1
@@ -45,18 +45,18 @@ spec:
         image: "{{ .Values.gameserver.deploy.image }}:{{ .Values.gameserver.deploy.tag }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
           protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 3000
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 3000
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 3
 {{ end }}
