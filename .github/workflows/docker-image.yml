@@ -21,7 +21,6 @@ jobs:
           working-directory: server
   build:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
     - uses: actions/checkout@v3
     - name: Docker Login
@@ -51,9 +50,14 @@ jobs:
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
         chmod 700 get_helm.sh
         ./get_helm.sh
-    - name: Deploy
-      if: success()
-      run: |
-        echo "${{ secrets.KILNWOOD_NA_KUBECONFIG }}" >> kubeconfig
-        helm --kubeconfig="kubeconfig" upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml --set gameserver.deploy.tag=$GITHUB_SHA --wait
-
+    - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
+      with:
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
+    - run: |-
+        gcloud --quiet auth configure-docker
+    - uses: google-github-actions/get-gke-credentials@fb08709ba27618c31c09e014e1d8364b02e5042e
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
+        credentials: ${{ secrets.GKE_SA_KEY }}
