@@ -1,41 +1,14 @@
 {{ if .Values.client.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ .Values.client.name }}
-spec:
-  rules:
-  - host: kilnwood-game.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: {{ .Values.client.name }}
-            port:
-              number: 80
----
-apiVersion: cloud.google.com/v1beta1
-kind: BackendConfig
-metadata:
-  name: kilnwood-backend-config
-spec:
-  timeoutSec: 43200
----
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.client.name }}
-  annotations:
-    cloud.google.com/backend-config: '{"ports": {"websocket":"kilnwood-backend-config"}}'
 spec:
   type: ClusterIP
   selector:
     app: {{ .Values.client.name }}
   ports:
-    - name: websocket
-      port: 80
+    - port: 80
       targetPort: 3000
       protocol: TCP
 ---
@@ -64,16 +37,16 @@ spec:
         ports:
         - containerPort: 3000
           protocol: TCP
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 3
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 3
+        # livenessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: 3000
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 3
+        # readinessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: 3000
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 3
 {{ end }}

@@ -19,7 +19,10 @@ jobs:
     - name: Build and Push Docker Image
       if: success()
       run: |
-        docker build client/ --file ./client/Dockerfile.dev -t willcliffy/kilnwood-client:$GITHUB_SHA -t willcliffy/kilnwood-client:latest -t willcliffy/kilnwood-client:dev
+        docker build . --file Dockerfile.web \
+          -t willcliffy/kilnwood-client:$GITHUB_SHA \
+          -t willcliffy/kilnwood-client:latest \
+          -t willcliffy/kilnwood-client:dev
         docker push willcliffy/kilnwood-client:$GITHUB_SHA
         docker push willcliffy/kilnwood-client:dev
         docker push willcliffy/kilnwood-client:latest
