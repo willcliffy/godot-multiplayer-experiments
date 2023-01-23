@@ -56,7 +56,7 @@ jobs:
         docker push willcliffy/kilnwood:latest
   deploy:
     runs-on: ubuntu-latest
-    needs: build-gameserver
+    needs: [build-gameserver, build-client-web]
     permissions:
       contents: 'read'
       id-token: 'write'
