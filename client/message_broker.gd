@@ -39,6 +39,7 @@ func _on_data():
 
 	var packet = _client.get_peer(1).get_packet()
 	if not packet:
+		print("got no data")
 		return
 
 	var json = JSON.parse(packet.get_string_from_utf8())
@@ -52,21 +53,11 @@ func _on_data():
 	match json.result.Type:
 		"join-response":
 			print(packet.get_string_from_utf8())
-			id = json.result.PlayerId
-			$"../Player".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
-			$"../Player".set_team(json.result.Team)
-			if not json.result.Others: return
-			for player in json.result.Others:
-				print(player)
-				$"../Opponent1".translation = Vector3(player.Location.X, 0, player.Location.Z)
-				$"../Opponent1".set_team(player.Team)
-				$"../Opponent1".visible = true
+			on_local_player_joined_game(json.result)
 		"join-broadcast":
 			if json.result.PlayerId == id: return
 			print(packet.get_string_from_utf8())
-			$"../Opponent1".translation = Vector3(json.result.Spawn.X, 0, json.result.Spawn.Z)
-			$"../Opponent1".set_team(json.result.Team)
-			$"../Opponent1".visible = true
+			on_remote_player_joined_game(json.result)
 		"tick":
 			if len(json.result.Events) == 0: return
 			print(packet.get_string_from_utf8())
@@ -76,13 +67,43 @@ func process_tick(events):
 	for event in events:
 		var split_event = event.split(":")
 		match split_event[0]:
-			"m":
-				if split_event[1] == id: return
-				$"../Opponent1".set_moving(Vector3(split_event[2], 0, split_event[3]))
-			"a": print("attack nyi")
+			"m": on_move_event_received(split_event)
+			"a": on_attack_event_received(split_event)
 		print(event)
 
-func on_player_move(location):
+func player_requested_move(location):
 	var err = _client.get_peer(1).put_packet("m:{id}:{x}:{z}".format({"id": id, "x": location.x, "z": location.z}).to_utf8())
 	if err:
 		print(err)
+
+func player_requested_attack(target_id):
+	var err = _client.get_peer(1).put_packet("a:{source}:{target}".format({"source": id, "target": target_id}).to_utf8())
+	if err:
+		print(err)
+
+func on_local_player_joined_game(msg):
+	id = msg.PlayerId
+	$"../Player".translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
+	$"../Player".set_team(msg.Team)
+	$"../Player".set_id(id)
+	
+	if not msg.Others: return
+	for player in msg.Others:
+		print(player)
+		on_remote_player_joined_game(player)
+
+func on_remote_player_joined_game(msg):
+	#$"../Opponent1".translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
+	$"../Opponent1".translation = Vector3(10, 0, 10)
+	$"../Opponent1".set_team(msg.Team)
+	$"../Opponent1".set_id(msg.PlayerId)
+	$"../Opponent1".visible = true
+
+func on_move_event_received(event):
+	if event[1] == id:
+		$"../Player".set_moving(Vector3(event[2], 0, event[3]))
+		return
+	$"../Opponent1".set_moving(Vector3(event[2], 0, event[3]))
+
+func on_attack_event_received(event):
+	print("attack nyi")

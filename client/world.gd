@@ -1,9 +1,6 @@
 extends Spatial
 
-onready var camerabase : Spatial = $Player/CameraBase
 onready var camera : Camera = $Player/CameraBase/Camera
-
-var show_path = true
 
 func _input(event):
 	if not event is InputEventMouseButton or not event.pressed: return
@@ -23,9 +20,9 @@ func _input(event):
 	# TODO - I don't like this, but it's really simple
 	if res.collider.has_method("get_id"):
 		attacking = true
-		$Player.set_attacking(res.collider.get_id())
-		$MessageBroker.player_requested_attack(res.collider.get_id()) # TODO - send pos to server
+		$Player.set_moving_to_attack()
+		$MessageBroker.player_requested_attack(res.collider.get_id()) # TODO - send pos to server for additional validation
 
 	$Target.set_target(pos)
 	if not attacking:
-		$MessageBroker.player_requested_move(pos, attacking)
+		$MessageBroker.player_requested_move(pos)

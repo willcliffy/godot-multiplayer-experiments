@@ -13,7 +13,7 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 )
 
-const gameTick = 250 * time.Millisecond
+const gameTick = 100 * time.Millisecond
 
 type Game struct {
 	id              uint64
@@ -106,10 +106,11 @@ func (self *Game) OnPlayerDisconnected(playerId uint64) {
 
 func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
 	// TODO - allow specifying team
-	team := objects.Team_Red
-	if len(self.players) == 0 {
-		team = objects.Team_Blue
-	}
+	// team := objects.Team_Red
+	// if len(self.players) == 0 {
+	// 	team = objects.Team_Blue
+	// }
+	team := objects.Team(3) // gives everyone a random color
 
 	p, playerInGame := self.players[playerId]
 	if !playerInGame {
@@ -126,7 +127,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	type PlayerListEntry struct {
 		PlayerId string
 		Team     objects.Team
-		Location objects.Location
+		Spawn    objects.Location
 	}
 
 	playerList := make([]PlayerListEntry, 0, 2)
@@ -139,7 +140,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		playerList = append(playerList, PlayerListEntry{
 			PlayerId: fmt.Sprint(pId),
 			Team:     p.Team,
-			Location: p.Location,
+			Spawn:    p.Location,
 		})
 
 	}
