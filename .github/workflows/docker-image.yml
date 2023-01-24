@@ -86,7 +86,8 @@ jobs:
         location: ${{ secrets.GKE_ZONE }}
         credentials: ${{ secrets.GKE_SA_KEY }}
     - name: deploy
-      run: helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml \
-        --set gameserver.deploy.tag=$GITHUB_SHA \
-        --set client.deploy.tag=$GITHUB_SHA \
-        --wait
+      run: |
+        helm upgrade --install kilnwood ./infra -f ./infra/values/dev.yaml \
+          --set gameserver.deploy.tag=$GITHUB_SHA \
+          --set client.deploy.tag=$GITHUB_SHA \
+          --wait
