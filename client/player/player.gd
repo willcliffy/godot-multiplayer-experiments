@@ -1,18 +1,19 @@
 extends KinematicBody
 
 onready var agent : NavigationAgent = $NavigationAgent
-onready var animation_tree: AnimationTree = $AnimationTree
+onready var animation: AnimationTree = $AnimationTree
+onready var target: CSGMesh = $"../Target"
 
 onready var HEADMESH : MeshInstance = $Robot/RobotArmature/Skeleton/BoneAttachment2/Head
 
 const SPEED = 3
-const ATTACK_RANGE = 0.05 # todo - why doesnt this work as I expect it to? attack range should be 1 but that makes the character stop short
 const ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05
+const ATTACK_RANGE = 2 + ACCEPTABLE_DIST_TO_TARGET_RANGE
 
 var id
 var moving = false
 var attacking = false
-var target = null
+var target_translation = null
 
 func set_id(new_id):
 	id = new_id
@@ -20,7 +21,7 @@ func set_id(new_id):
 func get_id():
 	return id
 
-func set_team(t, hex):
+func set_team(_t, hex):
 	var material = HEADMESH.mesh.surface_get_material(0).duplicate()
 	material.albedo_color = Color(hex)
 	HEADMESH.set_surface_material(0, material)
@@ -29,16 +30,12 @@ func _physics_process(delta):
 	if Input.is_action_just_pressed("exit"):
 		get_tree().quit()
 
-	if not moving:
+	if not moving or not target_translation:
 		return
 
-	var dist_to_target = (target - translation).length()
+	var dist_to_target = (target_translation - translation).length()
 	if attacking && dist_to_target < ATTACK_RANGE:
-		print(dist_to_target)
-		print(target)
-		print(translation)
-		print("nyi should be attacking")
-		set_idle()
+		set_attacking_target_reached()
 		return
 
 	if dist_to_target <= ACCEPTABLE_DIST_TO_TARGET_RANGE:
@@ -61,22 +58,28 @@ func set_moving(location):
 	moving = true
 	attacking = false
 	agent.set_target_location(location)
-	target = location
-	print(target)
-	print(translation)
-	$AnimationTree.get("parameters/playback").travel("walk")
+	target_translation = location
+	if target: target.set_target_location(location, attacking)
+	animation.get("parameters/playback").travel("walk")
 
 func set_attacking(location):
+	print("attack started")
 	moving = true
 	attacking = true
+	agent.set_target_location(location)
+	target_translation = location
+	if target: target.set_target_location(location, attacking)
+	animation.get("parameters/playback").travel("walk")
 
 func set_attacking_target_reached():
 	moving = false
 	attacking = false
-	$AnimationTree.get("parameters/playback").travel("punch")
+	target_translation = null
+	animation.get("parameters/playback").travel("attack")
 
 func set_idle():
 	moving = false
 	attacking = false
-	$AnimationTree.get("parameters/playback").travel("idle")
-	$"../Target".on_arrived()
+	target_translation = null
+	animation.get("parameters/playback").travel("idle")
+	if target: target.on_arrived()

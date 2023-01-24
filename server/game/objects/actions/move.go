@@ -50,18 +50,18 @@ func NewMoveActionFromMessage(playerId uint64, msg ...string) (*MoveAction, erro
 	return NewMoveAction(id, int(locX), int(locZ)), nil
 }
 
-func (self MoveAction) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", self.Id())), nil
+func (a MoveAction) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", a.Id())), nil
 }
 
-func (self MoveAction) Id() string {
-	return fmt.Sprintf("%v:%d:%d:%d", self.Type(), self.PlayerId, self.Location.X, self.Location.Z)
+func (a MoveAction) Id() string {
+	return fmt.Sprintf("%v:%d:%d:%d", a.Type(), a.PlayerId, a.Location.X, a.Location.Z)
 }
 
-func (self MoveAction) Type() ActionType {
+func (a MoveAction) Type() ActionType {
 	return ActionType_Move
 }
 
-func (self MoveAction) ToLocation() objects.Location {
-	return objects.New2DLocation(self.Location.X, self.Location.Z)
+func (a MoveAction) ToLocation() objects.Location {
+	return objects.New2DLocation(a.Location.X, a.Location.Z)
 }

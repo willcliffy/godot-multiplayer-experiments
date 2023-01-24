@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	gamemap_x = 11
-	gamemap_y = 11
+	spawn_range_x = 11
+	spawn_range_z = 11
 )
 
 var (
@@ -24,53 +24,43 @@ var (
 )
 
 type GameMap struct {
-	tiles   [][]Tile
 	players map[uint64]*player.Player
 }
 
 func NewGameMap() *GameMap {
-	tiles := make([][]Tile, gamemap_x)
-	for i := 0; i < gamemap_x; i++ {
-		tiles[i] = make([]Tile, gamemap_y)
-		for j := 0; j < gamemap_y; j++ {
-			tiles[i][j] = Tile{}
-		}
-	}
-
 	return &GameMap{
-		tiles:   tiles,
 		players: make(map[uint64]*player.Player),
 	}
 }
 
-func (self *GameMap) AddPlayer(p *player.Player) error {
-	// if len(self.players) >= 2 {
+func (m *GameMap) AddPlayer(p *player.Player) error {
+	// if len(m.players) >= 2 {
 	// 	return errors.New("game is full")
 	// }
 
-	for _, player := range self.players {
+	for _, player := range m.players {
 		if player.Id() == p.Id() {
 			//return errors.New("player already in game")
 			return nil
 		}
 	}
 
-	self.players[p.Id()] = p
+	m.players[p.Id()] = p
 	p.SetPlayerState(objects.PlayerState_Vibing)
 	return nil
 }
 
-func (self *GameMap) RemovePlayer(playerId uint64) error {
-	delete(self.players, playerId)
+func (m *GameMap) RemovePlayer(playerId uint64) error {
+	delete(m.players, playerId)
 
 	return nil
 }
 
-func (self *GameMap) SpawnPlayer(p *player.Player) (objects.Location, error) {
-	x := rand.Intn(gamemap_x)
-	y := rand.Intn(gamemap_y)
+func (m *GameMap) SpawnPlayer(p *player.Player) (objects.Location, error) {
+	x := rand.Intn(spawn_range_x)
+	z := rand.Intn(spawn_range_z)
 
-	spawn := objects.New2DLocation(x, y)
+	spawn := objects.New2DLocation(x, z)
 
 	p.SetTargetLocation(spawn)
 	p.SetPlayerState(objects.PlayerState_Alive)
@@ -78,12 +68,12 @@ func (self *GameMap) SpawnPlayer(p *player.Player) (objects.Location, error) {
 	return spawn, nil
 }
 
-func (self *GameMap) DespawnPlayer() error {
+func (m *GameMap) DespawnPlayer() error {
 	return errors.New("nyi")
 }
 
-func (self *GameMap) ApplyMovement(movement *actions.MoveAction) error {
-	player, ok := self.players[movement.PlayerId]
+func (m *GameMap) ApplyMovement(movement *actions.MoveAction) error {
+	player, ok := m.players[movement.PlayerId]
 	if !ok {
 		return ErrPlayerNotInGame
 	}
@@ -92,13 +82,13 @@ func (self *GameMap) ApplyMovement(movement *actions.MoveAction) error {
 	return nil
 }
 
-func (self *GameMap) ApplyAttack(attack actions.AttackAction) (int, error) {
-	target, ok := self.players[attack.TargetPlayerId]
+func (m *GameMap) ApplyAttack(attack actions.AttackAction) (int, error) {
+	target, ok := m.players[attack.TargetPlayerId]
 	if !ok {
 		return 0, ErrPlayerNotInGame
 	}
 
-	source, ok := self.players[attack.SourcePlayerId]
+	source, ok := m.players[attack.SourcePlayerId]
 	if !ok {
 		return 0, ErrPlayerNotInGame
 	}

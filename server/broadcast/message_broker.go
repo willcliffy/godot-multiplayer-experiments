@@ -27,19 +27,19 @@ func NewMessageBroker() *MessageBroker {
 	}
 }
 
-func (self *MessageBroker) Close() {
+func (mb *MessageBroker) Close() {
 	// have to do this first, since BroadcastToGame also wants the lock
 	// TODO - formalize disconnect message
-	for gameId := range self.games {
-		_ = self.BroadcastToGame(gameId, []byte("d:all"))
+	for gameId := range mb.games {
+		_ = mb.BroadcastToGame(gameId, []byte("d:all"))
 	}
 
 	log.Debug().Msgf("Locking")
-	self.lock.Lock()
+	mb.lock.Lock()
 	log.Debug().Msgf("Locked")
-	defer self.lock.Unlock()
+	defer mb.lock.Unlock()
 
-	for _, conn := range self.playerConns {
+	for _, conn := range mb.playerConns {
 		_ = conn.Close()
 	}
 	log.Debug().Msgf("Unlocking")
@@ -47,27 +47,27 @@ func (self *MessageBroker) Close() {
 
 // This satisfies the `MessageBroadcaster` interface
 // Note that this blocks the thread until the connection is broken
-func (self *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Conn) {
-	self.lock.Lock()
-	playerId, _ := self.playerIdGenerator.NextID()
-	self.playerConns[playerId] = conn
-	self.lock.Unlock()
+func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Conn) {
+	mb.lock.Lock()
+	playerId, _ := mb.playerIdGenerator.NextID()
+	mb.playerConns[playerId] = conn
+	mb.lock.Unlock()
 
 	log.Info().Msgf("Connected to new player assigned id: '%d'", playerId)
-	self.clientReadLoop(playerId, conn)
+	mb.clientReadLoop(playerId, conn)
 }
 
-func (self *MessageBroker) unregisterConnection(playerId uint64) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
+func (mb *MessageBroker) unregisterConnection(playerId uint64) {
+	mb.lock.Lock()
+	defer mb.lock.Unlock()
 
-	if err := self.playerConns[playerId].Close(); err != nil {
+	if err := mb.playerConns[playerId].Close(); err != nil {
 		log.Error().Err(err).Msgf("Failed to disconnect from %v", playerId)
 	}
 
-	delete(self.playerConns, playerId)
+	delete(mb.playerConns, playerId)
 
-	for _, game := range self.games {
+	for _, game := range mb.games {
 		game.OnPlayerDisconnected(playerId)
 	}
 
@@ -76,24 +76,24 @@ func (self *MessageBroker) unregisterConnection(playerId uint64) {
 
 // This satifies the MessageBroadcaster interface
 // This is the only allowed communication from the games to the MessageBroker
-func (self *MessageBroker) OnPlayerLeft(playerId uint64) {
-	if err := self.playerConns[playerId].Close(); err != nil {
+func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
+	if err := mb.playerConns[playerId].Close(); err != nil {
 		log.Error().Err(err).Msgf("Failed to disconnect from %v", playerId)
 	}
 
-	delete(self.playerConns, playerId)
+	delete(mb.playerConns, playerId)
 }
 
-func (self *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
+func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			self.unregisterConnection(playerId)
+			mb.unregisterConnection(playerId)
 			return
 		}
 
 		// TODO - support multiple games
-		for _, g := range self.games {
+		for _, g := range mb.games {
 			err = g.OnMessageReceived(playerId, message)
 			if err != nil {
 				log.Warn().Err(err).Send()
@@ -102,25 +102,25 @@ func (self *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn)
 	}
 }
 
-func (self *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
-	self.lock.Lock()
-	defer self.lock.Unlock()
+func (mb *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
+	mb.lock.Lock()
+	defer mb.lock.Unlock()
 
-	gameId, _ := self.playerIdGenerator.NextID()
-	self.games[gameId] = game
+	gameId, _ := mb.playerIdGenerator.NextID()
+	mb.games[gameId] = game
 
 	return gameId
 }
 
 // This satisfies the util.Broadcaster interface
-func (self *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
+func (mb *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
 	log.Debug().Msgf("broadcasting to game '%v' payload '%v'", gameId, string(payload))
 
-	self.lock.Lock()
-	defer self.lock.Unlock()
+	mb.lock.Lock()
+	defer mb.lock.Unlock()
 
 	// todo - support multiple games. This blasts to all
-	for _, conn := range self.playerConns {
+	for _, conn := range mb.playerConns {
 		if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
 			return err
 		}
@@ -130,13 +130,13 @@ func (self *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error 
 }
 
 // This satisfies the util.Broadcaster interface
-func (self *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) error {
+func (mb *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) error {
 	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, string(payload))
 
-	self.lock.Lock()
-	defer self.lock.Unlock()
+	mb.lock.Lock()
+	defer mb.lock.Unlock()
 
-	if conn, ok := self.playerConns[playerId]; ok {
+	if conn, ok := mb.playerConns[playerId]; ok {
 		if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
 			return err
 		}

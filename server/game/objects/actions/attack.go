@@ -51,22 +51,22 @@ func NewAttackActionFromMessage(playerId uint64, msg ...string) (*AttackAction, 
 	return NewAttackAction(sourceId, targetId), nil
 }
 
-func (self AttackAction) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", self.Id())), nil
+func (a AttackAction) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", a.Id())), nil
 }
 
-func (self AttackAction) Id() string {
+func (a AttackAction) Id() string {
 	return fmt.Sprintf("%v:%d:%d:%d",
-		self.Type(),
-		self.SourcePlayerId,
-		self.TargetPlayerId,
-		self.damageDealt)
+		a.Type(),
+		a.SourcePlayerId,
+		a.TargetPlayerId,
+		a.damageDealt)
 }
 
-func (self AttackAction) Type() ActionType {
+func (a AttackAction) Type() ActionType {
 	return ActionType_Attack
 }
 
-func (self *AttackAction) SetDamageDealt(damage int) {
-	self.damageDealt = damage
+func (a *AttackAction) SetDamageDealt(damage int) {
+	a.damageDealt = damage
 }

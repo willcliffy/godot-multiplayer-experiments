@@ -13,7 +13,8 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 )
 
-const gameTick = 100 * time.Millisecond
+// 360 bpm
+const gameTick = 1000 / 6 * time.Millisecond
 
 type Game struct {
 	id              uint64
@@ -39,28 +40,28 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 	}
 }
 
-func (self Game) Id() string {
-	return fmt.Sprint(self.id)
+func (g Game) Id() string {
+	return fmt.Sprint(g.id)
 }
 
-func (self *Game) Start() {
-	self.clock = time.NewTicker(gameTick)
-	go self.run()
+func (g *Game) Start() {
+	g.clock = time.NewTicker(gameTick)
+	go g.run()
 }
 
-func (self *Game) Stop() {
-	self.done <- true
-	self.clock.Stop()
+func (g *Game) Stop() {
+	g.done <- true
+	g.clock.Stop()
 }
 
-func (self *Game) run() {
+func (g *Game) run() {
 	for {
 		select {
-		case <-self.done:
+		case <-g.done:
 			break
-		case <-self.clock.C:
-			self.tick += 1
-			processed := self.processQueue()
+		case <-g.clock.C:
+			g.tick += 1
+			processed := g.processQueue()
 			if len(processed) == 0 {
 				continue
 			}
@@ -71,11 +72,11 @@ func (self *Game) run() {
 				Events []actions.Action
 			}{
 				Type:   "tick",
-				Tick:   self.tick,
+				Tick:   g.tick,
 				Events: processed,
 			})
 
-			err := self.broadcaster.BroadcastToGame(self.id, payload)
+			err := g.broadcaster.BroadcastToGame(g.id, payload)
 			if err != nil {
 				log.Warn().Err(err).Msgf("failed to broadcast")
 			}
@@ -84,7 +85,7 @@ func (self *Game) run() {
 }
 
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
-func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
+func (g *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	log.Debug().Msgf("message received from player '%v': %v", playerId, string(message))
 
 	action, err := actions.ParseActionFromMessage(playerId, string(message))
@@ -93,46 +94,39 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 	}
 
 	if action.Type() == actions.ActionType_JoinGame {
-		return self.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
+		return g.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
 	}
 
-	return self.QueueAction(playerId, action)
+	return g.QueueAction(playerId, action)
 }
 
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
-func (self *Game) OnPlayerDisconnected(playerId uint64) {
-	delete(self.players, playerId)
-	err := self.broadcaster.BroadcastToGame(self.id, []byte(fmt.Sprintf("d:%d", playerId)))
+func (g *Game) OnPlayerDisconnected(playerId uint64) {
+	delete(g.players, playerId)
+	err := g.broadcaster.BroadcastToGame(g.id, []byte(fmt.Sprintf("d:%d", playerId)))
 	if err != nil {
 		log.Warn().Err(err).Msgf("failed to broadcast")
 	}
 }
 
-func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
-	// TODO - allow specifying team
-	// team := objects.Team_Red
-	// if len(self.players) == 0 {
-	// 	team = objects.Team_Blue
-	// }
-
-	// for now, give everyone a random color
-	color := objects.RandomTeamColor()
-
-	p, playerInGame := self.players[playerId]
+func (g *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
+	p, playerInGame := g.players[playerId]
 	if !playerInGame {
+		// TODO - allow specifying team. for now, give everyone a random color
+		color := objects.RandomTeamColor()
 		p = player.NewPlayer(playerId, "", a.Class, color)
-		self.players[playerId] = p
+		g.players[playerId] = p
 	}
 
-	err := self.gameMap.AddPlayer(p)
+	err := g.gameMap.AddPlayer(p)
 	if err != nil {
-		delete(self.players, p.Id())
+		delete(g.players, p.Id())
 		return err
 	}
 
-	_, err = self.gameMap.SpawnPlayer(p)
+	_, err = g.gameMap.SpawnPlayer(p)
 	if err != nil {
-		delete(self.players, p.Id())
+		delete(g.players, p.Id())
 		return err
 	}
 
@@ -145,7 +139,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 
 	playerList := make([]PlayerListEntry, 0, 2)
 
-	for pId, p := range self.players {
+	for pId, p := range g.players {
 		if p == nil || pId == playerId {
 			continue
 		}
@@ -168,8 +162,8 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		// Team     objects.Team
 	}{
 		Type:     "join-response",
-		PlayerId: fmt.Sprint(playerId),
-		Color:    color,
+		PlayerId: fmt.Sprint(p.Id()),
+		Color:    p.Color,
 		Spawn:    p.Location,
 		Others:   playerList,
 		// Team:     team
@@ -180,7 +174,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		return err
 	}
 
-	err = self.broadcaster.BroadcastToPlayer(playerId, payload)
+	err = g.broadcaster.BroadcastToPlayer(playerId, payload)
 	if err != nil {
 		return err
 	}
@@ -192,7 +186,7 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		return err
 	}
 
-	err = self.broadcaster.BroadcastToGame(self.id, payload)
+	err = g.broadcaster.BroadcastToGame(g.id, payload)
 	if err != nil {
 		return err
 	}
@@ -200,22 +194,20 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	return nil
 }
 
-func (self *Game) QueueAction(playerId uint64, a actions.Action) error {
-	log.Debug().Msgf("queuing action: %v", a)
-
+func (g *Game) QueueAction(playerId uint64, a actions.Action) error {
 	if a.Type() == actions.ActionType_Move {
-		self.movementsQueued[playerId] = a.(*actions.MoveAction)
+		g.movementsQueued[playerId] = a.(*actions.MoveAction)
 		return nil
 	}
 
-	self.actionsQueued = append(self.actionsQueued, a)
+	g.actionsQueued = append(g.actionsQueued, a)
 	return nil
 }
 
-func (self *Game) processQueue() []actions.Action {
+func (g *Game) processQueue() []actions.Action {
 	processed := make([]actions.Action, 0)
 
-	for _, action := range self.actionsQueued {
+	for _, action := range g.actionsQueued {
 		switch action.Type() {
 		case actions.ActionType_Attack:
 			attackAction, ok := action.(actions.AttackAction)
@@ -224,7 +216,7 @@ func (self *Game) processQueue() []actions.Action {
 				continue
 			}
 
-			dmg, err := self.gameMap.ApplyAttack(attackAction)
+			dmg, err := g.gameMap.ApplyAttack(attackAction)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed action: could not apply AttackAction")
 				continue
@@ -242,8 +234,8 @@ func (self *Game) processQueue() []actions.Action {
 		}
 	}
 
-	for _, move := range self.movementsQueued {
-		err := self.gameMap.ApplyMovement(move)
+	for _, move := range g.movementsQueued {
+		err := g.gameMap.ApplyMovement(move)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -253,8 +245,8 @@ func (self *Game) processQueue() []actions.Action {
 	}
 
 	// reset actionQueue for the next tick
-	self.actionsQueued = make([]actions.Action, 0, 16)
-	self.movementsQueued = make(map[uint64]*actions.MoveAction)
+	g.actionsQueued = make([]actions.Action, 0, 16)
+	g.movementsQueued = make(map[uint64]*actions.MoveAction)
 
 	return processed
 }

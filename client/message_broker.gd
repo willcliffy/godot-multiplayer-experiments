@@ -1,12 +1,13 @@
 extends Node
 
-onready var localPlayer = $"Player"
+onready var localPlayer = $Player
+onready var opponents = $OpponentController
 
 export var websocket_url = "ws://kilnwood-game.com/connect"
 var _client = WebSocketClient.new()
 
 var connected = false
-var otherPlayers = {}
+var num_connected = false
 
 func _ready():
 	_client.connect("connection_closed", self, "_closed")
@@ -56,7 +57,7 @@ func _on_data():
 			on_local_player_joined_game(json.result)
 		"join-broadcast":
 			if json.result.PlayerId == localPlayer.get_id(): return
-			on_remote_player_joined_game(json.result)
+			opponents.joined(json.result.PlayerId, json.result.Spawn, json.result.Color)
 		"tick":
 			if len(json.result.Events) == 0: return
 			process_tick(json.result.Events)
@@ -68,6 +69,35 @@ func process_tick(events):
 		match split_event[0]:
 			"m": on_move_event_received(split_event)
 			"a": on_attack_event_received(split_event)
+			"d": opponents.delete(split_event[1])
+
+func on_local_player_joined_game(msg):
+	localPlayer.translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
+	localPlayer.set_team("team", msg.Color)
+	localPlayer.set_id(msg.PlayerId)
+	
+	if not msg.Others: return
+	for player in msg.Others:
+		opponents.joined(player.PlayerId, player.Spawn, player.Color)
+
+func on_move_event_received(event):
+	var sourcePlayerId = event[1]
+	if event[1] == localPlayer.get_id():
+		localPlayer.set_moving(Vector3(event[2], 0, event[3]))
+		return
+
+	opponents.get(sourcePlayerId).set_moving(Vector3(event[2], 0, event[3]))
+
+func on_attack_event_received(event):
+	var sourcePlayerId = event[1]
+	if sourcePlayerId == localPlayer.get_id():
+		localPlayer.set_attacking(Vector3(event[2], 0, event[3]))
+		return
+	
+	if not opponents.has(sourcePlayerId):
+		print("NETWORK BADNESS: got message from {s} but wasnt in game!".format({"s": sourcePlayerId}))
+
+	opponents.get(sourcePlayerId).set_attacking(Vector3(event[2], 0, event[3]))
 
 func player_requested_move(location):
 	var msg = "m:{source}:{x}:{z}".format({
@@ -86,49 +116,3 @@ func player_requested_attack(target_id):
 	})
 	var err = _client.get_peer(1).put_packet(msg.to_utf8())
 	if err: print(err)
-
-func on_local_player_joined_game(msg):
-	localPlayer.translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
-	localPlayer.set_team("team", msg.Color)
-	localPlayer.set_id(msg.PlayerId)
-	
-	if not msg.Others: return
-	for player in msg.Others:
-		on_remote_player_joined_game(player)
-
-func on_remote_player_joined_game(msg):
-	if len(otherPlayers) > 7:
-		print("NETWORK BADNESS: game overflowed!")
-		return
-
-	var i = len(otherPlayers) + 1
-	var playerObject = $"Others/{i}".format({"i": i})
-	playerObject.translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
-	playerObject.set_team("team", msg.Color)
-	playerObject.set_id(msg.PlayerId)
-	playerObject.visible = true
-	otherPlayers[msg.PlayerId] = playerObject
-	
-func on_remote_player_disconnected(msg):
-	otherPlayers.delete(msg[1])
-
-func on_move_event_received(event):
-	var sourcePlayerId = event[1]
-	if event[1] == localPlayer.get_id():
-		localPlayer.set_moving(Vector3(event[2], 0, event[3]))
-		return
-		
-	otherPlayers[sourcePlayerId].set_moving(Vector3(event[2], 0, event[3]))
-
-func on_attack_event_received(event):
-	var sourcePlayerId = event[1]
-	if sourcePlayerId == localPlayer.get_id():
-		localPlayer.set_attacking(Vector3(event[2], 0, event[3]))
-		return
-	
-	if not otherPlayers.has(sourcePlayerId):
-		print("NETWORK BADNESS: got message from {s} but wasnt in game!".format({"s": sourcePlayerId}))
-
-	otherPlayers[sourcePlayerId].set_attacking(Vector3(event[2], 0, event[3]))
-	
-	
