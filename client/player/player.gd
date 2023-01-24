@@ -6,15 +6,17 @@ onready var animation_tree: AnimationTree = $AnimationTree
 onready var HEADMESH : MeshInstance = $Robot/RobotArmature/Skeleton/BoneAttachment2/Head
 
 const SPEED = 3
+const ATTACK_RANGE = 0.05 # todo - why doesnt this work as I expect it to? attack range should be 1 but that makes the character stop short
 const ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05
 
 var id
 var moving = false
-var moving_to_attack = false
+var attacking = false
+var target = null
 
 func set_id(new_id):
 	id = new_id
-	
+
 func get_id():
 	return id
 
@@ -30,18 +32,21 @@ func _physics_process(delta):
 	if not moving:
 		return
 
-	var next = agent.get_next_location()
-	if not next:
+	var dist_to_target = (target - translation).length()
+	if attacking && dist_to_target < ATTACK_RANGE:
+		print(dist_to_target)
+		print(target)
+		print(translation)
+		print("nyi should be attacking")
 		set_idle()
 		return
 
-	var dist_to_target = (next - translation).length()
 	if dist_to_target <= ACCEPTABLE_DIST_TO_TARGET_RANGE:
 		set_idle()
 		return
-	
-	if moving_to_attack:
-		print("nyi should be attacking")
+
+	var next = agent.get_next_location()
+	if not next:
 		set_idle()
 		return
 
@@ -54,20 +59,24 @@ func _physics_process(delta):
 
 func set_moving(location):
 	moving = true
+	attacking = false
 	agent.set_target_location(location)
+	target = location
+	print(target)
+	print(translation)
 	$AnimationTree.get("parameters/playback").travel("walk")
 
-func set_moving_to_attack():
+func set_attacking(location):
 	moving = true
-	moving_to_attack = true
-	
-func set_attacking():
+	attacking = true
+
+func set_attacking_target_reached():
 	moving = false
-	moving_to_attack = false
+	attacking = false
 	$AnimationTree.get("parameters/playback").travel("punch")
 
 func set_idle():
 	moving = false
-	moving_to_attack = false
+	attacking = false
 	$AnimationTree.get("parameters/playback").travel("idle")
 	$"../Target".on_arrived()

@@ -102,6 +102,10 @@ func (self *Game) OnMessageReceived(playerId uint64, message []byte) error {
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
 func (self *Game) OnPlayerDisconnected(playerId uint64) {
 	delete(self.players, playerId)
+	err := self.broadcaster.BroadcastToGame(self.id, []byte(fmt.Sprintf("d:%d", playerId)))
+	if err != nil {
+		log.Warn().Err(err).Msgf("failed to broadcast")
+	}
 }
 
 func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
@@ -126,11 +130,17 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		return err
 	}
 
+	_, err = self.gameMap.SpawnPlayer(p)
+	if err != nil {
+		delete(self.players, p.Id())
+		return err
+	}
+
 	type PlayerListEntry struct {
 		PlayerId string
+		Color    objects.TeamColor
+		Spawn    objects.Location
 		//Team     objects.Team
-		Color objects.TeamColor
-		Spawn objects.Location
 	}
 
 	playerList := make([]PlayerListEntry, 0, 2)
@@ -142,9 +152,9 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 
 		playerList = append(playerList, PlayerListEntry{
 			PlayerId: fmt.Sprint(pId),
+			Color:    p.Color,
+			Spawn:    p.Location,
 			//Team:     p.Team,
-			Color: p.Color,
-			Spawn: p.Location,
 		})
 
 	}
@@ -155,12 +165,14 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 		Color    objects.TeamColor
 		Spawn    objects.Location
 		Others   []PlayerListEntry
+		// Team     objects.Team
 	}{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
 		Color:    color,
 		Spawn:    p.Location,
 		Others:   playerList,
+		// Team:     team
 	}
 
 	payload, err := json.Marshal(msg)
