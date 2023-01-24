@@ -6,15 +6,16 @@ import (
 )
 
 type Player struct {
-	id       uint64
-	Name     string
-	class    *CharacterClass
-	Team     objects.Team
+	id    uint64
+	Name  string
+	class *CharacterClass
+	//Team     objects.Team
+	Color    objects.TeamColor
 	Location objects.Location
 	Combat   PlayerCombatStats
 }
 
-func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Player {
+func NewPlayer(playerId uint64, name, classType string, color objects.TeamColor) *Player {
 	class, ok := CharacterClassFromType(classType)
 	if !ok {
 		log.Warn().Msgf("Could not parse character class: %v", classType)
@@ -22,10 +23,11 @@ func NewPlayer(playerId uint64, name, classType string, team objects.Team) *Play
 	}
 
 	return &Player{
-		id:       playerId,
-		Name:     name,
-		class:    class,
-		Team:     team,
+		id:    playerId,
+		Name:  name,
+		class: class,
+		//Team:     team,
+		Color:    color,
 		Location: objects.Location{},
 		Combat:   NewPlayerCombatStats(),
 	}

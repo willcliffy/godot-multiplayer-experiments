@@ -6,6 +6,6 @@ type Location struct {
 	//z int
 }
 
-func New2DLocation(x, z int) *Location {
-	return &Location{x, z}
+func New2DLocation(x, z int) Location {
+	return Location{x, z}
 }

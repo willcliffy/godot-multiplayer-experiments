@@ -110,11 +110,13 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	// if len(self.players) == 0 {
 	// 	team = objects.Team_Blue
 	// }
-	team := objects.Team(3) // gives everyone a random color
+
+	// for now, give everyone a random color
+	color := objects.RandomTeamColor()
 
 	p, playerInGame := self.players[playerId]
 	if !playerInGame {
-		p = player.NewPlayer(playerId, "", a.Class, team)
+		p = player.NewPlayer(playerId, "", a.Class, color)
 		self.players[playerId] = p
 	}
 
@@ -126,8 +128,9 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 
 	type PlayerListEntry struct {
 		PlayerId string
-		Team     objects.Team
-		Spawn    objects.Location
+		//Team     objects.Team
+		Color objects.TeamColor
+		Spawn objects.Location
 	}
 
 	playerList := make([]PlayerListEntry, 0, 2)
@@ -139,8 +142,9 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 
 		playerList = append(playerList, PlayerListEntry{
 			PlayerId: fmt.Sprint(pId),
-			Team:     p.Team,
-			Spawn:    p.Location,
+			//Team:     p.Team,
+			Color: p.Color,
+			Spawn: p.Location,
 		})
 
 	}
@@ -148,13 +152,13 @@ func (self *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error
 	msg := struct {
 		Type     string
 		PlayerId string
-		Team     objects.Team
+		Color    objects.TeamColor
 		Spawn    objects.Location
 		Others   []PlayerListEntry
 	}{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(playerId),
-		Team:     team,
+		Color:    color,
 		Spawn:    p.Location,
 		Others:   playerList,
 	}

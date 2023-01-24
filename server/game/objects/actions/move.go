@@ -63,5 +63,5 @@ func (self MoveAction) Type() ActionType {
 }
 
 func (self MoveAction) ToLocation() objects.Location {
-	return *objects.New2DLocation(self.Location.X, self.Location.Z)
+	return objects.New2DLocation(self.Location.X, self.Location.Z)
 }

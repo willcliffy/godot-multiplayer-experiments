@@ -19,7 +19,7 @@ func set_id(new_id):
 func get_id():
 	return id
 
-func set_team(t):
+func set_team(t, hex):
 	if t == 1: # Red team
 		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
 		material.albedo_color = Color(1, 0.25, 0.25)

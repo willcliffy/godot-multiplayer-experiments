@@ -2,6 +2,7 @@ package gamemap
 
 import (
 	"errors"
+	"math/rand"
 
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
 	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
@@ -66,22 +67,10 @@ func (self *GameMap) RemovePlayer(playerId uint64) error {
 }
 
 func (self *GameMap) SpawnPlayer(p *player.Player) (objects.Location, error) {
-	var spawn objects.Location
-	if p.Team == objects.Team_Red {
-		spawn = Spawn_RedOne
-	} else {
-		spawn = Spawn_BlueOne
-	}
+	x := rand.Intn(gamemap_x)
+	y := rand.Intn(gamemap_y)
 
-	for _, player := range self.players {
-		if player.Team == p.Team {
-			if p.Team == objects.Team_Red {
-				spawn = Spawn_RedTwo
-			} else {
-				spawn = Spawn_BlueTwo
-			}
-		}
-	}
+	spawn := objects.New2DLocation(x, y)
 
 	p.SetTargetLocation(spawn)
 	p.SetPlayerState(objects.PlayerState_Alive)
