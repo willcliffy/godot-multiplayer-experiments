@@ -2,7 +2,6 @@ extends KinematicBody
 
 onready var agent : NavigationAgent = $NavigationAgent
 onready var animation: AnimationTree = $AnimationTree
-onready var target: CSGMesh = $"../Target"
 
 onready var HEADMESH : MeshInstance = $Robot/RobotArmature/Skeleton/BoneAttachment2/Head
 
@@ -59,7 +58,6 @@ func set_moving(location):
 	attacking = false
 	agent.set_target_location(location)
 	target_translation = location
-	if target: target.set_target_location(location, attacking)
 	animation.get("parameters/playback").travel("walk")
 
 func set_attacking(location):
@@ -68,7 +66,6 @@ func set_attacking(location):
 	attacking = true
 	agent.set_target_location(location)
 	target_translation = location
-	if target: target.set_target_location(location, attacking)
 	animation.get("parameters/playback").travel("walk")
 
 func set_attacking_target_reached():
@@ -82,4 +79,3 @@ func set_idle():
 	attacking = false
 	target_translation = null
 	animation.get("parameters/playback").travel("idle")
-	if target: target.on_arrived()

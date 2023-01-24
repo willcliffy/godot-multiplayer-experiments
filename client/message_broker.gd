@@ -26,11 +26,12 @@ func _closed(was_clean = false):
 
 func _connected(_proto = ""):
 	var err = _client.get_peer(1).put_packet("J:::f".to_utf8())
-	if err:
+	if err != OK:
 		print("failed to connect: ", err)
 		return
 
 	connected = true
+	print("connected")
 
 func _process(_delta):
 	_client.poll()
@@ -72,6 +73,7 @@ func process_tick(events):
 			"d": opponents.delete(split_event[1])
 
 func on_local_player_joined_game(msg):
+	print(msg)
 	localPlayer.translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
 	localPlayer.set_team("team", msg.Color)
 	localPlayer.set_id(msg.PlayerId)
