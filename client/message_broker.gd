@@ -5,7 +5,6 @@ var _client = WebSocketClient.new()
 
 var connected = false
 var id = 0
-var team = 0
 
 func _ready():
 	_client.connect("connection_closed", self, "_closed")
@@ -84,7 +83,7 @@ func player_requested_attack(target_id):
 func on_local_player_joined_game(msg):
 	id = msg.PlayerId
 	$"../Player".translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
-	$"../Player".set_team(msg.Team)
+	$"../Player".set_team("team", msg.Color)
 	$"../Player".set_id(id)
 	
 	if not msg.Others: return
@@ -95,7 +94,7 @@ func on_local_player_joined_game(msg):
 func on_remote_player_joined_game(msg):
 	#$"../Opponent1".translation = Vector3(msg.Spawn.X, 0, msg.Spawn.Z)
 	$"../Opponent1".translation = Vector3(10, 0, 10)
-	$"../Opponent1".set_team(msg.Team)
+	$"../Opponent1".set_team("team", msg.Color)
 	$"../Opponent1".set_id(msg.PlayerId)
 	$"../Opponent1".visible = true
 

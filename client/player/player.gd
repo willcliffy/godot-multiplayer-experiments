@@ -9,7 +9,6 @@ const SPEED = 3
 const ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05
 
 var id
-var team
 var moving = false
 var moving_to_attack = false
 
@@ -20,21 +19,9 @@ func get_id():
 	return id
 
 func set_team(t, hex):
-	if t == 1: # Red team
-		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
-		material.albedo_color = Color(1, 0.25, 0.25)
-		HEADMESH.set_surface_material(0, material)
-		team = t
-	elif t == 2: # Blue team
-		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
-		material.albedo_color = Color(0.25, 0.25, 1)
-		HEADMESH.set_surface_material(0, material)
-		team = t
-	else: #rainbow party bitch
-		var material = HEADMESH.mesh.surface_get_material(0).duplicate()
-		material.albedo_color = Color(randf(), randf(), randf())
-		HEADMESH.set_surface_material(0, material)
-		team = t
+	var material = HEADMESH.mesh.surface_get_material(0).duplicate()
+	material.albedo_color = Color(hex)
+	HEADMESH.set_surface_material(0, material)
 
 func _physics_process(delta):
 	if Input.is_action_just_pressed("exit"):
