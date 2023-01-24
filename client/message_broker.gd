@@ -97,7 +97,7 @@ func on_local_player_joined_game(msg):
 		on_remote_player_joined_game(player)
 
 func on_remote_player_joined_game(msg):
-	if len(otherPlayers) < 7:
+	if len(otherPlayers) > 7:
 		print("NETWORK BADNESS: game overflowed!")
 		return
 
