@@ -34,41 +34,35 @@ func (mb *MessageBroker) Close() {
 		_ = mb.BroadcastToGame(gameId, []byte("d:all"))
 	}
 
-	log.Debug().Msgf("Locking")
 	mb.lock.Lock()
-	log.Debug().Msgf("Locked")
 	defer mb.lock.Unlock()
 
 	for _, conn := range mb.playerConns {
 		_ = conn.Close()
 	}
-	log.Debug().Msgf("Unlocking")
 }
 
 // This satisfies the `MessageBroadcaster` interface
 // Note that this blocks the thread until the connection is broken
 func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Conn) {
-	log.Info().Msgf("lock")
 	mb.lock.Lock()
 	playerId, _ := mb.playerIdGenerator.NextID()
 	mb.playerConns[playerId] = conn
 	mb.lock.Unlock()
-	log.Debug().Msgf("unlock")
 
 	log.Info().Msgf("Connected to new player assigned id: '%d'", playerId)
 	mb.clientReadLoop(playerId, conn)
 }
 
 func (mb *MessageBroker) unregisterConnection(playerId uint64) {
-	log.Info().Msgf("lock")
-	mb.lock.Lock()
-	defer mb.lock.Unlock()
 
+	mb.lock.Lock()
 	if err := mb.playerConns[playerId].Close(); err != nil {
 		log.Error().Err(err).Msgf("Failed to disconnect from %v", playerId)
 	}
 
 	delete(mb.playerConns, playerId)
+	mb.lock.Unlock()
 
 	for _, game := range mb.games {
 		game.OnPlayerDisconnected(playerId)
@@ -80,7 +74,6 @@ func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 // This satifies the MessageBroadcaster interface
 // This is the only allowed communication from the games to the MessageBroker
 func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
-	log.Info().Msgf("lock")
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -89,7 +82,6 @@ func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
 	}
 
 	delete(mb.playerConns, playerId)
-	log.Info().Msgf("unlock")
 }
 
 func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
@@ -111,14 +103,12 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 }
 
 func (mb *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
-	log.Debug().Msgf("locking")
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
 	gameId, _ := mb.playerIdGenerator.NextID()
 	mb.games[gameId] = game
 
-	log.Debug().Msgf("unlocked")
 	return gameId
 }
 
@@ -126,7 +116,6 @@ func (mb *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
 func (mb *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
 	log.Debug().Msgf("broadcasting to game '%v' payload '%v'", gameId, string(payload))
 
-	log.Debug().Msgf("locking")
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -137,7 +126,6 @@ func (mb *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
 		}
 	}
 
-	log.Debug().Msgf("unlocked")
 	return nil
 }
 
@@ -145,7 +133,6 @@ func (mb *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
 func (mb *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) error {
 	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, string(payload))
 
-	log.Debug().Msgf("locking")
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -155,6 +142,5 @@ func (mb *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) erro
 		}
 	}
 
-	log.Debug().Msgf("unlocked")
 	return nil
 }
