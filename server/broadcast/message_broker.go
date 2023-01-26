@@ -77,6 +77,9 @@ func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 // This satifies the MessageBroadcaster interface
 // This is the only allowed communication from the games to the MessageBroker
 func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
+	mb.lock.Lock()
+	defer mb.lock.Unlock()
+
 	if err := mb.playerConns[playerId].Close(); err != nil {
 		log.Error().Err(err).Msgf("Failed to disconnect from %v", playerId)
 	}

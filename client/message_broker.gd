@@ -37,6 +37,7 @@ func _process(_delta):
 	_client.poll()
 
 func _on_data():
+	print("on_data")
 	if not connected:
 		return
 
@@ -95,7 +96,7 @@ func on_attack_event_received(event):
 	if sourcePlayerId == localPlayer.get_id():
 		localPlayer.set_attacking(Vector3(event[2], 0, event[3]))
 		return
-	
+
 	if not opponents.has(sourcePlayerId):
 		print("NETWORK BADNESS: got message from {s} but wasnt in game!".format({"s": sourcePlayerId}))
 
