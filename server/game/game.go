@@ -127,12 +127,12 @@ func (g *Game) OnMessageReceived(playerId uint64, message []byte) {
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
 func (g *Game) OnPlayerDisconnected(playerId uint64) {
 	delete(g.players, playerId)
-	action := actions.DisconnectAction{}
+	action := actions.DisconnectAction{PlayerId: playerId}
 	g.actionsQueued = append(g.actionsQueued, action)
 }
 
 func (g *Game) Close() {
-	action := actions.DisconnectAction{}
+	action := actions.DisconnectAction{All: true}
 	g.actionsQueued = append(g.actionsQueued, action)
 }
 
