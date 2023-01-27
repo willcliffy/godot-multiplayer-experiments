@@ -60,7 +60,7 @@ func main() {
 	// TODO - support for mulitple games
 	gameIdGenerator := sonyflake.NewSonyflake(sonyflake.Settings{})
 	gameId, _ := gameIdGenerator.NextID()
-	newGame := game.NewGame(broadcast.GameId(gameId), messageBroker)
+	newGame := game.NewGame(gameId, messageBroker)
 	newGame.Start()
 
 	messageBroker.RegisterMessageReceiver(newGame)
