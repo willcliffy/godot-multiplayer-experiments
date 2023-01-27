@@ -12,7 +12,6 @@ type MessageBroadcaster interface {
 	BroadcastToPlayer(playerId uint64, payload []byte) error
 
 	// From MessageReceivers to their MessageBroadcaster
-	OnPlayerJoin(playerId uint64)
 	OnPlayerLeft(playerId uint64)
 }
 
