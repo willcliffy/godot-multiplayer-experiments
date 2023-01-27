@@ -9,7 +9,7 @@ type ActionType string
 
 const (
 	ActionType_JoinGame   ActionType = "J"
-	ActionType_Disconnect ActionType = "D"
+	ActionType_Disconnect ActionType = "d"
 
 	ActionType_Move   ActionType = "m"
 	ActionType_Attack ActionType = "a"
