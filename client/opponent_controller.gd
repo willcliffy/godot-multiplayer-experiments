@@ -13,6 +13,8 @@ func get(id):
 
 func delete(id):
 	if not opponentDict.has(id): return
+	opponentDict[id].visible = false
+	opponentDict[id].translation = Vector3(-10, 0, -10)
 	available.append(opponentDict[id])
 	opponentDict.delete(id)
 

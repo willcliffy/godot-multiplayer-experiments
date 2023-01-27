@@ -13,8 +13,24 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 )
 
-// 360 bpm
-const gameTick = 1000 / 6 * time.Millisecond
+// 240 bpm or 4 bps
+const gameTick = 1000 / 4 * time.Millisecond
+
+type PlayerListEntry struct {
+	PlayerId string
+	Color    objects.TeamColor
+	Spawn    objects.Location
+	//Team     objects.Team
+}
+
+type PlayerJoinResponse struct {
+	Type     string
+	PlayerId string
+	Color    objects.TeamColor
+	Spawn    objects.Location
+	Others   []PlayerListEntry
+	// Team     objects.Team
+}
 
 type Game struct {
 	id              uint64
@@ -85,28 +101,39 @@ func (g *Game) run() {
 }
 
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
-func (g *Game) OnMessageReceived(playerId uint64, message []byte) error {
+func (g *Game) OnMessageReceived(playerId uint64, message []byte) {
 	log.Debug().Msgf("message received from player '%v': %v", playerId, string(message))
 
 	action, err := actions.ParseActionFromMessage(playerId, string(message))
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("failed to parse action from message")
 	}
 
-	if action.Type() == actions.ActionType_JoinGame {
-		return g.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
+	switch action.Type() {
+	case actions.ActionType_JoinGame:
+		err := g.onPlayerJoin(playerId, action.(*actions.JoinGameAction))
+		if err != nil {
+			log.Warn().Err(err).Msgf("failed to join game")
+		}
+	case actions.ActionType_Move:
+		g.movementsQueued[playerId] = action.(*actions.MoveAction)
+	case actions.ActionType_Disconnect:
+		g.actionsQueued = append(g.actionsQueued, action)
+	default:
+		g.actionsQueued = append(g.actionsQueued, action)
 	}
-
-	return g.QueueAction(playerId, action)
 }
 
 // This satisfies the `MessageReceiver` interface, which the MessageBroker uses
 func (g *Game) OnPlayerDisconnected(playerId uint64) {
 	delete(g.players, playerId)
-	err := g.broadcaster.BroadcastToGame(g.id, []byte(fmt.Sprintf("d:%d", playerId)))
-	if err != nil {
-		log.Warn().Err(err).Msgf("failed to broadcast")
-	}
+	action := actions.DisconnectAction{}
+	g.actionsQueued = append(g.actionsQueued, action)
+}
+
+func (g *Game) Close() {
+	action := actions.DisconnectAction{}
+	g.actionsQueued = append(g.actionsQueued, action)
 }
 
 func (g *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
@@ -130,13 +157,6 @@ func (g *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
 		return err
 	}
 
-	type PlayerListEntry struct {
-		PlayerId string
-		Color    objects.TeamColor
-		Spawn    objects.Location
-		//Team     objects.Team
-	}
-
 	playerList := make([]PlayerListEntry, 0, 2)
 
 	for pId, p := range g.players {
@@ -153,14 +173,7 @@ func (g *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
 
 	}
 
-	msg := struct {
-		Type     string
-		PlayerId string
-		Color    objects.TeamColor
-		Spawn    objects.Location
-		Others   []PlayerListEntry
-		// Team     objects.Team
-	}{
+	msg := PlayerJoinResponse{
 		Type:     "join-response",
 		PlayerId: fmt.Sprint(p.Id()),
 		Color:    p.Color,
@@ -193,17 +206,6 @@ func (g *Game) onPlayerJoin(playerId uint64, a *actions.JoinGameAction) error {
 
 	return nil
 }
-
-func (g *Game) QueueAction(playerId uint64, a actions.Action) error {
-	if a.Type() == actions.ActionType_Move {
-		g.movementsQueued[playerId] = a.(*actions.MoveAction)
-		return nil
-	}
-
-	g.actionsQueued = append(g.actionsQueued, a)
-	return nil
-}
-
 func (g *Game) processQueue() []actions.Action {
 	processed := make([]actions.Action, 0)
 
@@ -225,9 +227,14 @@ func (g *Game) processQueue() []actions.Action {
 			attackAction.SetDamageDealt(dmg)
 
 			processed = append(processed, attackAction)
-		case actions.ActionType_CancelAction:
-			log.Error().Msg("cancel action nyi")
-			continue
+		case actions.ActionType_Disconnect:
+			disconnectAction, ok := action.(actions.DisconnectAction)
+			if !ok {
+				log.Error().Msgf("Discarded action: could not cast %s to DisconnectAction", action.Id())
+				continue
+			}
+
+			g.OnPlayerDisconnected(disconnectAction.PlayerId)
 		default:
 			log.Error().Msgf("got bad action in process queue: %s", action.Id())
 			continue

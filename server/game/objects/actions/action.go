@@ -2,15 +2,14 @@ package actions
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
 type ActionType string
 
 const (
-	ActionType_CancelAction ActionType = "C"
-	ActionType_JoinGame     ActionType = "J"
+	ActionType_JoinGame   ActionType = "J"
+	ActionType_Disconnect ActionType = "D"
 
 	ActionType_Move   ActionType = "m"
 	ActionType_Attack ActionType = "a"
@@ -29,14 +28,14 @@ func ParseActionFromMessage(playerId uint64, msg string) (Action, error) {
 	}
 
 	switch ActionType(split[0]) {
-	case ActionType_CancelAction:
-		return nil, fmt.Errorf("cancelling actions nyi")
 	case ActionType_Move:
 		return NewMoveActionFromMessage(playerId, split...)
 	case ActionType_Attack:
 		return NewAttackActionFromMessage(playerId, split...)
 	case ActionType_JoinGame:
 		return NewJoinGameActionFromMessage(playerId, split...)
+	case ActionType_Disconnect:
+		return NewDisconnectAction(playerId)
 	default:
 		return nil, errors.New("invalid message")
 	}

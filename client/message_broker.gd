@@ -1,7 +1,7 @@
 extends Node
 
 onready var localPlayer = $Player
-onready var opponents = $OpponentController
+onready var opponentController = $OpponentController
 
 export var websocket_url = "ws://kilnwood-game.com/connect"
 var _client = WebSocketClient.new()
@@ -49,6 +49,7 @@ func _on_data():
 	var json = JSON.parse(packet.get_string_from_utf8())
 	if json.error:
 		print("got error from json parse: ", json.error)
+		print(packet.get_string_from_utf8())
 		return
 	if not json.result or not json.result.has("Type"):
 		print("unexpected json from server: ", json.result)
@@ -59,7 +60,7 @@ func _on_data():
 			on_local_player_joined_game(json.result)
 		"join-broadcast":
 			if json.result.PlayerId == localPlayer.get_id(): return
-			opponents.joined(json.result.PlayerId, json.result.Spawn, json.result.Color)
+			opponentController.joined(json.result.PlayerId, json.result.Spawn, json.result.Color)
 		"tick":
 			if len(json.result.Events) == 0: return
 			process_tick(json.result.Events)
@@ -71,7 +72,7 @@ func process_tick(events):
 		match split_event[0]:
 			"m": on_move_event_received(split_event)
 			"a": on_attack_event_received(split_event)
-			"d": opponents.delete(split_event[1])
+			"d": opponentController.delete(split_event[1])
 
 func on_local_player_joined_game(msg):
 	print(msg)
@@ -81,7 +82,7 @@ func on_local_player_joined_game(msg):
 	
 	if not msg.Others: return
 	for player in msg.Others:
-		opponents.joined(player.PlayerId, player.Spawn, player.Color)
+		opponentController.joined(player.PlayerId, player.Spawn, player.Color)
 
 func on_move_event_received(event):
 	var sourcePlayerId = event[1]
@@ -89,7 +90,7 @@ func on_move_event_received(event):
 		localPlayer.set_moving(Vector3(event[2], 0, event[3]))
 		return
 
-	opponents.get(sourcePlayerId).set_moving(Vector3(event[2], 0, event[3]))
+	opponentController.get(sourcePlayerId).set_moving(Vector3(event[2], 0, event[3]))
 
 func on_attack_event_received(event):
 	var sourcePlayerId = event[1]
@@ -97,10 +98,10 @@ func on_attack_event_received(event):
 		localPlayer.set_attacking(Vector3(event[2], 0, event[3]))
 		return
 
-	if not opponents.has(sourcePlayerId):
+	if not opponentController.has(sourcePlayerId):
 		print("NETWORK BADNESS: got message from {s} but wasnt in game!".format({"s": sourcePlayerId}))
 
-	opponents.get(sourcePlayerId).set_attacking(Vector3(event[2], 0, event[3]))
+	opponentController.get(sourcePlayerId).set_attacking(Vector3(event[2], 0, event[3]))
 
 func player_requested_move(location):
 	var msg = "m:{source}:{x}:{z}".format({
