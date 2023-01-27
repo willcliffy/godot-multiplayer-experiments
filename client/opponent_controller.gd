@@ -16,7 +16,7 @@ func delete(id):
 	opponentDict[id].visible = false
 	opponentDict[id].translation = Vector3(-10, 0, -10)
 	available.append(opponentDict[id])
-	opponentDict.delete(id)
+	opponentDict.erase(id)
 
 func joined(id, spawn, color):
 	print("joined: ", id, spawn, color)
