@@ -1,7 +1,6 @@
 package broadcast
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -68,11 +67,7 @@ func (mb *MessageBroker) unregisterConnection_LOCK(playerId uint64) {
 	delete(mb.playerConns, playerId)
 	mb.lock.Unlock()
 
-	for gameId, game := range mb.games {
-		err := mb.BroadcastToGame(gameId, []byte(fmt.Sprintf("d:%d", playerId)))
-		if err != nil {
-			log.Warn().Err(err).Msgf("failed to broadcast")
-		}
+	for _, game := range mb.games {
 		game.OnPlayerDisconnected(playerId)
 	}
 
