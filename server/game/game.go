@@ -129,7 +129,7 @@ func (g *Game) OnPlayerDisconnected(playerId uint64) {
 	delete(g.players, playerId)
 	action := actions.DisconnectAction{PlayerId: playerId}
 	g.actionsQueued = append(g.actionsQueued, action)
-	log.Info().Msgf("queued disconnect")
+	log.Info().Msgf("queued disconnectw")
 }
 
 func (g *Game) Close() {
@@ -236,7 +236,7 @@ func (g *Game) processQueue() []actions.Action {
 			}
 
 			log.Info().Msgf("calling player disconnected")
-			g.OnPlayerDisconnected(disconnectAction.PlayerId)
+			processed = append(processed, disconnectAction)
 		default:
 			log.Error().Msgf("got bad action in process queue: %s", action.Id())
 			continue
