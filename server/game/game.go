@@ -9,50 +9,44 @@ import (
 	"github.com/willcliffy/kilnwood-game-server/broadcast"
 	gamemap "github.com/willcliffy/kilnwood-game-server/game/map"
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
-	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
 	"github.com/willcliffy/kilnwood-game-server/game/player"
+	"github.com/willcliffy/kilnwood-game-server/pb"
+	"google.golang.org/protobuf/proto"
 )
 
 // 240 bpm or 4 bps
 const gameTick = 1000 / 4 * time.Millisecond
 
-type PlayerListEntry struct {
-	PlayerId string
-	Color    objects.TeamColor
-	Spawn    objects.Location
-	//Team     objects.Team
-}
-
-type PlayerJoinResponse struct {
-	Type     string
-	PlayerId string
-	Color    objects.TeamColor
-	Spawn    objects.Location
-	Others   []PlayerListEntry
-	// Team     objects.Team
-}
-
 type Game struct {
-	id              uint64
-	clock           *time.Ticker
-	tick            uint8
-	done            chan bool
-	actionsQueued   []actions.Action
-	movementsQueued map[uint64]*actions.MoveAction
-	gameMap         *gamemap.GameMap
-	players         map[uint64]*player.Player
-	broadcaster     broadcast.MessageBroadcaster
+	id          uint64
+	broadcaster broadcast.MessageBroadcaster
+	done        chan bool
+
+	clock *time.Ticker
+	tick  uint32
+
+	gameMap *gamemap.GameMap
+	players map[uint64]*player.Player
+
+	connectsQueued    map[uint64]*pb.ConnectAction
+	disconnectsQueued map[uint64]*pb.DisconnectAction
+	movementsQueued   map[uint64]*pb.MoveAction
+	attacksQueued     map[uint64]*pb.AttackAction
 }
 
 func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 	return &Game{
-		id:              gameId,
-		done:            make(chan bool),
-		actionsQueued:   make([]actions.Action, 0, 16),
-		movementsQueued: make(map[uint64]*actions.MoveAction),
-		gameMap:         gamemap.NewGameMap(),
-		players:         make(map[uint64]*player.Player),
-		broadcaster:     broadcaster,
+		id:          gameId,
+		broadcaster: broadcaster,
+		done:        make(chan bool),
+
+		gameMap: gamemap.NewGameMap(),
+		players: make(map[uint64]*player.Player),
+
+		connectsQueued:    make(map[uint64]*pb.ConnectAction),
+		disconnectsQueued: make(map[uint64]*pb.DisconnectAction),
+		movementsQueued:   make(map[uint64]*pb.MoveAction),
+		attacksQueued:     make(map[uint64]*pb.AttackAction),
 	}
 }
 
@@ -82,15 +76,15 @@ func (g *Game) run() {
 				continue
 			}
 
-			payload, _ := json.Marshal(struct {
-				Type   string
-				Tick   uint8
-				Events []actions.Action
-			}{
-				Type:   "tick",
-				Tick:   g.tick,
-				Events: processed,
-			})
+			body := &pb.GameTick{
+				Tick:        g.tick,
+				Connects:    nil,
+				Disconnects: nil,
+				Moves:       nil,
+				Attacks:     nil,
+			}
+
+			payload, _ := proto.Marshal(body)
 
 			err := g.broadcaster.BroadcastToGame(g.id, payload)
 			if err != nil {

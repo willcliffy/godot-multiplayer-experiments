@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/willcliffy/kilnwood-game-server/game/objects"
-	"github.com/willcliffy/kilnwood-game-server/game/objects/actions"
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 )
 
@@ -72,7 +71,7 @@ func (m *GameMap) DespawnPlayer() error {
 	return errors.New("nyi")
 }
 
-func (m *GameMap) ApplyMovement(movement *actions.MoveAction) error {
+func (m *GameMap) ApplyMovement(movement *MoveAction) error {
 	player, ok := m.players[movement.PlayerId]
 	if !ok {
 		return ErrPlayerNotInGame
@@ -82,7 +81,7 @@ func (m *GameMap) ApplyMovement(movement *actions.MoveAction) error {
 	return nil
 }
 
-func (m *GameMap) ApplyAttack(attack actions.AttackAction) (int, error) {
+func (m *GameMap) ApplyAttack(attack AttackAction) (int, error) {
 	target, ok := m.players[attack.TargetPlayerId]
 	if !ok {
 		return 0, ErrPlayerNotInGame
