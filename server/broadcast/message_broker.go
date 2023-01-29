@@ -4,9 +4,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 	"github.com/sony/sonyflake"
+	pb "github.com/willcliffy/kilnwood-game-server/proto"
 )
 
 type MessageBroker struct {
@@ -96,9 +98,17 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 			return
 		}
 
+		var msg pb.Action
+		_ = proto.Unmarshal(message, &msg)
+
+		switch msg.Type {
+		case 0:
+			// yes
+		}
+
 		// TODO - support multiple games
-		for _, g := range mb.games {
-			g.OnMessageReceived(playerId, message)
+		for _, _ = range mb.games {
+			//g.OnMessageReceived(playerId, message)
 		}
 	}
 }

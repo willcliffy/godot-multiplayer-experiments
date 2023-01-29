@@ -17,6 +17,5 @@ type MessageBroadcaster interface {
 
 type MessageReceiver interface {
 	OnPlayerDisconnected(uint64)
-	OnMessageReceived(uint64, []byte)
 	Close()
 }
