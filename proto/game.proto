@@ -1,0 +1,52 @@
+syntax = "proto3";
+package game;
+option go_package = "./game";
+
+message Location {
+  uint32 x = 1;
+  uint32 z = 2;
+}
+
+message JoinGameResponse {
+  uint64 playerId = 1;
+  string color = 2;
+  Location spawn = 3;
+
+  repeated JoinGameResponse others = 4;
+}
+
+message Action {
+  uint32 type = 1;
+  string payload = 2;
+}
+
+message Connect {
+  uint64 playerId = 1;
+  optional string color = 2;
+}
+
+message Disconnect { uint64 playerId = 1; }
+
+message Move {
+  uint64 playerId = 1;
+  Location target = 2;
+}
+
+message Attack {
+  uint64 sourcePlayerId = 1;
+  uint64 targetPlayerId = 2;
+}
+
+message Damage {
+  uint64 sourcePlayerId = 1;
+  uint64 targetPlayerId = 2;
+  int32 damageDealt = 3;
+}
+
+message GameTick {
+  uint32 tick = 1;
+  repeated Connect connects = 2;
+  repeated Disconnect disconnects = 3;
+  repeated Move moves = 4;
+  repeated Attack attacks = 5;
+}
