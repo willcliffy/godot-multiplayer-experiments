@@ -13,6 +13,10 @@ config_version=4
 config/name="Kilnwood Godot Client"
 run/main_scene="res://level.tscn"
 
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/protobuf/plugin.cfg" )
+
 [gdnative]
 
 singletons=[  ]

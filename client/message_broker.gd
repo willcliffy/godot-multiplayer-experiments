@@ -1,9 +1,11 @@
 extends Node
 
+const pb = preload("res://proto/game.gd")
+
 onready var localPlayer = $Player
 onready var opponentController = $OpponentController
 
-export var websocket_url = "ws://kilnwood-game.com/connect"
+export var websocket_url = "ws://localhost:8080/connect"
 var _client = WebSocketClient.new()
 
 var connected = false
@@ -25,7 +27,12 @@ func _closed(was_clean = false):
 	set_process(false)
 
 func _connected(_proto = ""):
-	var err = _client.get_peer(1).put_packet("J:::f".to_utf8())
+	var connect = pb.Connect.new()
+	connect.set_playerId(1)
+	connect.set_color("")
+	print(connect.to_string())
+	print(connect.to_bytes())
+	var err = _client.get_peer(1).put_packet(connect.to_bytes())
 	if err != OK:
 		print("failed to connect: ", err)
 		return
@@ -104,13 +111,11 @@ func on_attack_event_received(event):
 	opponentController.get(sourcePlayerId).set_attacking(Vector3(event[2], 0, event[3]))
 
 func player_requested_move(location):
-	var msg = "m:{source}:{x}:{z}".format({
-		"source": localPlayer.get_id(),
-		"x": location.x,
-		"z": location.z
-	})
-
-	var err = _client.get_peer(1).put_packet(msg.to_utf8())
+	var action = pb.Move.new()
+	action.set_playerId(localPlayer.id)
+	action.set_target(location)
+	
+	var err = _client.get_peer(1).put_packet(action.to_bytes)
 	if err: print(err)
 
 func player_requested_attack(target_id):
