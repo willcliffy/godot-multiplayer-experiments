@@ -4,11 +4,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 	"github.com/sony/sonyflake"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type MessageBroker struct {
@@ -31,10 +31,6 @@ func NewMessageBroker() *MessageBroker {
 }
 
 func (mb *MessageBroker) Close() {
-	for _, game := range mb.games {
-		game.Close()
-	}
-
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -58,7 +54,51 @@ func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Co
 		Msgf("Disconnected from player '%d'. Connection duration %v", playerId, time.Since(start))
 }
 
-func (mb *MessageBroker) unregisterConnection_LOCK(playerId uint64) {
+func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
+	for {
+		// buf := make([]byte, 1024)
+		// n, err := conn.UnderlyingConn().Read(buf)
+		// if err != nil {
+		// 	log.Warn().Err(err).Msgf("failed to read message from client, disconnecting")
+		// 	return
+		// }
+		// log.Info().Msgf("n '%v', buf '%v'", n, string(buf[:n]))
+
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Warn().Err(err).Msgf("failed to read message from client, disconnecting")
+			mb.unregisterConnection(playerId)
+			return
+		}
+
+		log.Debug().Msgf("got packet %v", string(message))
+
+		var action pb.Action
+		err = proto.Unmarshal(message, &action)
+		if err != nil {
+			log.Warn().Err(err).Msgf("failed to unmarshal client action")
+			continue
+		}
+
+		log.Debug().Msgf("Got Action: %+v", action.Payload)
+
+		if action.Type == pb.ActionType_ACTION_CONNECT {
+			for _, g := range mb.games {
+				err := g.OnPlayerConnected(playerId)
+				if err != nil {
+					log.Error().Msgf("failed to onplayerconnected")
+				}
+			}
+			continue
+		}
+
+		for _, g := range mb.games {
+			g.OnActionReceived(playerId, &action)
+		}
+	}
+}
+
+func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 	mb.lock.Lock()
 
 	err := mb.playerConns[playerId].Close()
@@ -77,8 +117,26 @@ func (mb *MessageBroker) unregisterConnection_LOCK(playerId uint64) {
 }
 
 // This satifies the MessageBroadcaster interface
-// This is the only allowed communication from the games to the MessageBroker
-func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
+func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.JoinGameResponse) {
+	payload, err := proto.Marshal(response)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to marshal join game response: %+v", response)
+		return
+	}
+
+	mb.broadcastToPlayer(playerId, payload)
+
+	response.Others = nil
+	payload, err = proto.Marshal(response)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to marshal join game broadcast: %+v", response)
+	}
+
+	mb.broadcastToGame(gameId, payload)
+}
+
+// This satifies the MessageBroadcaster interface
+func (mb *MessageBroker) OnPlayerLeftGame(gameId, playerId uint64) {
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -90,27 +148,18 @@ func (mb *MessageBroker) OnPlayerLeft(playerId uint64) {
 	delete(mb.playerConns, playerId)
 }
 
-func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			mb.unregisterConnection_LOCK(playerId)
-			return
-		}
-
-		var msg pb.Action
-		_ = proto.Unmarshal(message, &msg)
-
-		switch msg.Type {
-		case 0:
-			// yes
-		}
-
-		// TODO - support multiple games
-		for _, _ = range mb.games {
-			//g.OnMessageReceived(playerId, message)
-		}
+// This satifies the MessageBroadcaster interface
+func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
+	if len(tick.Attacks) == 0 && len(tick.Moves) == 0 && len(tick.Moves) == 0 {
+		return
 	}
+
+	payload, err := proto.Marshal(tick)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to marshal game tick: %v", tick)
+		return
+	}
+	mb.broadcastToGame(gameId, payload)
 }
 
 func (mb *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
@@ -123,13 +172,7 @@ func (mb *MessageBroker) RegisterMessageReceiver(game MessageReceiver) uint64 {
 	return gameId
 }
 
-// This satisfies the util.Broadcaster interface
-func (mb *MessageBroker) BroadcastToGame(gameId uint64, payload []byte) error {
-	log.Debug().Msgf("broadcasting to game '%v' payload '%v'", gameId, string(payload))
-	return mb.broadcastToGame_LOCK(gameId, payload)
-}
-
-func (mb *MessageBroker) broadcastToGame_LOCK(gameId uint64, payload []byte) error {
+func (mb *MessageBroker) broadcastToGame(gameId uint64, payload []byte) {
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
@@ -137,34 +180,23 @@ func (mb *MessageBroker) broadcastToGame_LOCK(gameId uint64, payload []byte) err
 	for _, conn := range mb.playerConns {
 		err := conn.WriteMessage(websocket.TextMessage, payload)
 		if err != nil {
-			return err
+			log.Warn().Err(err).Msgf("Failed to broadcast to player")
 		}
 	}
-
-	return nil
 }
 
-// This satisfies the util.Broadcaster interface
-func (mb *MessageBroker) BroadcastToPlayer(playerId uint64, payload []byte) error {
-	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, string(payload))
-	return mb.broadcastToPlayer_LOCK(playerId, payload)
-}
-
-func (mb *MessageBroker) broadcastToPlayer_LOCK(playerId uint64, payload []byte) error {
-	log.Debug().Msgf("broadcasting to player '%v' payload '%v'", playerId, string(payload))
-
+func (mb *MessageBroker) broadcastToPlayer(playerId uint64, payload []byte) {
 	mb.lock.Lock()
 	defer mb.lock.Unlock()
 
 	conn, ok := mb.playerConns[playerId]
 	if !ok {
-		log.Warn().Msgf("")
+		log.Warn().Msgf("Tried to broadcast to player that is not connected")
+		return
 	}
 
 	err := conn.WriteMessage(websocket.TextMessage, payload)
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("Failed to broadcast to player")
 	}
-
-	return nil
 }

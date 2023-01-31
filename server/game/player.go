@@ -37,15 +37,15 @@ func RandomTeamColor() string {
 type Player struct {
 	Id       uint64
 	Color    string
-	Location pb.Location
-	combat   PlayerCombatStats
+	Location *pb.Location
+	combat   *PlayerCombatStats
 }
 
 func NewPlayer(playerId uint64, color string) *Player {
 	return &Player{
 		Id:       playerId,
 		Color:    color,
-		Location: pb.Location{},
+		Location: &pb.Location{},
 		combat:   NewPlayerCombatStats(),
 	}
 }
@@ -71,8 +71,8 @@ type PlayerCombatStats struct {
 	ticksToNextRegen int
 }
 
-func NewPlayerCombatStats() PlayerCombatStats {
-	return PlayerCombatStats{
+func NewPlayerCombatStats() *PlayerCombatStats {
+	return &PlayerCombatStats{
 		HP:               10,
 		AD:               1,
 		Regen:            10,

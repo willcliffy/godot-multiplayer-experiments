@@ -53,11 +53,11 @@ func (m *GameMap) RemovePlayer(playerId uint64) error {
 	return nil
 }
 
-func (m *GameMap) SpawnPlayer(p *Player) (pb.Location, error) {
+func (m *GameMap) SpawnPlayer(p *Player) (*pb.Location, error) {
 	x := uint32(rand.Intn(spawn_range_x))
 	z := uint32(rand.Intn(spawn_range_z))
 
-	spawn := pb.Location{X: x, Z: z}
+	spawn := &pb.Location{X: x, Z: z}
 
 	p.Location = spawn
 
@@ -74,7 +74,7 @@ func (m *GameMap) ApplyMovement(movement *pb.Move) error {
 		return ErrPlayerNotInGame
 	}
 
-	player.Location = *movement.Target
+	player.Location = movement.Target
 
 	return nil
 }

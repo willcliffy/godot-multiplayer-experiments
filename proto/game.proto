@@ -1,6 +1,6 @@
 syntax = "proto3";
 package game;
-option go_package = "./game";
+option go_package = "./proto";
 
 message Location {
   uint32 x = 1;
@@ -15,14 +15,17 @@ message JoinGameResponse {
   repeated JoinGameResponse others = 4;
 }
 
-message Action {
-  uint32 type = 1;
-  string payload = 2;
+enum ActionType {
+  ACTION_PING = 0;
+  ACTION_CONNECT = 1;
+  ACTION_DISCONNECT = 2;
+  ACTION_MOVE = 3;
+  ACTION_ATTACK = 4;
 }
 
-message Connect {
-  uint64 playerId = 1;
-  optional string color = 2;
+message Action {
+  ActionType type = 1;
+  bytes payload = 2;
 }
 
 message Disconnect { uint64 playerId = 1; }
@@ -45,7 +48,6 @@ message Damage {
 
 message GameTick {
   uint32 tick = 1;
-  repeated Connect connects = 2;
   repeated Disconnect disconnects = 3;
   repeated Move moves = 4;
   repeated Attack attacks = 5;

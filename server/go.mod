@@ -16,7 +16,6 @@ require (
 )
 
 require (
-	github.com/golang/protobuf v1.5.2
 	github.com/rs/zerolog v1.28.0
 	google.golang.org/protobuf v1.28.1
 )
