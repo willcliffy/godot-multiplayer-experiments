@@ -23,7 +23,7 @@ func _input(event):
 	if res.collider.has_method("get_id"):
 		attacking = true
 		player.set_attacking(pos)
-		messageBroker.player_requested_attack(res.collider.get_id()) # TODO - send pos to server for additional validation
+		messageBroker.playerRequestedAttack(res.collider.get_id()) # TODO - send pos to server for additional validation
 
 	if not attacking:
-		messageBroker.player_requested_move(pos)
+		messageBroker.playerRequestedMove(pos)

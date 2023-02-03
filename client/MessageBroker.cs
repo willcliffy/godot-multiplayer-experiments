@@ -1,5 +1,8 @@
 using Godot;
 using System;
+using System.IO;
+using Game;
+using Google.Protobuf;
 
 public class MessageBroker : Node
 {
@@ -8,6 +11,7 @@ public class MessageBroker : Node
 
     [Export]
     string webSocketURL = "ws://localhost:8080/connect";
+
     WebSocketClient client = null;
 
     public override void _Ready()
@@ -21,7 +25,6 @@ public class MessageBroker : Node
         client.Connect("connection_error", this, nameof(OnConnectionError));
 
         Error error = client.ConnectToUrl(webSocketURL, null, false);
-
         if (error != Error.Ok)
         {
             client.GetPeer(1).Close();
@@ -34,23 +37,27 @@ public class MessageBroker : Node
 
     public override void _Process(float delta)
     {
-       if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected || 
+       if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected ||
            client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connecting)
         {
             client.Poll();
         }
     }
 
-
     public void OnConnectionEstablished(string protocol)
     {
-        Error error = client.GetPeer(1).PutPacket("J:::f".ToUTF8());
+
+        Game.Action msg = new Game.Action();
+        msg.Type = ActionType.ActionConnect;
+        MemoryStream stream = new MemoryStream();
+        msg.WriteTo(stream);
+        Error error = client.GetPeer(1).PutPacket(stream.ToArray());
         if (error != Error.Ok)
         {
             GD.Print("Failed to establish connection: " + error);
             return;
         }
-        GD.Print("Connection established. " + error);
+        GD.Print($"Connection established with proto {protocol}");
     }
 
     public void OnDataRecived()

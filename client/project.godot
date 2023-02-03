@@ -15,7 +15,7 @@ run/main_scene="res://level.tscn"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/protobuf/plugin.cfg" )
+enabled=PoolStringArray(  )
 
 [gdnative]
 

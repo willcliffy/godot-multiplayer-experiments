@@ -80,21 +80,20 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 			continue
 		}
 
-		log.Debug().Msgf("Got Action: %+v", action.Payload)
+		log.Debug().Msgf("Got Action: %+v - %+v", action.Type, action.Payload)
 
-		if action.Type == pb.ActionType_ACTION_CONNECT {
-			for _, g := range mb.games {
+		for _, g := range mb.games {
+			if action.Type == pb.ActionType_ACTION_CONNECT {
 				err := g.OnPlayerConnected(playerId)
 				if err != nil {
 					log.Error().Msgf("failed to onplayerconnected")
 				}
+				continue
 			}
-			continue
-		}
-
-		for _, g := range mb.games {
 			g.OnActionReceived(playerId, &action)
 		}
+
+		time.Sleep(3 * time.Second)
 	}
 }
 

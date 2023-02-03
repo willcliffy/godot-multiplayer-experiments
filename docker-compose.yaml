@@ -12,6 +12,7 @@ services:
     build:
       context: server
       dockerfile: Dockerfile.dev
+    command: CompileDaemon -log-prefix=false -build="go build -o /dist/app /app/main.go" -command="/dist/app"
     volumes:
       - ./server:/app
     ports:
