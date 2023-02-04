@@ -24,6 +24,7 @@ type Game struct {
 	gameMap *GameMap
 	players map[uint64]*Player
 
+	connectsQueued    map[uint64]*pb.Connect
 	disconnectsQueued map[uint64]*pb.Disconnect
 	movementsQueued   map[uint64]*pb.Move
 	attacksQueued     map[uint64]*pb.Attack
@@ -38,6 +39,7 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		gameMap: NewGameMap(),
 		players: make(map[uint64]*Player),
 
+		connectsQueued:    make(map[uint64]*pb.Connect),
 		disconnectsQueued: make(map[uint64]*pb.Disconnect),
 		movementsQueued:   make(map[uint64]*pb.Move),
 		attacksQueued:     make(map[uint64]*pb.Attack),
@@ -103,6 +105,7 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 			continue
 		}
 
+		log.Debug().Msgf("appending player %v since it does not match %v", pId, playerId)
 		playerList = append(playerList, &pb.Connect{
 			PlayerId: pId,
 			Color:    p.Color,
@@ -110,18 +113,17 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		})
 	}
 
-	type JoinGameResponse struct {
-		playerId uint64
-		color    string
-		spawn    *pb.Location
-		others   []*pb.Connect
+	msg := &pb.JoinGameResponse{
+		PlayerId: p.Id,
+		Color:    p.Color,
+		Spawn:    p.Location,
+		Others:   playerList,
 	}
 
-	msg := &JoinGameResponse{
-		playerId: p.Id,
-		color:    p.Color,
-		spawn:    p.Location,
-		others:   playerList,
+	g.connectsQueued[p.Id] = &pb.Connect{
+		PlayerId: p.Id,
+		Color:    p.Color,
+		Spawn:    p.Location,
 	}
 
 	g.broadcaster.OnPlayerJoinGame(g.id, playerId, msg)
@@ -146,38 +148,44 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 	case pb.ClientActionType_ACTION_PING:
 		// nyi
 	case pb.ClientActionType_ACTION_DISCONNECT:
-		var disconnect *pb.Disconnect
-		err := json.Unmarshal([]byte(action.Payload), disconnect)
+		var disconnect pb.Disconnect
+		err := json.Unmarshal([]byte(action.Payload), &disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
 		}
 
-		g.disconnectsQueued[playerId] = disconnect
+		g.disconnectsQueued[playerId] = &disconnect
 	case pb.ClientActionType_ACTION_MOVE:
-		var disconnect *pb.Disconnect
-		err := json.Unmarshal([]byte(action.Payload), disconnect)
+		var move pb.Move
+		err := json.Unmarshal([]byte(action.Payload), &move)
 		if err != nil {
-			log.Warn().Err(err).Msgf("failed to unmarshal move")
+			log.Warn().Err(err).Msgf("failed to unmarshal move: %s", action.Payload)
 		}
 
-		g.disconnectsQueued[playerId] = disconnect
+		g.movementsQueued[playerId] = &move
 	case pb.ClientActionType_ACTION_ATTACK:
-		var attack *pb.Attack
-		err := json.Unmarshal([]byte(action.Payload), attack)
+		var attack pb.Attack
+		err := json.Unmarshal([]byte(action.Payload), &attack)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal attack")
 		}
 
-		g.attacksQueued[playerId] = attack
+		g.attacksQueued[playerId] = &attack
 	default:
 		log.Error().Msgf("could not unmarshal unknown action type: %v", action.Type)
 	}
 }
 
 func (g *Game) processQueue() *pb.GameTick {
+	var connectsProcessed []*pb.Connect
 	var disconnectsProcessed []*pb.Disconnect
 	var movementsProcessed []*pb.Move
 	var attacksProcessed []*pb.Attack
+
+	for _, connect := range g.connectsQueued {
+		log.Debug().Msgf("processed connect: %v", connect)
+		connectsProcessed = append(connectsProcessed, connect)
+	}
 
 	for _, disconnect := range g.disconnectsQueued {
 		g.OnPlayerDisconnected(disconnect.PlayerId)
@@ -205,12 +213,14 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	// reset actionQueue for the next tick
+	g.connectsQueued = make(map[uint64]*pb.Connect)
 	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
 
 	return &pb.GameTick{
 		Tick:        g.tick,
+		Connects:    connectsProcessed,
 		Disconnects: disconnectsProcessed,
 		Moves:       movementsProcessed,
 		Attacks:     attacksProcessed,

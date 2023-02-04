@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	spawn_range_x = 11
-	spawn_range_z = 11
+	spawn_range_x = 10
+	spawn_range_z = 10
 )
 
 var (
@@ -54,8 +54,8 @@ func (m *GameMap) RemovePlayer(playerId uint64) error {
 }
 
 func (m *GameMap) SpawnPlayer(p *Player) (*pb.Location, error) {
-	x := uint32(rand.Intn(spawn_range_x))
-	z := uint32(rand.Intn(spawn_range_z))
+	x := uint32(rand.Intn(spawn_range_x)) + 1
+	z := uint32(rand.Intn(spawn_range_z)) + 1
 
 	spawn := &pb.Location{X: x, Z: z}
 

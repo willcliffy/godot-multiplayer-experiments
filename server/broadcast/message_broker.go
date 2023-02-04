@@ -71,16 +71,12 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 			return
 		}
 
-		log.Debug().Msgf("got packet %v", string(message))
-
 		var action pb.ClientAction
 		err = json.Unmarshal(message, &action)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal client action")
 			continue
 		}
-
-		log.Debug().Msgf("Got Action: %+v - %+v", action.Type, action.Payload)
 
 		for _, g := range mb.games {
 			if action.Type == int32(pb.ClientActionType_ACTION_CONNECT) {
@@ -92,8 +88,6 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 			}
 			g.OnActionReceived(playerId, &action)
 		}
-
-		time.Sleep(3 * time.Second)
 	}
 }
 
@@ -118,7 +112,7 @@ func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.JoinGameResponse) {
 	if len(response.Others) == 0 {
-		response.Others = []*pb.JoinGameResponse{}
+		response.Others = []*pb.Connect{}
 	}
 
 	responseBytes, err := json.Marshal(response)
@@ -141,21 +135,6 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 	log.Debug().Msg(string(messageBytes))
 
 	mb.broadcastToPlayer(playerId, messageBytes)
-
-	response.Others = nil
-	responseBytes, err = json.Marshal(response)
-	if err != nil {
-		log.Error().Err(err).Msgf("failed to marshal join game broadcast: %+v", response)
-	}
-
-	message.Payload = string(responseBytes)
-	messageBytes, err = json.Marshal(&message)
-	if err != nil {
-		log.Error().Err(err).Msgf("failed to marshal join broadcast message: %v", message)
-		return
-	}
-
-	mb.broadcastToGame(gameId, messageBytes)
 }
 
 // This satifies the MessageBroadcaster interface
@@ -171,9 +150,17 @@ func (mb *MessageBroker) OnPlayerLeftGame(gameId, playerId uint64) {
 	delete(mb.playerConns, playerId)
 }
 
+// TODO - this better
+func tickIsEmpty(tick *pb.GameTick) bool {
+	return len(tick.Connects) == 0 &&
+		len(tick.Disconnects) == 0 &&
+		len(tick.Moves) == 0 &&
+		len(tick.Attacks) == 0
+}
+
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
-	if len(tick.Attacks) == 0 && len(tick.Moves) == 0 && len(tick.Moves) == 0 {
+	if tickIsEmpty(tick) {
 		return
 	}
 
