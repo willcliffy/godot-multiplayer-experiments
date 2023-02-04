@@ -28,7 +28,7 @@ RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Go
 RUN unzip Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
 RUN unzip Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64.zip
 
-RUN mv Godot_v${GODOT_VERSION}_mono-stable_linux_headless.64 /usr/local/bin/godot
+RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64 /usr/local/bin/godot
 RUN mv templates/* ~/.local/share/godot/templates/${GODOT_VERSION}.stable
 
 WORKDIR /client
