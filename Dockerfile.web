@@ -22,8 +22,8 @@ RUN apk add --allow-untrusted --force-overwrite glibc-2.31-r0.apk
 
 WORKDIR /client/_engine
 
-RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/Godot_v${GODOT_VERSION}-stable_linux_headless.64.zip
-RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_linux_headless.64.zip
+RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
 
 RUN unzip Godot_v${GODOT_VERSION}-stable_export_templates.tpz
 RUN unzip Godot_v${GODOT_VERSION}-stable_linux_headless.64.zip
