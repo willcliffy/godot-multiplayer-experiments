@@ -7,14 +7,6 @@ message Location {
   uint32 z = 2;
 }
 
-message JoinGameResponse {
-  uint64 playerId = 1;
-  string color = 2;
-  Location spawn = 3;
-
-  repeated JoinGameResponse others = 4;
-}
-
 enum ClientActionType {
   ACTION_PING = 0;
   ACTION_CONNECT = 1;
@@ -24,11 +16,19 @@ enum ClientActionType {
 }
 
 message ClientAction {
-  ClientActionType type = 1;
-  bytes payload = 2;
+  int32 type = 1;
+  string payload = 2;
 }
 
-message Disconnect { uint64 playerId = 1; }
+message Connect {
+  uint64 playerId = 1;
+  string color = 2;
+  Location spawn = 3;
+}
+
+message Disconnect {
+  uint64 playerId = 1;
+}
 
 message Move {
   uint64 playerId = 1;
@@ -53,8 +53,8 @@ enum ServerMessageType {
 }
 
 message ServerMessage {
-  ServerMessageType type = 1;
-  bytes payload = 2;
+  int32 type = 1;
+  string payload = 2;
 }
 
 message GameTick {

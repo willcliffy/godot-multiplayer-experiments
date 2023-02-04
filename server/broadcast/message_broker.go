@@ -83,7 +83,7 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 		log.Debug().Msgf("Got Action: %+v - %+v", action.Type, action.Payload)
 
 		for _, g := range mb.games {
-			if action.Type == pb.ClientActionType_ACTION_CONNECT {
+			if action.Type == int32(pb.ClientActionType_ACTION_CONNECT) {
 				err := g.OnPlayerConnected(playerId)
 				if err != nil {
 					log.Error().Msgf("failed to onplayerconnected")
@@ -117,6 +117,10 @@ func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.JoinGameResponse) {
+	if len(response.Others) == 0 {
+		response.Others = []*pb.JoinGameResponse{}
+	}
+
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal join game response: %+v", response)
@@ -124,8 +128,8 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 	}
 
 	message := &pb.ServerMessage{
-		Type:    pb.ServerMessageType_MESSAGE_TICK,
-		Payload: responseBytes,
+		Type:    int32(pb.ServerMessageType_MESSAGE_JOIN),
+		Payload: string(responseBytes),
 	}
 
 	messageBytes, err := json.Marshal(&message)
@@ -133,6 +137,8 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 		log.Error().Err(err).Msgf("failed to marshal player join response: %v", message)
 		return
 	}
+	log.Debug().Msg(string(responseBytes))
+	log.Debug().Msg(string(messageBytes))
 
 	mb.broadcastToPlayer(playerId, messageBytes)
 
@@ -142,7 +148,7 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 		log.Error().Err(err).Msgf("failed to marshal join game broadcast: %+v", response)
 	}
 
-	message.Payload = responseBytes
+	message.Payload = string(responseBytes)
 	messageBytes, err = json.Marshal(&message)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal join broadcast message: %v", message)
@@ -177,9 +183,9 @@ func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
 		return
 	}
 
-	message := pb.ServerMessage{
-		Type:    pb.ServerMessageType_MESSAGE_TICK,
-		Payload: tickBytes,
+	message := &pb.ServerMessage{
+		Type:    int32(pb.ServerMessageType_MESSAGE_TICK),
+		Payload: string(tickBytes),
 	}
 
 	messageBytes, err := json.Marshal(&message)

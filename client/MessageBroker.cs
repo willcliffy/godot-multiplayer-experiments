@@ -23,7 +23,6 @@ public class MessageBroker : Node
         client.Connect("data_received", this, nameof(OnDataRecived));
         client.Connect("server_close_request", this, nameof(OnServerCloseRequest));
         client.Connect("connection_closed", this, nameof(OnConnectionClosed));
-        client.Connect("connection_error", this, nameof(OnConnectionError));
 
         Error error = client.ConnectToUrl(webSocketURL, null, false);
         if (error != Error.Ok)
@@ -47,10 +46,9 @@ public class MessageBroker : Node
 
     public void OnConnectionEstablished(string protocol)
     {
-
         var msg = new Game.ClientAction();
-        msg.Type = ClientActionType.ActionConnect;
-        var msgBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
+        msg.type = (int)ClientActionType.ACTION_CONNECT;
+        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
         Error error = client.GetPeer(1).PutPacket(msgBytes);
         if (error != Error.Ok)
         {
@@ -58,31 +56,6 @@ public class MessageBroker : Node
             return;
         }
         GD.Print("Connection established");
-    }
-
-    public void OnDataRecived()
-    {
-        GD.Print("data received");
-        var packet = client.GetPeer(1).GetPacket();
-        var action = JsonSerializer.Deserialize<Game.ServerMessage>(packet);
-        switch (action.Type)
-        {
-            case Game.ServerMessageType.MessagePing:
-                // TODO
-                GD.Print("ping");
-                break;
-            case Game.ServerMessageType.MessageJoin:
-                var joinGameRes = JsonSerializer.Deserialize<Game.JoinGameResponse>(action.Payload.ToByteArray());
-                GD.Print(joinGameRes);
-                break;
-            case Game.ServerMessageType.MessageTick:
-                var tick = JsonSerializer.Deserialize<Game.GameTick>(action.Payload.ToByteArray());
-                GD.Print(tick);
-                break;
-            default:
-                GD.Print($"Unknown server message type: '{action.Type}'");
-                break;
-        }
     }
 
     public void OnServerCloseRequest(int code, string reason)
@@ -95,8 +68,53 @@ public class MessageBroker : Node
         GD.Print("Connection closed. was clean close: " + wasCleanClose.ToString());
     }
 
-    public void OnConnectionError()
+    public void OnDataRecived()
     {
-        GD.Print("Connection error");
+        var packet = client.GetPeer(1).GetPacket();
+        var action = JsonSerializer.Deserialize<Game.ServerMessage>(packet);
+        switch ((Game.ServerMessageType) action.type)
+        {
+            case Game.ServerMessageType.MESSAGE_PING:
+                GD.Print("ping"); // TODO
+                break;
+            case Game.ServerMessageType.MESSAGE_JOIN:
+                var joinGameRes = JsonSerializer.Deserialize<Game.JoinGameResponse>(action.payload);
+                GD.Print(joinGameRes.playerId);
+                GD.Print(joinGameRes.color);
+                GD.Print(joinGameRes.others);
+                break;
+            case Game.ServerMessageType.MESSAGE_TICK:
+                var tick = JsonSerializer.Deserialize<Game.GameTick>(action.payload);
+                GD.Print(tick);
+                break;
+            default:
+                GD.Print($"Unknown server message type: '{action.type}'");
+                break;
+        }
+    }
+
+    public void onLocalPlayerJoinedGame(Game.JoinGameResponse msg)
+    {
+        // TODO
+    }
+
+    public void PlayerRequestedMove(Game.Location target)
+    {
+        // TODO
+    }
+
+    public void PlayerRequestedAttack(ulong target)
+    {
+        // TODO
+    }
+
+    public void onMoveEventReceived(Game.Move move)
+    {
+        // TODO
+    }
+
+    public void onAttackEventReceived(Game.Attack attack)
+    {
+        // TODO
     }
 }

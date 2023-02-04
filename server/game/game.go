@@ -96,26 +96,32 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		return err
 	}
 
-	var playerList []*pb.JoinGameResponse
+	var playerList []*pb.Connect
 
 	for pId, p := range g.players {
 		if p == nil || pId == playerId {
 			continue
 		}
 
-		playerList = append(playerList, &pb.JoinGameResponse{
+		playerList = append(playerList, &pb.Connect{
 			PlayerId: pId,
 			Color:    p.Color,
 			Spawn:    p.Location,
 		})
-
 	}
 
-	msg := &pb.JoinGameResponse{
-		PlayerId: p.Id,
-		Color:    p.Color,
-		Spawn:    p.Location,
-		Others:   playerList,
+	type JoinGameResponse struct {
+		playerId uint64
+		color    string
+		spawn    *pb.Location
+		others   []*pb.Connect
+	}
+
+	msg := &JoinGameResponse{
+		playerId: p.Id,
+		color:    p.Color,
+		spawn:    p.Location,
+		others:   playerList,
 	}
 
 	g.broadcaster.OnPlayerJoinGame(g.id, playerId, msg)
@@ -136,12 +142,12 @@ func (g *Game) Close() {
 
 func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 	// TODO - replace json with proto if/when migrating off of Websockets to support protobuf
-	switch action.Type {
+	switch pb.ClientActionType(action.Type) {
 	case pb.ClientActionType_ACTION_PING:
 		// nyi
 	case pb.ClientActionType_ACTION_DISCONNECT:
 		var disconnect *pb.Disconnect
-		err := json.Unmarshal(action.Payload, disconnect)
+		err := json.Unmarshal([]byte(action.Payload), disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
 		}
@@ -149,7 +155,7 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		g.disconnectsQueued[playerId] = disconnect
 	case pb.ClientActionType_ACTION_MOVE:
 		var disconnect *pb.Disconnect
-		err := json.Unmarshal(action.Payload, disconnect)
+		err := json.Unmarshal([]byte(action.Payload), disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal move")
 		}
@@ -157,7 +163,7 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		g.disconnectsQueued[playerId] = disconnect
 	case pb.ClientActionType_ACTION_ATTACK:
 		var attack *pb.Attack
-		err := json.Unmarshal(action.Payload, attack)
+		err := json.Unmarshal([]byte(action.Payload), attack)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal attack")
 		}
