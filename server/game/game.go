@@ -1,13 +1,13 @@
 package game
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/broadcast"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
-	"google.golang.org/protobuf/proto"
 )
 
 // 600 bpm or 10 bps
@@ -134,29 +134,30 @@ func (g *Game) Close() {
 	}
 }
 
-func (g *Game) OnActionReceived(playerId uint64, action *pb.Action) {
+func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
+	// TODO - replace json with proto if/when migrating off of Websockets to support protobuf
 	switch action.Type {
-	case pb.ActionType_ACTION_PING:
+	case pb.ClientActionType_ACTION_PING:
 		// nyi
-	case pb.ActionType_ACTION_DISCONNECT:
+	case pb.ClientActionType_ACTION_DISCONNECT:
 		var disconnect *pb.Disconnect
-		err := proto.Unmarshal(action.Payload, disconnect)
+		err := json.Unmarshal(action.Payload, disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
 		}
 
 		g.disconnectsQueued[playerId] = disconnect
-	case pb.ActionType_ACTION_MOVE:
+	case pb.ClientActionType_ACTION_MOVE:
 		var disconnect *pb.Disconnect
-		err := proto.Unmarshal(action.Payload, disconnect)
+		err := json.Unmarshal(action.Payload, disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal move")
 		}
 
 		g.disconnectsQueued[playerId] = disconnect
-	case pb.ActionType_ACTION_ATTACK:
+	case pb.ClientActionType_ACTION_ATTACK:
 		var attack *pb.Attack
-		err := proto.Unmarshal(action.Payload, attack)
+		err := json.Unmarshal(action.Payload, attack)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal attack")
 		}

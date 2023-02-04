@@ -11,5 +11,5 @@ type MessageBroadcaster interface {
 type MessageReceiver interface {
 	OnPlayerConnected(playerId uint64) error
 	OnPlayerDisconnected(playerId uint64)
-	OnActionReceived(playerId uint64, action *pb.Action)
+	OnActionReceived(playerId uint64, action *pb.ClientAction)
 }

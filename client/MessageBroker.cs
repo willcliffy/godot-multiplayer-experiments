@@ -1,8 +1,9 @@
 using Godot;
 using System;
 using System.IO;
+using System.Text;
+using System.Text.Json;
 using Game;
-using Google.Protobuf;
 
 public class MessageBroker : Node
 {
@@ -37,8 +38,8 @@ public class MessageBroker : Node
 
     public override void _Process(float delta)
     {
-       if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected ||
-           client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connecting)
+        if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected ||
+            client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connecting)
         {
             client.Poll();
         }
@@ -47,24 +48,41 @@ public class MessageBroker : Node
     public void OnConnectionEstablished(string protocol)
     {
 
-        Game.Action msg = new Game.Action();
-        msg.Type = ActionType.ActionConnect;
-        MemoryStream stream = new MemoryStream();
-        msg.WriteTo(stream);
-        Error error = client.GetPeer(1).PutPacket(stream.ToArray());
+        var msg = new Game.ClientAction();
+        msg.Type = ClientActionType.ActionConnect;
+        var msgBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(msg));
+        Error error = client.GetPeer(1).PutPacket(msgBytes);
         if (error != Error.Ok)
         {
-            GD.Print("Failed to establish connection: " + error);
+            GD.Print($"Failed to establish connection: {error}");
             return;
         }
-        GD.Print($"Connection established with proto {protocol}");
+        GD.Print("Connection established");
     }
 
     public void OnDataRecived()
     {
-        // Example only: Handle reciving text from server.
+        GD.Print("data received");
         var packet = client.GetPeer(1).GetPacket();
-        GD.Print(packet);
+        var action = JsonSerializer.Deserialize<Game.ServerMessage>(packet);
+        switch (action.Type)
+        {
+            case Game.ServerMessageType.MessagePing:
+                // TODO
+                GD.Print("ping");
+                break;
+            case Game.ServerMessageType.MessageJoin:
+                var joinGameRes = JsonSerializer.Deserialize<Game.JoinGameResponse>(action.Payload.ToByteArray());
+                GD.Print(joinGameRes);
+                break;
+            case Game.ServerMessageType.MessageTick:
+                var tick = JsonSerializer.Deserialize<Game.GameTick>(action.Payload.ToByteArray());
+                GD.Print(tick);
+                break;
+            default:
+                GD.Print($"Unknown server message type: '{action.Type}'");
+                break;
+        }
     }
 
     public void OnServerCloseRequest(int code, string reason)
@@ -79,6 +97,6 @@ public class MessageBroker : Node
 
     public void OnConnectionError()
     {
-        GD.Print("Connection error.");
+        GD.Print("Connection error");
     }
 }

@@ -15,7 +15,7 @@ message JoinGameResponse {
   repeated JoinGameResponse others = 4;
 }
 
-enum ActionType {
+enum ClientActionType {
   ACTION_PING = 0;
   ACTION_CONNECT = 1;
   ACTION_DISCONNECT = 2;
@@ -23,8 +23,8 @@ enum ActionType {
   ACTION_ATTACK = 4;
 }
 
-message Action {
-  ActionType type = 1;
+message ClientAction {
+  ClientActionType type = 1;
   bytes payload = 2;
 }
 
@@ -44,6 +44,17 @@ message Damage {
   uint64 sourcePlayerId = 1;
   uint64 targetPlayerId = 2;
   int32 damageDealt = 3;
+}
+
+enum ServerMessageType {
+  MESSAGE_PING = 0;
+  MESSAGE_JOIN = 1;
+  MESSAGE_TICK = 2;
+}
+
+message ServerMessage {
+  ServerMessageType type = 1;
+  bytes payload = 2;
 }
 
 message GameTick {
