@@ -59,7 +59,16 @@ message ServerMessage {
 
 message GameTick {
   uint32 tick = 1;
+  repeated Connect connects = 2;
   repeated Disconnect disconnects = 3;
   repeated Move moves = 4;
   repeated Attack attacks = 5;
+}
+
+message JoinGameResponse
+{
+  uint64 playerId = 1;
+  string color = 2;
+  Location spawn = 3;
+  repeated Connect others = 4;
 }

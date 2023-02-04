@@ -4,9 +4,6 @@ onready var available = [$"1", $"2", $"3", $"4", $"5", $"6", $"7"]
 
 var opponentDict = {}
 
-func has(id):
-	return opponentDict.has(id)
-
 func get(id):
 	if not opponentDict.has(id): return
 	return opponentDict[id]

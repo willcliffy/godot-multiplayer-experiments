@@ -93,6 +93,7 @@ shadow_filter=3
 
 [rendering]
 
+quality/driver/driver_name="GLES2"
 quality/driver/fallback_to_gles2=true
 vram_compression/import_etc=true
 quality/shadows/filter_mode=2
