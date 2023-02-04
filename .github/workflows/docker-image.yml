@@ -50,6 +50,10 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Fix Ubuntu Env
+      run: |
+        echo "LD_PRELOAD=/lib/x86_64-linux-gnu/libgcc_s.so.1" >> $GITHUB_ENV
+      if: runner.os == 'Linux'
     - name: Build and Push Docker Image
       if: success()
       run: |
