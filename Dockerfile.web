@@ -9,7 +9,8 @@ COPY client/ .
 ENV GODOT_VERSION "3.5.1"
 
 # Updates and installs
-RUN apk update && apk add --no-cache bash wget git
+RUN apk update && apk add --no-cache gcc g++ make git gnutls gnutls-dev gnutls-c++ \
+       pkgconfig perl perl-net-ssleay perl-io-socket-ssl perl-libwww wget
 
 # Godot and export template directories
 RUN mkdir ~/.cache
