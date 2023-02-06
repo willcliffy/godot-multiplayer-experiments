@@ -48,8 +48,10 @@ func main() {
 		_, _ = w.Write([]byte("alive\n"))
 	})
 
-	router.Get("/game/", GetServeStaticFile("index.html"))
-	router.Get("/game/{filename}", GetServeStaticFiles)
+	router.Route("/game", func(r chi.Router) {
+		r.Get("/", GetServeStaticFile("index.html"))
+		r.Get("/game/{filename}", GetServeStaticFiles)
+	})
 
 	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
 		c, err := wsUpgrader.Upgrade(w, r, nil)

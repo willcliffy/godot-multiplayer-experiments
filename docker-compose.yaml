@@ -3,7 +3,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: Dockerfile
     command: CompileDaemon -log-prefix=false -build="go build -o /dist/app /app/main.go" -command="/dist/app"
     ports:
       - 3000:3000
