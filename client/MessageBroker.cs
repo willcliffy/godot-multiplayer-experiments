@@ -8,7 +8,7 @@ public class MessageBroker : Node
     // onready var opponentController = $OpponentController
 
     [Export]
-    string webSocketURL = System.Environment.GetEnvironmentVariable("WEBSOCKET_URL") ?? "ws://localhost:8080/ws/v1/connect";
+    string webSocketURL = "ws://kilnwood-game.com/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
