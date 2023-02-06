@@ -48,6 +48,9 @@ func main() {
 		_, _ = w.Write([]byte("alive\n"))
 	})
 
+	router.Get("/game/", GetServeStaticFile("index.html"))
+	router.Get("/game/{filename}", GetServeStaticFiles)
+
 	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
 		c, err := wsUpgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -75,4 +78,15 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal().Err(err).Msgf("error in ListenAndServe")
 	}
+}
+
+func GetServeStaticFile(filename string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "dist/"+filename)
+	}
+}
+
+func GetServeStaticFiles(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "filename")
+	http.ServeFile(w, r, "dist/"+filename)
 }

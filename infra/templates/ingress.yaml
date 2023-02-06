@@ -14,10 +14,3 @@ spec:
             name: {{ .Values.gameserver.name }}
             port:
               number: 80
-      - path: /game
-        pathType: Prefix
-        backend:
-          service:
-            name: {{ .Values.client.name }}
-            port:
-              number: 80

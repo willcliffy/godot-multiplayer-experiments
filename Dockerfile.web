@@ -22,7 +22,7 @@ FROM golang:1.19-alpine AS server-builder
 
 RUN mkdir -p /app
 WORKDIR /app
-COPY webclient/ .
+COPY server/ .
 
 RUN COOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/dist/app /app/main.go
 
