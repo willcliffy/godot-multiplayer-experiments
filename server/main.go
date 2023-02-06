@@ -55,25 +55,22 @@ func main() {
 func ConfigureRouter(mb *broadcast.MessageBroker) http.Handler {
 	router := chi.NewRouter()
 
-	// Router helpers
-	HealthHandler := func(w http.ResponseWriter, r *http.Request) {
+	// Health checks
+	router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("alive\n"))
-	}
-	GetServeStaticFile := func(filename string) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "dist/"+filename)
-		}
-	}
-
-	// Health checks
-	router.Get("/healthz", HealthHandler)
+	})
 
 	// Web client
 	if WEBCLIENT_ENABLED {
-		router.Get("/", GetServeStaticFile("index.html"))
+		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			log.Debug().Msgf("serving index")
+			http.ServeFile(w, r, "dist/index.html")
+		})
 		router.Get("/{file}", func(w http.ResponseWriter, r *http.Request) {
-			GetServeStaticFile(chi.URLParam(r, "file"))
+			f := chi.URLParam(r, "file")
+			log.Debug().Msgf("serving: " + f)
+			http.ServeFile(w, r, "dist/"+f)
 		})
 	}
 
@@ -81,14 +78,16 @@ func ConfigureRouter(mb *broadcast.MessageBroker) http.Handler {
 	wsUpgrader := websocket.Upgrader{}
 	wsUpgrader.CheckOrigin = func(r *http.Request) bool { return true } // TODO - security risk
 	router.Route("/ws", func(r chi.Router) {
-		r.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
-			c, err := wsUpgrader.Upgrade(w, r, nil)
-			if err != nil {
-				log.Error().Err(err).Send()
-				return
-			}
+		r.Route("/v1", func(r chi.Router) {
+			r.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
+				c, err := wsUpgrader.Upgrade(w, r, nil)
+				if err != nil {
+					log.Error().Err(err).Send()
+					return
+				}
 
-			mb.RegisterAndHandleWebsocketConnection(c)
+				mb.RegisterAndHandleWebsocketConnection(c)
+			})
 		})
 	})
 
