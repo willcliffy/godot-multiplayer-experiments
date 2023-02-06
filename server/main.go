@@ -31,37 +31,6 @@ func main() {
 	messageBroker := broadcast.NewMessageBroker()
 	defer messageBroker.Close()
 
-	wsUpgrader := websocket.Upgrader{}
-
-	// TODO - This is a security risk and should be patched before prod
-	wsUpgrader.CheckOrigin = func(r *http.Request) bool { return true }
-
-	router := chi.NewRouter()
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("alive\n"))
-	})
-
-	router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("alive\n"))
-	})
-
-	router.Route("/game", func(r chi.Router) {
-		r.Get("/", GetServeStaticFile("index.html"))
-		r.Get("/game/{filename}", GetServeStaticFiles)
-	})
-
-	router.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
-		c, err := wsUpgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Error().Err(err).Send()
-			return
-		}
-		messageBroker.RegisterAndHandleWebsocketConnection(c)
-	})
-
 	// TODO - support for mulitple games
 	gameIdGenerator := sonyflake.NewSonyflake(sonyflake.Settings{})
 	gameId, _ := gameIdGenerator.NextID()
@@ -73,7 +42,7 @@ func main() {
 
 	server := http.Server{
 		Addr:    ":" + PORT,
-		Handler: router,
+		Handler: ConfigureRouter(messageBroker),
 	}
 
 	log.Info().Msgf("Listening on port: %s", PORT)
@@ -82,13 +51,47 @@ func main() {
 	}
 }
 
-func GetServeStaticFile(filename string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "dist/"+filename)
-	}
-}
+func ConfigureRouter(mb *broadcast.MessageBroker) http.Handler {
+	router := chi.NewRouter()
 
-func GetServeStaticFiles(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "filename")
-	http.ServeFile(w, r, "dist/"+filename)
+	// Router helpers
+	HealthHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("alive\n"))
+	}
+	GetServeStaticFile := func(filename string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, "dist/"+filename)
+		}
+	}
+
+	// Health checks
+	router.Get("/", HealthHandler)
+	router.Get("/healthz", HealthHandler)
+
+	// Web client
+	router.Route("/game", func(r chi.Router) {
+		r.Get("/", GetServeStaticFile("index.html"))
+		r.Get("/{filename}", func(w http.ResponseWriter, r *http.Request) {
+			filename := chi.URLParam(r, "filename")
+			GetServeStaticFile(filename)
+		})
+	})
+
+	// Game server - websockets
+	wsUpgrader := websocket.Upgrader{}
+	wsUpgrader.CheckOrigin = func(r *http.Request) bool { return true } // TODO - security risk
+	router.Route("/ws", func(r chi.Router) {
+		r.Get("/connect", func(w http.ResponseWriter, r *http.Request) {
+			c, err := wsUpgrader.Upgrade(w, r, nil)
+			if err != nil {
+				log.Error().Err(err).Send()
+				return
+			}
+
+			mb.RegisterAndHandleWebsocketConnection(c)
+		})
+	})
+
+	return router
 }
