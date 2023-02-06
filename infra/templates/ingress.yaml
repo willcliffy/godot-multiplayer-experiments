@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.gameserver.name }}
 spec:
   rules:
-  - host: kilnwood-game.com
+  - host: {{ .Values.gameserver.host }}
     http:
       paths:
       - path: /

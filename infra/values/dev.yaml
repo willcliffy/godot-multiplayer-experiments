@@ -1,17 +1,11 @@
 name: kilnwood
-client:
-  enabled: true
-  name: kilnwood-client
-  host:
-  deploy:
-    replicas: 1
-    image: willcliffy/kilnwood-client
-    tag: dev
 gameserver:
   enabled: true
   name: kilnwood-gameserver
-  host:
+  host: kilnwood-game.com
   deploy:
     replicas: 1
     image: willcliffy/kilnwood
     tag: dev
+  env:
+    websocket_url: http://kilnwood-game.com/ws/v1/connect

@@ -47,6 +47,9 @@ spec:
         ports:
         - containerPort: 8080
           protocol: TCP
+        env:
+          - name: WEBSOCKET_URL
+            value: {{ .Values.gameserver.env.websocket_url }}
         livenessProbe:
           httpGet:
             path: /healthz
