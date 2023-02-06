@@ -1,43 +1,22 @@
-## WARNING - takes a long time to build and run. Only run with `docker compose`
+FROM willcliffy/kilnwood-webclient-builder:v0.0.0 as client-builder
 
-FROM alpine:3.17 as client-builder
+WORKDIR /client/_engine
+
+ENV GODOT_VERSION "3.5.1"
+
+RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
+RUN mkdir -p ~/.local/share/godot/templates/3.5.1.stable.mono
+RUN mv templates/* ~/.local/share/godot/templates/${GODOT_VERSION}.stable.mono
+
+RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64.zip
+RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/GodotSharp /usr/local/bin/
+RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/Godot_v${GODOT_VERSION}-stable_mono_linux_headless.64 /usr/local/bin/godot
 
 WORKDIR /client
 COPY client/ .
 
-# Variables
-ENV GODOT_VERSION "3.5.1"
-
-# Updates and installs
-RUN apk update && apk add --no-cache gcc g++ make git gnutls gnutls-dev gnutls-c++ \
-       pkgconfig perl perl-net-ssleay perl-io-socket-ssl perl-libwww wget
-
-# Godot and export template directories
-RUN mkdir ~/.cache
-RUN mkdir -p ~/.config/godot
-RUN mkdir -p ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-
-# Required to run Godot
-RUN wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk
-RUN apk add --allow-untrusted --force-overwrite glibc-2.31-r0.apk
-
-WORKDIR /client/_engine
-
-RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64.zip
-RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
-
-RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
-RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64.zip
-
-RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/GodotSharp /usr/local/bin/
-RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/Godot_v${GODOT_VERSION}-stable_mono_linux_headless.64 /usr/local/bin/godot
-RUN mv templates/* ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-
-WORKDIR /client
-
 RUN mkdir -p dist
 RUN godot --path . --export "HTML5" dist/index.html
-
 
 FROM golang:1.19-alpine AS server-builder
 
