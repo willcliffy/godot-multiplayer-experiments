@@ -8,14 +8,11 @@ public class MessageBroker : Node
     // onready var opponentController = $OpponentController
 
     [Export]
-    string webSocketURL = Environment.GetEnvironmentVariable("WEBSOCKET_URL") 
-        ?? "ws://localhost:8080/ws/v1/connect";
+    string webSocketURL = System.Environment.GetEnvironmentVariable("WEBSOCKET_URL") ?? "ws://localhost:8080/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
     OpponentController opponents;
-
-    ulong localPlayerId;
 
     #region GODOT
     public override void _Ready()
