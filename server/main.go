@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	PORT = "8080"
+	PORT              string = "8080"
+	WEBCLIENT_ENABLED bool   = true
 )
 
 func main() {
@@ -66,17 +67,15 @@ func ConfigureRouter(mb *broadcast.MessageBroker) http.Handler {
 	}
 
 	// Health checks
-	router.Get("/", HealthHandler)
 	router.Get("/healthz", HealthHandler)
 
 	// Web client
-	router.Route("/game", func(r chi.Router) {
-		r.Get("/", GetServeStaticFile("index.html"))
-		r.Get("/{filename}", func(w http.ResponseWriter, r *http.Request) {
-			filename := chi.URLParam(r, "filename")
-			GetServeStaticFile(filename)
+	if WEBCLIENT_ENABLED {
+		router.Get("/", GetServeStaticFile("index.html"))
+		router.Get("/{file}", func(w http.ResponseWriter, r *http.Request) {
+			GetServeStaticFile(chi.URLParam(r, "file"))
 		})
-	})
+	}
 
 	// Game server - websockets
 	wsUpgrader := websocket.Upgrader{}
