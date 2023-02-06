@@ -37,4 +37,4 @@ COPY --from=server-builder /app/dist/app /app/app
 COPY --from=client-builder /client/dist/ /app/dist/
 
 EXPOSE 8080
-CMD app
+CMD /app/app
