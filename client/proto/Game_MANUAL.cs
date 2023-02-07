@@ -1,9 +1,15 @@
+using Godot;
+
 namespace Game
 {
     public class Location
     {
         public uint x { get; set; }
         public uint z { get; set; }
+
+        public Vector3 ToVector3() {
+            return new Vector3(this.x, 0, this.z);
+        }
     }
 
     public enum ClientActionType
@@ -42,7 +48,9 @@ namespace Game
     public class Attack
     {
         public ulong sourcePlayerId { get; set; }
+        public Location sourcePlayerLocation { get; set; }
         public ulong targetPlayerId { get; set; }
+        public Location targetPlayerLocation { get; set; }
     }
 
     public class Damage

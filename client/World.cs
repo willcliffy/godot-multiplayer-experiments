@@ -3,7 +3,6 @@ using Game;
 
 public class World : Spatial
 {
-
     const int RAY_TRACE_DISTANCE = 500;
 
     MessageBroker mb;
@@ -38,13 +37,13 @@ public class World : Spatial
             z = (uint)Mathf.RoundToInt(targetVec3.z),
         };
 
-        // # TODO - I don't like this, but it's really simple
-        // var attacking = false
-        // if res.collider.has_method("get_id"):
-        //     attacking = true
-        //     player.set_attacking(pos)
-        //     messageBroker.playerRequestedAttack(res.collider.get_id()) # TODO - send pos to server for additional validation
-        // if not attacking:
-        mb.PlayerRequestedMove(targetLocation);
+        var targetPlayer = result["collider"] as Player;
+        if (targetPlayer != null)
+        {
+            this.mb.PlayerRequestedAttack(targetPlayer.id);
+            return;
+        }
+
+        this.mb.PlayerRequestedMove(targetLocation);
     }
 }

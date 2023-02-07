@@ -1,10 +1,11 @@
+using Game;
 using Godot;
 
 public class Player : KinematicBody
 {
     const int SPEED = 3;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
-    const float ATTACK_RANGE = 2 + ACCEPTABLE_DIST_TO_TARGET_RANGE;
+    const float ATTACK_RANGE = 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
 
     public ulong id { get; set; }
 
@@ -18,18 +19,16 @@ public class Player : KinematicBody
     private AnimationNodeStateMachinePlayback animations;
     private Target target;
 
-    // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
         this.model = GetNode<Spatial>("Robot");
         this.nav = GetNode<NavigationAgent>("NavigationAgent");
+
         var animationNode = GetNode<AnimationTree>("AnimationTree");
         this.animations = (AnimationNodeStateMachinePlayback)animationNode.Get("parameters/playback");
-
-        if (Visible) // TODO - hacky way to check if you are the local player
-        {
-            this.target = GetNode<Target>("../Target");
-        }
+ 
+        // TODO - hacky way to check if this is the local player
+        if (Visible) this.target = GetNode<Target>("../Target");
     }
 
     public override void _PhysicsProcess(float delta)
@@ -37,9 +36,12 @@ public class Player : KinematicBody
         if (Input.IsActionJustPressed("exit")) GetTree().Quit();
         if (!this.moving) return;
 
-        var distToTarget = (this.targetLocation - Translation).Length();
+        var distToTarget = (this.targetLocation - this.Translation).Length();
         if (attacking && distToTarget < ATTACK_RANGE)
         {
+            GD.Print(this.targetLocation);
+            GD.Print(this.Translation);
+            GD.Print($"reached target, attacking with dist {distToTarget}");
             this.setAttackingTargetReached();
             return;
         }
@@ -54,6 +56,7 @@ public class Player : KinematicBody
         if (next == null)
         {
             this.setIdle();
+            return;
         }
 
         var direction = (next - Translation).Normalized();
@@ -79,37 +82,24 @@ public class Player : KinematicBody
         this.targetLocation = target;
         this.nav.SetTargetLocation(target);
         this.animations.Travel("walk");
-
-        if (this.target != null)
-        {
-            this.target.SetLocation(target);
-        }
+        this.target?.SetLocation(target);
     }
 
     public void SetAttacking(Vector3 target)
     {
         this.moving = true;
         this.attacking = true;
-        this.target.SetLocation(target);
         this.nav.SetTargetLocation(target);
         this.animations.Travel("walk");
-
-        if (this.target != null)
-        {
-            this.target.SetLocation(target);
-        }
+        this.target?.SetLocation(target, attacking=true);
     }
 
     private void setAttackingTargetReached()
     {
         this.moving = false;
         this.attacking = true;
-        this.animations.Travel("attack");
-
-        if (this.target != null)
-        {
-            this.target.OnArrived();
-        }
+        this.animations.Travel("punch");
+        this.target?.OnArrived();
     }
 
     private void setIdle()
@@ -117,10 +107,14 @@ public class Player : KinematicBody
         this.moving = false;
         this.attacking = false;
         this.animations.Travel("idle");
+        this.target?.OnArrived();
+    }
 
-        if (this.target != null)
+    public Location CurrentLocation() {
+        return new Location()
         {
-            this.target.OnArrived();
-        }
+            x = (uint)Mathf.RoundToInt(this.Translation.x),
+            z = (uint)Mathf.RoundToInt(this.Translation.z),
+        };
     }
 }

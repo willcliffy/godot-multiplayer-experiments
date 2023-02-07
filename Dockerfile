@@ -34,7 +34,7 @@ RUN mkdir -p /app
 WORKDIR /app
 
 COPY --from=server-builder /app/dist/app /app/app
-COPY --from=client-builder /client/dist/ /app/dist/
+COPY --from=client-builder /client/dist /app/dist
 
 EXPOSE 8080
 CMD /app/app

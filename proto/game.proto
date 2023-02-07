@@ -37,7 +37,9 @@ message Move {
 
 message Attack {
   uint64 sourcePlayerId = 1;
-  uint64 targetPlayerId = 2;
+  Location sourcePlayerLocation = 2;
+  uint64 targetPlayerId = 3;
+  Location targetPlayerLocation = 4;
 }
 
 message Damage {

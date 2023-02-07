@@ -8,7 +8,8 @@ public class MessageBroker : Node
     // onready var opponentController = $OpponentController
 
     [Export]
-    string webSocketURL = "ws://kilnwood-game.com/ws/v1/connect";
+    //string webSocketURL = "ws://kilnwood-game.com/ws/v1/connect";
+    string webSocketURL = "ws://localhost:8080/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
@@ -159,19 +160,11 @@ public class MessageBroker : Node
     {
         if (move.playerId == player.id)
         {
-            player.SetMoving(new Vector3
-            {
-                x = move.target.x,
-                z = move.target.z,
-            });
+            player.SetMoving(move.target.ToVector3());
             return;
         }
 
-        opponents.SetMoving(move.playerId, new Vector3
-        {
-            x = move.target.x,
-            z = move.target.z,
-        });
+        opponents.SetMoving(move.playerId, move.target.ToVector3());
     }
 
     private void onDisconnectEventReceived(Disconnect disconnect)
@@ -183,13 +176,20 @@ public class MessageBroker : Node
             return;
         }
 
-        opponents.OnPlayerDisconnected(disconnect.playerId);
+        this.opponents.OnPlayerDisconnected(disconnect.playerId);
     }
 
     private void onAttackEventReceived(Attack attack)
     {
-        // TODO - get target player location? What if they move? players should follow their target if they are attacking.
-        //player.SetAttacking(...);
+        if (attack.sourcePlayerId == player.id)
+        {
+            GD.Print(attack.sourcePlayerLocation.ToVector3());
+            GD.Print(attack.targetPlayerLocation.ToVector3());
+            this.player.SetAttacking(attack.targetPlayerLocation.ToVector3());
+            return;
+        }
+
+        this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerLocation.ToVector3());
     }
     #endregion
 
@@ -222,7 +222,9 @@ public class MessageBroker : Node
             payload = JsonSerializer.Serialize(new Attack()
             {
                 sourcePlayerId = player.id,
+                sourcePlayerLocation = player.CurrentLocation(),
                 targetPlayerId = target,
+                targetPlayerLocation = opponents.CurrentLocation(target),
             })
         };
         var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);

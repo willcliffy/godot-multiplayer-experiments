@@ -54,9 +54,19 @@ public class OpponentController : Node
         available.Enqueue(p);
     }
 
+    public Location CurrentLocation(ulong id) {
+        if (!inUse.TryGetValue(id, out var p)) return null;
+        return p.CurrentLocation();
+    }
+
     public void SetMoving(ulong id, Vector3 target)
     {
         if (!inUse.TryGetValue(id, out var p)) return;
         p.SetMoving(target);
+    }
+
+    public void SetAttacking(ulong id, Vector3 target) {
+        if (!inUse.TryGetValue(id, out var p)) return;
+        p.SetAttacking(target);
     }
 }

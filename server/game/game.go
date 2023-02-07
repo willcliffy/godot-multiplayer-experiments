@@ -72,6 +72,8 @@ func (g *Game) run() {
 				continue
 			}
 
+			log.Debug().Msgf("tick: %+v", tickResult)
+
 			g.broadcaster.OnGameTick(g.id, tickResult)
 		}
 	}
@@ -105,7 +107,6 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 			continue
 		}
 
-		log.Debug().Msgf("appending player %v since it does not match %v", pId, playerId)
 		playerList = append(playerList, &pb.Connect{
 			PlayerId: pId,
 			Color:    p.Color,
@@ -203,6 +204,19 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, attack := range g.attacksQueued {
+		if !g.gameMap.InRangeToAttack(attack) {
+			// TODO maybe one day we refuse the request and `continue`. for now, correct the client
+			source := g.gameMap.players[attack.SourcePlayerId].Location
+			target := g.gameMap.players[attack.TargetPlayerId].Location
+			log.Warn().
+				Msgf("Corrected client attack. Source from '%v' to '%v', target from '%v' to '%v'",
+					attack.SourcePlayerLocation, source,
+					attack.TargetPlayerLocation, target)
+			attack.SourcePlayerLocation = source
+			attack.TargetPlayerLocation = target
+
+		}
+
 		_, err := g.gameMap.ApplyAttack(attack)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
@@ -217,6 +231,10 @@ func (g *Game) processQueue() *pb.GameTick {
 	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
+
+	if len(connectsProcessed)+len(disconnectsProcessed)+len(movementsProcessed)+len(attacksProcessed) == 0 {
+		return nil
+	}
 
 	return &pb.GameTick{
 		Tick:        g.tick,

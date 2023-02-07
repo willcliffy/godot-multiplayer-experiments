@@ -79,6 +79,10 @@ func (m *GameMap) ApplyMovement(movement *pb.Move) error {
 	return nil
 }
 
+func (m *GameMap) InRangeToAttack(attack *pb.Attack) bool {
+	return false
+}
+
 func (m *GameMap) ApplyAttack(attack *pb.Attack) (int, error) {
 	target, ok := m.players[attack.TargetPlayerId]
 	if !ok {
