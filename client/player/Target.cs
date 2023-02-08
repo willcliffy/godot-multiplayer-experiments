@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 public class Target : MeshInstance
 {
@@ -16,7 +15,7 @@ public class Target : MeshInstance
     {
         if (attacking)
         {
-            Translation = location + new Vector3(0, 2 / 3f, 0);
+            Translation = location + new Vector3(0, 5 / 3f, 0);
             var mat = (SpatialMaterial)Mesh.SurfaceGetMaterial(0).Duplicate();
             mat.AlbedoColor = new Color(1, 0, 0);
             SetSurfaceMaterial(0, mat);

@@ -6,7 +6,7 @@ using Game;
 public class MessageBroker : Node
 {
     [Export]
-    string webSocketURL = Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL");
+    string webSocketURL = System.Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL") ?? "ws://kilnwood-game.com/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
@@ -182,11 +182,11 @@ public class MessageBroker : Node
         {
             GD.Print(attack.sourcePlayerLocation.ToVector3());
             GD.Print(attack.targetPlayerLocation.ToVector3());
-            this.player.SetAttacking(attack.targetPlayerLocation.ToVector3());
+            this.player.SetAttacking(attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
             return;
         }
 
-        this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerLocation.ToVector3());
+        this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
     }
     #endregion
 
@@ -221,7 +221,7 @@ public class MessageBroker : Node
                 sourcePlayerId = player.id,
                 sourcePlayerLocation = player.CurrentLocation(),
                 targetPlayerId = targetPlayerId,
-                targetPlayerLocation = opponents.CurrentLocation(target),
+                targetPlayerLocation = opponents.CurrentLocation(targetPlayerId),
             })
         };
         var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);

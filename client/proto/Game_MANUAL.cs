@@ -7,7 +7,8 @@ namespace Game
         public uint x { get; set; }
         public uint z { get; set; }
 
-        public Vector3 ToVector3() {
+        public Vector3 ToVector3()
+        {
             return new Vector3(this.x, 0, this.z);
         }
     }
