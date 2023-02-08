@@ -89,6 +89,7 @@ public class Player : KinematicBody
     {
         this.moving = true;
         this.attacking = true;
+        this.targetLocation = target;
         this.nav.SetTargetLocation(target);
         this.animations.Travel("walk");
         this.target?.SetLocation(target, attacking=true);

@@ -11,6 +11,8 @@ services:
       - ./server:/app
     networks:
       - backend
+    environment:
+      GAMESERVER_WEBSOCKET_URL: ws://kilnwood-game.com/ws/v1/connect
 
 networks:
   backend:

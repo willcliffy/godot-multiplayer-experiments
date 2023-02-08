@@ -1,15 +1,12 @@
 using Godot;
+using System;
 using System.Text.Json;
 using Game;
 
 public class MessageBroker : Node
 {
-    // onready var localPlayer = $Player
-    // onready var opponentController = $OpponentController
-
     [Export]
-    //string webSocketURL = "ws://kilnwood-game.com/ws/v1/connect";
-    string webSocketURL = "ws://localhost:8080/ws/v1/connect";
+    string webSocketURL = Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL") ?? "ws://localhost:8080/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
@@ -214,7 +211,7 @@ public class MessageBroker : Node
         }
     }
 
-    public void PlayerRequestedAttack(ulong target)
+    public void PlayerRequestedAttack(ulong targetPlayerId)
     {
         var msg = new ClientAction()
         {
@@ -223,7 +220,7 @@ public class MessageBroker : Node
             {
                 sourcePlayerId = player.id,
                 sourcePlayerLocation = player.CurrentLocation(),
-                targetPlayerId = target,
+                targetPlayerId = targetPlayerId,
                 targetPlayerLocation = opponents.CurrentLocation(target),
             })
         };
