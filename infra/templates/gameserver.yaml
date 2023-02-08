@@ -48,7 +48,7 @@ spec:
         - containerPort: 8080
           protocol: TCP
         env:
-          - name: WEBSOCKET_URL
+          - name: GAMESERVER_WEBSOCKET_URL
             value: {{ .Values.gameserver.env.websocket_url }}
         livenessProbe:
           httpGet:

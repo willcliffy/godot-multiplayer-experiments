@@ -6,7 +6,7 @@ using Game;
 public class MessageBroker : Node
 {
     [Export]
-    string webSocketURL = Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL") ?? "ws://localhost:8080/ws/v1/connect";
+    string webSocketURL = Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL");
 
     WebSocketClient client = null;
     Player player;
