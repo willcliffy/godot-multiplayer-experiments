@@ -17,17 +17,18 @@ RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/Godot_v${GODOT_VERS
 WORKDIR /client
 COPY client/ .
 
-RUN godot --path . --export "HTML5" dist/index.html
+RUN godot --path . --export "HTML5" /client/dist/index.html
 
 FROM golang:1.19-alpine AS server-builder
 
 WORKDIR /app
 
 COPY server/ .
+RUN mkdir -p /app/dist
 COPY --from=client-builder /client/dist /app/dist
 
 RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
-RUN COOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/dist/app /app/main.go
+RUN COOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/app /app/main.go
 
 EXPOSE 8080
 CMD /app/app

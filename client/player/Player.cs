@@ -116,6 +116,8 @@ public class Player : KinematicBody
         this.targetLocation = targetLocation;
         this.animations.Travel("walk");
         this.target?.SetLocation(targetLocation, attacking = true);
+        targetLocation.y = Translation.y;
+        this.model.LookAt(-targetLocation, Vector3.Up);
     }
 
     public bool IsAttacking(ulong? playerId)

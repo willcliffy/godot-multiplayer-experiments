@@ -7,8 +7,8 @@ services:
     command: CompileDaemon -log-prefix=false -build="go build -o /dist/app /app/main.go" -command="/dist/app"
     ports:
       - 8080:8080
-    volumes:
-      - ./server:/app
+    # volumes:
+    #   - ./server:/app # TODO - hot reload doesnt work rn
     networks:
       - backend
     environment:
