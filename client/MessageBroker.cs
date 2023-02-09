@@ -85,7 +85,6 @@ public class MessageBroker : Node
             case ServerMessageType.MESSAGE_JOIN:
                 var joinGameRes = JsonSerializer.Deserialize<JoinGameResponse>(action.payload);
                 this.onLocalPlayerJoinedGame(joinGameRes);
-                GD.Print(action.payload);
                 break;
             case ServerMessageType.MESSAGE_TICK:
                 var tick = JsonSerializer.Deserialize<GameTick>(action.payload);
@@ -129,6 +128,14 @@ public class MessageBroker : Node
             foreach (var attack in tick.attacks)
             {
                 this.onAttackEventReceived(attack);
+            }
+        }
+
+        if (tick.damages != null)
+        {
+            foreach (var damage in tick.damages)
+            {
+                this.onDamageEventReceived(damage);
             }
         }
     }
@@ -188,6 +195,17 @@ public class MessageBroker : Node
 
         this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
     }
+
+    private void onDamageEventReceived(Damage damage)
+    {
+        if (damage.targetPlayerId == player.id)
+        {
+            this.player.ApplyDamage(damage.amount);
+            return;
+        }
+
+        this.opponents.ApplyDamage(damage.targetPlayerId, damage.amount);
+    }
     #endregion
 
     #region CLIENT_TO_SERVER
@@ -222,6 +240,27 @@ public class MessageBroker : Node
                 sourcePlayerLocation = player.CurrentLocation(),
                 targetPlayerId = targetPlayerId,
                 targetPlayerLocation = opponents.CurrentLocation(targetPlayerId),
+            })
+        };
+        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
+        Error error = client.GetPeer(1).PutPacket(msgBytes);
+        if (error != Error.Ok)
+        {
+            GD.Print($"Failed to request move: {error}");
+            return;
+        }
+    }
+
+    public void PlayerRequestedDamage(ulong targetPlayerId)
+    {
+        var msg = new ClientAction()
+        {
+            type = (int)ClientActionType.ACTION_DAMAGE,
+            payload = JsonSerializer.Serialize(new Damage()
+            {
+                sourcePlayerId = player.id,
+                targetPlayerId = targetPlayerId,
+                amount = 1,
             })
         };
         var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);

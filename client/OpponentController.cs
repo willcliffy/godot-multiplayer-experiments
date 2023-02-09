@@ -37,8 +37,6 @@ public class OpponentController : Node
         }
 
         p.id = id;
-        GD.Print(p.Translation);
-        GD.Print(spawn);
         p.Translation = new Vector3(spawn.x, 0, spawn.z);
         p.SetTeam(color);
         p.Visible = true;
@@ -81,5 +79,11 @@ public class OpponentController : Node
                 kvp.Value.StopAttacking();
             }
         }
+    }
+
+    public void ApplyDamage(ulong playerId, int amount)
+    {
+        if (!inUse.TryGetValue(playerId, out var p)) return;
+        p.ApplyDamage(amount);
     }
 }
