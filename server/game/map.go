@@ -2,12 +2,15 @@ package game
 
 import (
 	"errors"
+	"math"
 	"math/rand"
 
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
 )
 
 const (
+	PLAYER_ATTACK_RANGE = 2
+
 	spawn_range_x = 10
 	spawn_range_z = 10
 )
@@ -31,29 +34,23 @@ func NewGameMap() *GameMap {
 	}
 }
 
-func (m *GameMap) AddPlayer(p *Player) error {
-	// if len(m.players) >= 2 {
-	// 	return errors.New("game is full")
-	// }
-
+func (m *GameMap) addPlayer(p *Player) {
 	for _, player := range m.players {
 		if player.Id == p.Id {
-			//return errors.New("player already in game")
-			return nil
+			return
 		}
 	}
 
 	m.players[p.Id] = p
-	return nil
 }
 
-func (m *GameMap) RemovePlayer(playerId uint64) error {
+func (m *GameMap) RemovePlayer(playerId uint64) {
 	delete(m.players, playerId)
-
-	return nil
 }
 
 func (m *GameMap) SpawnPlayer(p *Player) (*pb.Location, error) {
+	m.addPlayer(p)
+
 	x := uint32(rand.Intn(spawn_range_x)) + 1
 	z := uint32(rand.Intn(spawn_range_z)) + 1
 
@@ -79,17 +76,24 @@ func (m *GameMap) ApplyMovement(movement *pb.Move) error {
 	return nil
 }
 
-func (m *GameMap) InRangeToAttack(attack *pb.Attack) bool {
-	return false
+func DistanceBetweenLocations(loc1, loc2 *pb.Location) float64 {
+	return math.Sqrt(math.Pow(float64(loc2.X-loc1.X), 2) + math.Pow(float64(loc2.Z-loc1.Z), 2))
 }
 
-func (m *GameMap) ApplyAttack(attack *pb.Attack) (int, error) {
-	target, ok := m.players[attack.TargetPlayerId]
+func (m *GameMap) InRangeToAttack(damage *pb.Damage) bool {
+	dist := DistanceBetweenLocations(
+		m.players[damage.SourcePlayerId].Location,
+		m.players[damage.TargetPlayerId].Location)
+	return dist < PLAYER_ATTACK_RANGE
+}
+
+func (m *GameMap) ApplyDamage(damage *pb.Damage) (int, error) {
+	target, ok := m.players[damage.TargetPlayerId]
 	if !ok {
 		return 0, ErrPlayerNotInGame
 	}
 
-	source, ok := m.players[attack.SourcePlayerId]
+	source, ok := m.players[damage.SourcePlayerId]
 	if !ok {
 		return 0, ErrPlayerNotInGame
 	}

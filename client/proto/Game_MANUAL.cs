@@ -59,7 +59,7 @@ namespace Game
     {
         public ulong sourcePlayerId { get; set; }
         public ulong targetPlayerId { get; set; }
-        public int amount { get; set; }
+        public int damageDealt { get; set; }
     }
 
     public enum ServerMessageType
@@ -80,7 +80,6 @@ namespace Game
         public ulong playerId { get; set; }
         public string color { get; set; }
         public Location spawn { get; set; }
-
         public Connect[] others { get; set; }
     }
 
@@ -91,6 +90,6 @@ namespace Game
         public Disconnect[] disconnects { get; set; }
         public Move[] moves { get; set; }
         public Attack[] attacks { get; set; }
-        public Damage[] damages { get; set; }
+        public Damage[] damage { get; set; }
     }
 }

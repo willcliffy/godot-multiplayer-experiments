@@ -10,9 +10,11 @@ RUN mkdir ~/.cache
 RUN mkdir -p ~/.config/godot
 RUN mkdir -p ~/.local/share/godot/templates/${GODOT_VERSION}.stable
 
+RUN mkdir -p /client/dist
+
 WORKDIR /client/_engine
 
 RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64.zip
 RUN wget -q https://downloads.tuxfamily.org/godotengine/${GODOT_VERSION}/mono/Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
 
-ENTRYPOINT [ "sh" ]
+CMD [ "/bin/sh" ]

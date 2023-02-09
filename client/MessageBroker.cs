@@ -131,9 +131,9 @@ public class MessageBroker : Node
             }
         }
 
-        if (tick.damages != null)
+        if (tick.damage != null)
         {
-            foreach (var damage in tick.damages)
+            foreach (var damage in tick.damage)
             {
                 this.onDamageEventReceived(damage);
             }
@@ -200,11 +200,11 @@ public class MessageBroker : Node
     {
         if (damage.targetPlayerId == player.id)
         {
-            this.player.ApplyDamage(damage.amount);
+            this.player.ApplyDamage(damage.damageDealt);
             return;
         }
 
-        this.opponents.ApplyDamage(damage.targetPlayerId, damage.amount);
+        this.opponents.ApplyDamage(damage.targetPlayerId, damage.damageDealt);
     }
     #endregion
 
@@ -260,7 +260,7 @@ public class MessageBroker : Node
             {
                 sourcePlayerId = player.id,
                 targetPlayerId = targetPlayerId,
-                amount = 1,
+                damageDealt = 1,
             })
         };
         var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);

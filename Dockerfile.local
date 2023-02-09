@@ -17,7 +17,6 @@ RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/Godot_v${GODOT_VERS
 WORKDIR /client
 COPY client/ .
 
-RUN mkdir -p dist
 RUN godot --path . --export "HTML5" dist/index.html
 
 FROM golang:1.19-alpine AS server-builder
