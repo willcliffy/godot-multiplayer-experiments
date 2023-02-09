@@ -158,6 +158,7 @@ public class MessageBroker : Node
         if (move.playerId == player.id)
         {
             player.SetMoving(move.target.ToVector3());
+            opponents.StopAttacking(player.id);
             return;
         }
 
@@ -180,8 +181,6 @@ public class MessageBroker : Node
     {
         if (attack.sourcePlayerId == player.id)
         {
-            GD.Print(attack.sourcePlayerLocation.ToVector3());
-            GD.Print(attack.targetPlayerLocation.ToVector3());
             this.player.SetAttacking(attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
             return;
         }

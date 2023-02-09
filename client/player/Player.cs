@@ -5,7 +5,7 @@ public class Player : KinematicBody
 {
     const int SPEED = 3;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
-    const float ATTACK_RANGE = 1 + ACCEPTABLE_DIST_TO_TARGET_RANGE;
+    const float ATTACK_RANGE = 1 + 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
 
     public ulong id { get; set; }
 
@@ -90,13 +90,31 @@ public class Player : KinematicBody
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetLocation)
     {
+        var currentLocation = this.Translation;
+        this.nav.SetTargetLocation(targetLocation);
+        if (!this.nav.IsTargetReachable())
+        {
+            GD.Print($"FAILED TO SET ATTACKING! cannot reach {targetLocation} from {currentLocation}");
+            this.nav.SetTargetLocation(currentLocation);
+            return;
+        }
+
         this.moving = true;
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
         this.targetLocation = targetLocation;
-        this.nav.SetTargetLocation(targetLocation);
         this.animations.Travel("walk");
         this.target?.SetLocation(targetLocation, attacking = true);
+    }
+
+    public bool IsAttacking(ulong? playerId)
+    {
+        return this.attacking && playerId != null && playerId == this.targetPlayerId;
+    }
+
+    public void StopAttacking()
+    {
+        this.setIdle();
     }
 
     private void setAttackingTargetReached()
@@ -104,7 +122,7 @@ public class Player : KinematicBody
         this.moving = false;
         this.attacking = true;
         this.animations.Travel("punch");
-        //this.target?.OnArrived();
+        this.target?.OnArrived();
     }
 
     private void setIdle()
@@ -123,10 +141,5 @@ public class Player : KinematicBody
             x = (uint)Mathf.RoundToInt(this.Translation.x),
             z = (uint)Mathf.RoundToInt(this.Translation.z),
         };
-    }
-
-    public bool IsAttacking(ulong? playerId)
-    {
-        return this.attacking && playerId != null && playerId == this.targetPlayerId;
     }
 }

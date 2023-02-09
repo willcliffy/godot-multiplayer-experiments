@@ -71,4 +71,15 @@ public class OpponentController : Node
         if (!inUse.TryGetValue(sourcePlayerId, out var p)) return;
         p.SetAttacking(targetPlayerId, target);
     }
+
+    public void StopAttacking(ulong playerId)
+    {
+        foreach (var kvp in inUse)
+        {
+            if (kvp.Value.IsAttacking(playerId))
+            {
+                kvp.Value.StopAttacking();
+            }
+        }
+    }
 }
