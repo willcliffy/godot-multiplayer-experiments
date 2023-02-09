@@ -114,6 +114,7 @@ public class Player : KinematicBody
 
     public void StopAttacking()
     {
+        if (!attacking) return;
         this.setIdle();
     }
 

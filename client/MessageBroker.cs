@@ -163,6 +163,7 @@ public class MessageBroker : Node
         }
 
         opponents.SetMoving(move.playerId, move.target.ToVector3());
+        player.StopAttacking();
     }
 
     private void onDisconnectEventReceived(Disconnect disconnect)
