@@ -19,6 +19,7 @@ public class Player : KinematicBody
 
     private bool moving;
     private bool attacking;
+    private bool alive;
 
     private Target target;
     private Vector3 targetLocation;
@@ -33,6 +34,7 @@ public class Player : KinematicBody
         var animationNode = GetNode<AnimationTree>("AnimationTree");
         this.animations = (AnimationNodeStateMachinePlayback)animationNode.Get("parameters/playback");
 
+        this.alive = true;
         this.hp = MAX_HP;
         this.healthBar = GetNodeOrNull<MeshInstance>("HealthBar/Health");
 
@@ -90,6 +92,7 @@ public class Player : KinematicBody
 
     public void SetMoving(Vector3 target)
     {
+        if (!this.alive) return;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
@@ -101,6 +104,7 @@ public class Player : KinematicBody
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetLocation)
     {
+        if (!this.alive) return;
         var currentLocation = this.Translation;
         this.nav.SetTargetLocation(targetLocation);
         if (!this.nav.IsTargetReachable())
@@ -133,6 +137,7 @@ public class Player : KinematicBody
 
     private void setAttackingTargetReached()
     {
+        if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
         this.animations.Travel("punch");
@@ -146,6 +151,7 @@ public class Player : KinematicBody
 
     private void setIdle()
     {
+        if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
         this.targetPlayerId = null;
@@ -164,12 +170,25 @@ public class Player : KinematicBody
 
     public void ApplyDamage(int amount)
     {
+        if (!this.alive) return;
+        if (this.hp <= amount)
+        {
+            this.alive = false;
+            this.hp = 0;
+            if (this.healthBar != null)
+            {
+                this.healthBar.Visible = false;
+            }
+
+            this.animations.Travel("death");
+            // Play death animation. Restrict movement. Respawn soon?
+        }
         this.hp -= amount;
         if (this.healthBar != null)
         {
             GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
             ((CapsuleMesh)this.healthBar.Mesh).MidHeight = 1.0f * this.hp / MAX_HP;
-            this.healthBar.Translation -= new Vector3(1.0f * amount / MAX_HP, 0, 0);
+            this.healthBar.Translation -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
             GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
         }
     }

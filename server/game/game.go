@@ -247,6 +247,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
 	g.damageQueued = make(map[uint64]*pb.Damage)
+
 	tick := &pb.GameTick{
 		Tick:        g.tick,
 		Connects:    connectsProcessed,
