@@ -181,6 +181,15 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 	}
 }
 
+// TODO - this better
+func tickIsEmpty(tick *pb.GameTick) bool {
+	return len(tick.Connects) == 0 &&
+		len(tick.Disconnects) == 0 &&
+		len(tick.Moves) == 0 &&
+		len(tick.Attacks) == 0 &&
+		len(tick.Damage) == 0
+}
+
 func (g *Game) processQueue() *pb.GameTick {
 	var connectsProcessed []*pb.Connect
 	var disconnectsProcessed []*pb.Disconnect
@@ -238,8 +247,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
 	g.damageQueued = make(map[uint64]*pb.Damage)
-
-	return &pb.GameTick{
+	tick := &pb.GameTick{
 		Tick:        g.tick,
 		Connects:    connectsProcessed,
 		Disconnects: disconnectsProcessed,
@@ -247,4 +255,9 @@ func (g *Game) processQueue() *pb.GameTick {
 		Attacks:     attacksProcessed,
 		Damage:      damageProcessed,
 	}
+
+	if tickIsEmpty(tick) {
+		return nil
+	}
+	return tick
 }

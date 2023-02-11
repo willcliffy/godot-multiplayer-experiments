@@ -3,8 +3,7 @@ FROM willcliffy/kilnwood-webclient-builder:v0.0.0 as client-builder
 # init webclient builder
 WORKDIR /client/_engine
 
-ENV GODOT_VERSION "3.5.1"
-ENV GAMESERVER_WEBSOCKET_URL "ws://localhost:8080/ws/v1/connect" 
+ENV GODOT_VERSION="3.5.1"
 
 RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
 RUN mkdir -p ~/.local/share/godot/templates/3.5.1.stable.mono
@@ -21,6 +20,8 @@ COPY client/ .
 RUN godot --path . --export "HTML5" /client/dist/index.html
 
 FROM golang:1.19 AS server-builder
+
+ENV GAMESERVER_WEBSOCKET_URL="ws://localhost:8080/ws/v1/connect"
 
 WORKDIR /app
 

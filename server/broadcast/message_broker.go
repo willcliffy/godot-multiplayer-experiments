@@ -142,21 +142,8 @@ func (mb *MessageBroker) OnPlayerLeftGame(gameId, playerId uint64) {
 	delete(mb.playerConns, playerId)
 }
 
-// TODO - this better
-func tickIsEmpty(tick *pb.GameTick) bool {
-	return len(tick.Connects) == 0 &&
-		len(tick.Disconnects) == 0 &&
-		len(tick.Moves) == 0 &&
-		len(tick.Attacks) == 0 &&
-		len(tick.Damage) == 0
-}
-
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
-	if tickIsEmpty(tick) {
-		return
-	}
-
 	tickBytes, err := json.Marshal(tick)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal game tick: %v", tick)
