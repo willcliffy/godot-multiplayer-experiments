@@ -37,7 +37,7 @@ public class Player : KinematicBody
         this.healthBar = GetNodeOrNull<MeshInstance>("HealthBar/Health");
 
         // TODO - get health bar to change size when taking damage
-        this.ApplyDamage(10);
+        this.ApplyDamage(1);
 
         // TODO - hacky way to check if this is the local player
         if (Visible)
@@ -167,7 +167,10 @@ public class Player : KinematicBody
         this.hp -= amount;
         if (this.healthBar != null)
         {
-
+            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
+            ((CapsuleMesh)this.healthBar.Mesh).MidHeight = 1.0f * this.hp / MAX_HP;
+            this.healthBar.Translation -= new Vector3(1.0f * amount / MAX_HP, 0, 0);
+            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
         }
     }
 }

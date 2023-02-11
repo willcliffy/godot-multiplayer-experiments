@@ -1,5 +1,5 @@
 using Godot;
-using System;
+using System.Text;
 using System.Text.Json;
 using Game;
 
@@ -76,6 +76,7 @@ public class MessageBroker : Node
     private void onDataReceived()
     {
         var packet = client.GetPeer(1).GetPacket();
+        GD.Print(Encoding.UTF8.GetString(packet));
         var action = JsonSerializer.Deserialize<ServerMessage>(packet);
         switch ((ServerMessageType)action.type)
         {
@@ -133,6 +134,7 @@ public class MessageBroker : Node
 
         if (tick.damage != null)
         {
+            GD.Print("damage not none");
             foreach (var damage in tick.damage)
             {
                 this.onDamageEventReceived(damage);
@@ -198,6 +200,7 @@ public class MessageBroker : Node
 
     private void onDamageEventReceived(Damage damage)
     {
+        GD.Print("damage received");
         if (damage.targetPlayerId == player.id)
         {
             this.player.ApplyDamage(damage.damageDealt);

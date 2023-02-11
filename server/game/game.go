@@ -199,7 +199,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, move := range g.movementsQueued {
-		err := g.gameMap.ApplyMovement(move)
+		err := g.gameMap.ApplyMovement(move.PlayerId, move.Target)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -209,11 +209,18 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, attack := range g.attacksQueued {
+		// TODO - as far as the server is concerned, the attacking player just teleported to the target's exact location
+		err := g.gameMap.ApplyMovement(attack.TargetPlayerId, attack.TargetPlayerLocation)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
+			continue
+		}
+
 		attacksProcessed = append(attacksProcessed, attack)
 	}
 	for _, damage := range g.damageQueued {
 		if !g.gameMap.InRangeToAttack(damage) {
-			log.Warn().Msgf("Rejected client damage as they were out of range!")
+			log.Warn().Msgf("should have rejected client damage as attacker was out of range!")
 		}
 
 		_, err := g.gameMap.ApplyDamage(damage)
@@ -226,16 +233,11 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	// reset actionQueue for the next tick
-	// TODO - this is a lot of unne
 	g.connectsQueued = make(map[uint64]*pb.Connect)
 	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
 	g.damageQueued = make(map[uint64]*pb.Damage)
-
-	if len(connectsProcessed)+len(disconnectsProcessed)+len(movementsProcessed)+len(attacksProcessed)+len(damageProcessed) == 0 {
-		return nil
-	}
 
 	return &pb.GameTick{
 		Tick:        g.tick,

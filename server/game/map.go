@@ -65,13 +65,13 @@ func (m *GameMap) DespawnPlayer() error {
 	return errors.New("nyi")
 }
 
-func (m *GameMap) ApplyMovement(movement *pb.Move) error {
-	player, ok := m.players[movement.PlayerId]
+func (m *GameMap) ApplyMovement(playerId uint64, target *pb.Location) error {
+	player, ok := m.players[playerId]
 	if !ok {
 		return ErrPlayerNotInGame
 	}
 
-	player.Location = movement.Target
+	player.Location = target
 
 	return nil
 }

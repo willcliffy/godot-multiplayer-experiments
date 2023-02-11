@@ -395,13 +395,6 @@ func (x *Move) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *Move) GetTarget() *Location {
-	if x != nil {
-		return x.Target
-	}
-	return nil
-}
-
 type Attack struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
