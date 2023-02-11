@@ -3,18 +3,23 @@ using Godot;
 
 public class Player : KinematicBody
 {
+    const int MAX_HP = 20;
     const int SPEED = 3;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
     const float ATTACK_RANGE = 1 + 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
 
     public ulong id { get; set; }
+    public int hp { get; set; }
 
     private Spatial model;
     private NavigationAgent nav;
+    private MessageBroker mb;
     private AnimationNodeStateMachinePlayback animations;
+    private MeshInstance healthBar;
 
     private bool moving;
     private bool attacking;
+    private bool alive;
 
     private Target target;
     private Vector3 targetLocation;
@@ -29,8 +34,19 @@ public class Player : KinematicBody
         var animationNode = GetNode<AnimationTree>("AnimationTree");
         this.animations = (AnimationNodeStateMachinePlayback)animationNode.Get("parameters/playback");
 
+        this.alive = true;
+        this.hp = MAX_HP;
+        this.healthBar = GetNodeOrNull<MeshInstance>("HealthBar/Health");
+
+        // TODO - get health bar to change size when taking damage
+        this.ApplyDamage(1);
+
         // TODO - hacky way to check if this is the local player
-        if (Visible) this.target = GetNode<Target>("../Target");
+        if (Visible)
+        {
+            this.mb = GetParent<MessageBroker>();
+            this.target = mb.GetNode<Target>("Target");
+        }
     }
 
     public override void _PhysicsProcess(float delta)
@@ -41,9 +57,6 @@ public class Player : KinematicBody
         var distToTarget = (this.targetLocation - this.Translation).Length();
         if (attacking && distToTarget < ATTACK_RANGE)
         {
-            GD.Print(this.targetLocation);
-            GD.Print(this.Translation);
-            GD.Print($"reached target, attacking with dist {distToTarget}");
             this.setAttackingTargetReached();
             return;
         }
@@ -79,6 +92,7 @@ public class Player : KinematicBody
 
     public void SetMoving(Vector3 target)
     {
+        if (!this.alive) return;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
@@ -90,6 +104,7 @@ public class Player : KinematicBody
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetLocation)
     {
+        if (!this.alive) return;
         var currentLocation = this.Translation;
         this.nav.SetTargetLocation(targetLocation);
         if (!this.nav.IsTargetReachable())
@@ -105,6 +120,8 @@ public class Player : KinematicBody
         this.targetLocation = targetLocation;
         this.animations.Travel("walk");
         this.target?.SetLocation(targetLocation, attacking = true);
+        targetLocation.y = Translation.y;
+        this.model.LookAt(-targetLocation, Vector3.Up);
     }
 
     public bool IsAttacking(ulong? playerId)
@@ -120,14 +137,21 @@ public class Player : KinematicBody
 
     private void setAttackingTargetReached()
     {
+        if (!this.alive) return;
         this.moving = false;
-        this.attacking = true;
+        this.attacking = false;
         this.animations.Travel("punch");
         this.target?.OnArrived();
+
+        if (targetPlayerId.HasValue)
+        {
+            this.mb?.PlayerRequestedDamage(this.targetPlayerId.GetValueOrDefault());
+        }
     }
 
     private void setIdle()
     {
+        if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
         this.targetPlayerId = null;
@@ -142,5 +166,30 @@ public class Player : KinematicBody
             x = (uint)Mathf.RoundToInt(this.Translation.x),
             z = (uint)Mathf.RoundToInt(this.Translation.z),
         };
+    }
+
+    public void ApplyDamage(int amount)
+    {
+        if (!this.alive) return;
+        if (this.hp <= amount)
+        {
+            this.alive = false;
+            this.hp = 0;
+            if (this.healthBar != null)
+            {
+                this.healthBar.Visible = false;
+            }
+
+            this.animations.Travel("death");
+            // Play death animation. Restrict movement. Respawn soon?
+        }
+        this.hp -= amount;
+        if (this.healthBar != null)
+        {
+            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
+            ((CapsuleMesh)this.healthBar.Mesh).MidHeight = 1.0f * this.hp / MAX_HP;
+            this.healthBar.Translation -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
+            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
+        }
     }
 }

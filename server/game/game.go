@@ -28,6 +28,7 @@ type Game struct {
 	disconnectsQueued map[uint64]*pb.Disconnect
 	movementsQueued   map[uint64]*pb.Move
 	attacksQueued     map[uint64]*pb.Attack
+	damageQueued      map[uint64]*pb.Damage
 }
 
 func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
@@ -43,6 +44,7 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		disconnectsQueued: make(map[uint64]*pb.Disconnect),
 		movementsQueued:   make(map[uint64]*pb.Move),
 		attacksQueued:     make(map[uint64]*pb.Attack),
+		damageQueued:      make(map[uint64]*pb.Damage),
 	}
 }
 
@@ -88,13 +90,7 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		g.players[playerId] = p
 	}
 
-	err := g.gameMap.AddPlayer(p)
-	if err != nil {
-		delete(g.players, p.Id)
-		return err
-	}
-
-	_, err = g.gameMap.SpawnPlayer(p)
+	_, err := g.gameMap.SpawnPlayer(p)
 	if err != nil {
 		delete(g.players, p.Id)
 		return err
@@ -172,9 +168,26 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		}
 
 		g.attacksQueued[playerId] = &attack
+	case pb.ClientActionType_ACTION_DAMAGE:
+		var damage pb.Damage
+		err := json.Unmarshal([]byte(action.Payload), &damage)
+		if err != nil {
+			log.Warn().Err(err).Msgf("failed to unmarshal damage")
+		}
+
+		g.damageQueued[playerId] = &damage
 	default:
 		log.Error().Msgf("could not unmarshal unknown action type: %v", action.Type)
 	}
+}
+
+// TODO - this better
+func tickIsEmpty(tick *pb.GameTick) bool {
+	return len(tick.Connects) == 0 &&
+		len(tick.Disconnects) == 0 &&
+		len(tick.Moves) == 0 &&
+		len(tick.Attacks) == 0 &&
+		len(tick.Damage) == 0
 }
 
 func (g *Game) processQueue() *pb.GameTick {
@@ -182,6 +195,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	var disconnectsProcessed []*pb.Disconnect
 	var movementsProcessed []*pb.Move
 	var attacksProcessed []*pb.Attack
+	var damageProcessed []*pb.Damage
 
 	for _, connect := range g.connectsQueued {
 		log.Debug().Msgf("processed connect: %v", connect)
@@ -194,7 +208,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, move := range g.movementsQueued {
-		err := g.gameMap.ApplyMovement(move)
+		err := g.gameMap.ApplyMovement(move.PlayerId, move.Target)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -204,20 +218,8 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, attack := range g.attacksQueued {
-		if !g.gameMap.InRangeToAttack(attack) {
-			// TODO maybe one day we refuse the request and `continue`. for now, correct the client
-			source := g.gameMap.players[attack.SourcePlayerId].Location
-			target := g.gameMap.players[attack.TargetPlayerId].Location
-			log.Warn().
-				Msgf("Corrected client attack. Source from '%v' to '%v', target from '%v' to '%v'",
-					attack.SourcePlayerLocation, source,
-					attack.TargetPlayerLocation, target)
-			attack.SourcePlayerLocation = source
-			attack.TargetPlayerLocation = target
-
-		}
-
-		_, err := g.gameMap.ApplyAttack(attack)
+		// TODO - as far as the server is concerned, the attacking player just teleported to the target's exact location
+		err := g.gameMap.ApplyMovement(attack.TargetPlayerId, attack.TargetPlayerLocation)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -225,22 +227,38 @@ func (g *Game) processQueue() *pb.GameTick {
 
 		attacksProcessed = append(attacksProcessed, attack)
 	}
+	for _, damage := range g.damageQueued {
+		if !g.gameMap.InRangeToAttack(damage) {
+			log.Warn().Msgf("should have rejected client damage as attacker was out of range!")
+		}
+
+		_, err := g.gameMap.ApplyDamage(damage)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
+			continue
+		}
+
+		damageProcessed = append(damageProcessed, damage)
+	}
 
 	// reset actionQueue for the next tick
 	g.connectsQueued = make(map[uint64]*pb.Connect)
 	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
+	g.damageQueued = make(map[uint64]*pb.Damage)
 
-	if len(connectsProcessed)+len(disconnectsProcessed)+len(movementsProcessed)+len(attacksProcessed) == 0 {
-		return nil
-	}
-
-	return &pb.GameTick{
+	tick := &pb.GameTick{
 		Tick:        g.tick,
 		Connects:    connectsProcessed,
 		Disconnects: disconnectsProcessed,
 		Moves:       movementsProcessed,
 		Attacks:     attacksProcessed,
+		Damage:      damageProcessed,
 	}
+
+	if tickIsEmpty(tick) {
+		return nil
+	}
+	return tick
 }

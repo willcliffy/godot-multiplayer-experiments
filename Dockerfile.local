@@ -3,7 +3,7 @@ FROM willcliffy/kilnwood-webclient-builder:v0.0.0 as client-builder
 # init webclient builder
 WORKDIR /client/_engine
 
-ENV GODOT_VERSION "3.5.1"
+ENV GODOT_VERSION="3.5.1"
 
 RUN unzip -q Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz
 RUN mkdir -p ~/.local/share/godot/templates/3.5.1.stable.mono
@@ -17,18 +17,20 @@ RUN mv Godot_v${GODOT_VERSION}-stable_mono_linux_headless_64/Godot_v${GODOT_VERS
 WORKDIR /client
 COPY client/ .
 
-RUN mkdir -p dist
-RUN godot --path . --export "HTML5" dist/index.html
+RUN godot --path . --export "HTML5" /client/dist/index.html
 
-FROM golang:1.19-alpine AS server-builder
+FROM golang:1.19 AS server-builder
+
+ENV GAMESERVER_WEBSOCKET_URL="ws://localhost:8080/ws/v1/connect"
 
 WORKDIR /app
 
 COPY server/ .
+RUN mkdir -p /app/dist
 COPY --from=client-builder /client/dist /app/dist
 
 RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
-RUN COOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/dist/app /app/main.go
+RUN COOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/app /app/main.go
 
 EXPOSE 8080
 CMD /app/app

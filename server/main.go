@@ -64,12 +64,10 @@ func ConfigureRouter(mb *broadcast.MessageBroker) http.Handler {
 	// Web client
 	if WEBCLIENT_ENABLED {
 		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			log.Debug().Msgf("serving index")
 			http.ServeFile(w, r, "dist/index.html")
 		})
 		router.Get("/{file}", func(w http.ResponseWriter, r *http.Request) {
 			f := chi.URLParam(r, "file")
-			log.Debug().Msgf("serving: " + f)
 			http.ServeFile(w, r, "dist/"+f)
 		})
 	}

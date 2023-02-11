@@ -56,14 +56,6 @@ func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Co
 
 func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 	for {
-		// buf := make([]byte, 1024)
-		// n, err := conn.UnderlyingConn().Read(buf)
-		// if err != nil {
-		// 	log.Warn().Err(err).Msgf("failed to read message from client, disconnecting")
-		// 	return
-		// }
-		// log.Info().Msgf("n '%v', buf '%v'", n, string(buf[:n]))
-
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to read message from client, disconnecting")
@@ -150,20 +142,8 @@ func (mb *MessageBroker) OnPlayerLeftGame(gameId, playerId uint64) {
 	delete(mb.playerConns, playerId)
 }
 
-// TODO - this better
-func tickIsEmpty(tick *pb.GameTick) bool {
-	return len(tick.Connects) == 0 &&
-		len(tick.Disconnects) == 0 &&
-		len(tick.Moves) == 0 &&
-		len(tick.Attacks) == 0
-}
-
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
-	if tickIsEmpty(tick) {
-		return
-	}
-
 	tickBytes, err := json.Marshal(tick)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal game tick: %v", tick)

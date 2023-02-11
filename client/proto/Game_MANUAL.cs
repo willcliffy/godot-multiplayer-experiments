@@ -20,6 +20,7 @@ namespace Game
         ACTION_DISCONNECT = 2,
         ACTION_MOVE = 3,
         ACTION_ATTACK = 4,
+        ACTION_DAMAGE = 5,
     }
 
     public class ClientAction
@@ -58,6 +59,7 @@ namespace Game
     {
         public ulong sourcePlayerId { get; set; }
         public ulong targetPlayerId { get; set; }
+        public int damageDealt { get; set; }
     }
 
     public enum ServerMessageType
@@ -78,7 +80,6 @@ namespace Game
         public ulong playerId { get; set; }
         public string color { get; set; }
         public Location spawn { get; set; }
-
         public Connect[] others { get; set; }
     }
 
@@ -89,5 +90,6 @@ namespace Game
         public Disconnect[] disconnects { get; set; }
         public Move[] moves { get; set; }
         public Attack[] attacks { get; set; }
+        public Damage[] damage { get; set; }
     }
 }
