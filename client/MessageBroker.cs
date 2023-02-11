@@ -85,7 +85,6 @@ public class MessageBroker : Node
             case ServerMessageType.MESSAGE_JOIN:
                 var joinGameRes = JsonSerializer.Deserialize<JoinGameResponse>(action.payload);
                 this.onLocalPlayerJoinedGame(joinGameRes);
-                GD.Print(action.payload);
                 break;
             case ServerMessageType.MESSAGE_TICK:
                 var tick = JsonSerializer.Deserialize<GameTick>(action.payload);
@@ -104,7 +103,7 @@ public class MessageBroker : Node
             foreach (var connect in tick.connects)
             {
                 if (connect.playerId == player.id) continue;
-                this.onRemotePlayerJoinedGame(connect);
+                opponents.OnPlayerConnected(connect.playerId, connect.spawn, connect.color);
             }
         }
 
@@ -143,14 +142,9 @@ public class MessageBroker : Node
         {
             foreach (var other in msg.others)
             {
-                this.onRemotePlayerJoinedGame(other);
+                opponents.OnPlayerConnected(other.playerId, other.spawn, other.color);
             }
         }
-    }
-
-    private void onRemotePlayerJoinedGame(Connect msg)
-    {
-        opponents.OnPlayerConnected(msg.playerId, msg.spawn, msg.color);
     }
 
     private void onMoveEventReceived(Move move)
