@@ -148,7 +148,7 @@ func tickIsEmpty(tick *pb.GameTick) bool {
 		len(tick.Disconnects) == 0 &&
 		len(tick.Moves) == 0 &&
 		len(tick.Attacks) == 0 &&
-		len(tick.Disconnects) == 0
+		len(tick.Damage) == 0
 }
 
 // This satifies the MessageBroadcaster interface
