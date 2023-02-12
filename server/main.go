@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
@@ -18,6 +19,10 @@ const (
 	WEBCLIENT_ENABLED bool   = true
 )
 
+var (
+	GAMESERVER_WEBSOCKET_URL = os.Getenv("GAMESERVER_WEBSOCKET_URL")
+)
+
 func main() {
 	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -28,6 +33,8 @@ func main() {
 	log.Logger = log.With().
 		Caller().
 		Logger()
+
+	log.Info().Msgf("Configured ws url is: %s", GAMESERVER_WEBSOCKET_URL)
 
 	messageBroker := broadcast.NewMessageBroker()
 	defer messageBroker.Close()

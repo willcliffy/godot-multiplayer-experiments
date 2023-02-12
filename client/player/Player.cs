@@ -3,7 +3,7 @@ using Godot;
 
 public class Player : KinematicBody
 {
-    const int MAX_HP = 20;
+    const int MAX_HP = 10;
     const int SPEED = 3;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
     const float ATTACK_RANGE = 1 + 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
@@ -36,10 +36,7 @@ public class Player : KinematicBody
 
         this.alive = true;
         this.hp = MAX_HP;
-        this.healthBar = GetNodeOrNull<MeshInstance>("HealthBar/Health");
-
-        // TODO - get health bar to change size when taking damage
-        this.ApplyDamage(1);
+        this.healthBar = GetNode<MeshInstance>("HealthBar/Health");
 
         // TODO - hacky way to check if this is the local player
         if (Visible)
@@ -186,10 +183,10 @@ public class Player : KinematicBody
         this.hp -= amount;
         if (this.healthBar != null)
         {
-            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
-            ((CapsuleMesh)this.healthBar.Mesh).MidHeight = 1.0f * this.hp / MAX_HP;
+            var hpMesh = (CapsuleMesh)this.healthBar.Mesh.Duplicate();
+            hpMesh.MidHeight = 1.0f * this.hp / MAX_HP;
+            this.healthBar.Mesh = hpMesh;
             this.healthBar.Translation -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
-            GD.Print(((CapsuleMesh)this.healthBar.Mesh).MidHeight);
         }
     }
 }

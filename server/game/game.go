@@ -70,7 +70,7 @@ func (g *Game) run() {
 		case <-g.clock.C:
 			g.tick += 1
 			tickResult := g.processQueue()
-			if tickResult == nil {
+			if tickResult == nil || len(tickResult.Actions) == 0 {
 				continue
 			}
 
@@ -181,30 +181,25 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 	}
 }
 
-// TODO - this better
-func tickIsEmpty(tick *pb.GameTick) bool {
-	return len(tick.Connects) == 0 &&
-		len(tick.Disconnects) == 0 &&
-		len(tick.Moves) == 0 &&
-		len(tick.Attacks) == 0 &&
-		len(tick.Damage) == 0
-}
-
 func (g *Game) processQueue() *pb.GameTick {
-	var connectsProcessed []*pb.Connect
-	var disconnectsProcessed []*pb.Disconnect
-	var movementsProcessed []*pb.Move
-	var attacksProcessed []*pb.Attack
-	var damageProcessed []*pb.Damage
+	// TODO - 🍝
+	actions := make([]*pb.GameTickAction, 0)
 
 	for _, connect := range g.connectsQueued {
-		log.Debug().Msgf("processed connect: %v", connect)
-		connectsProcessed = append(connectsProcessed, connect)
+		connectBytes, _ := json.Marshal(connect)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_CONNECT),
+			Value: string(connectBytes),
+		})
 	}
 
 	for _, disconnect := range g.disconnectsQueued {
 		g.OnPlayerDisconnected(disconnect.PlayerId)
-		disconnectsProcessed = append(disconnectsProcessed, disconnect)
+		disconnectBytes, _ := json.Marshal(disconnect)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_DISCONNECT),
+			Value: string(disconnectBytes),
+		})
 	}
 
 	for _, move := range g.movementsQueued {
@@ -214,7 +209,11 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		movementsProcessed = append(movementsProcessed, move)
+		moveBytes, _ := json.Marshal(move)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_MOVE),
+			Value: string(moveBytes),
+		})
 	}
 
 	for _, attack := range g.attacksQueued {
@@ -225,8 +224,13 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		attacksProcessed = append(attacksProcessed, attack)
+		attackBytes, _ := json.Marshal(attack)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_ATTACK),
+			Value: string(attackBytes),
+		})
 	}
+
 	for _, damage := range g.damageQueued {
 		if !g.gameMap.InRangeToAttack(damage) {
 			log.Warn().Msgf("should have rejected client damage as attacker was out of range!")
@@ -238,7 +242,11 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		damageProcessed = append(damageProcessed, damage)
+		damageBytes, _ := json.Marshal(damage)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_DAMAGE),
+			Value: string(damageBytes),
+		})
 	}
 
 	// reset actionQueue for the next tick
@@ -249,16 +257,9 @@ func (g *Game) processQueue() *pb.GameTick {
 	g.damageQueued = make(map[uint64]*pb.Damage)
 
 	tick := &pb.GameTick{
-		Tick:        g.tick,
-		Connects:    connectsProcessed,
-		Disconnects: disconnectsProcessed,
-		Moves:       movementsProcessed,
-		Attacks:     attacksProcessed,
-		Damage:      damageProcessed,
+		Tick:    g.tick,
+		Actions: actions,
 	}
 
-	if tickIsEmpty(tick) {
-		return nil
-	}
 	return tick
 }

@@ -6,7 +6,7 @@ using Game;
 public class MessageBroker : Node
 {
     [Export]
-    string webSocketURL = System.Environment.GetEnvironmentVariable("GAMESERVER_WEBSOCKET_URL") ?? "ws://kilnwood-game.com/ws/v1/connect";
+    string wsUrl = "ws://kilnwood-game.com/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
@@ -15,25 +15,37 @@ public class MessageBroker : Node
     #region GODOT
     public override void _Ready()
     {
-        player = GetNode<Player>("Player");
-        opponents = GetNode<OpponentController>("OpponentController");
 
-        client = new WebSocketClient();
 
-        client.Connect("connection_established", this, nameof(onConnectionEstablished));
-        client.Connect("data_received", this, nameof(onDataReceived));
-        client.Connect("server_close_request", this, nameof(onServerCloseRequest));
-        client.Connect("connection_closed", this, nameof(onConnectionClosed));
+        this.player = GetNode<Player>("Player");
+        this.opponents = GetNode<OpponentController>("OpponentController");
 
-        Error error = client.ConnectToUrl(webSocketURL);
+        this.client = new WebSocketClient();
+
+        this.client.Connect("connection_established", this, nameof(onConnectionEstablished));
+        this.client.Connect("data_received", this, nameof(onDataReceived));
+        this.client.Connect("server_close_request", this, nameof(onServerCloseRequest));
+        this.client.Connect("connection_closed", this, nameof(onConnectionClosed));
+
+
+        if (OS.HasEnvironment("GAMESERVER_WEBSOCKET_URL"))
+        {
+            this.wsUrl = OS.GetEnvironment("GAMESERVER_WEBSOCKET_URL");
+        }
+        else
+        {
+            GD.Print($"falling back to default WS URL: {wsUrl}");
+        }
+
+        Error error = client.ConnectToUrl(this.wsUrl);
         if (error != Error.Ok)
         {
             client.GetPeer(1).Close();
-            GD.Print("Error connect to " + webSocketURL);
+            GD.Print("Error connect to " + this.wsUrl);
             return;
         }
 
-        GD.Print("Starting socket connetion to " + webSocketURL);
+        GD.Print("Starting socket connetion to " + this.wsUrl);
     }
 
     public override void _Process(float delta)
@@ -99,45 +111,42 @@ public class MessageBroker : Node
 
     private void processGameTick(GameTick tick)
     {
-        if (tick.connects != null)
+        // TODO - 🍝
+        foreach (var action in tick.actions)
         {
-            foreach (var connect in tick.connects)
+            GD.Print(action.type);
+            GD.Print(action.value);
+            switch (action.type)
             {
-                if (connect.playerId == player.id) continue;
-                opponents.OnPlayerConnected(connect.playerId, connect.spawn, connect.color);
-            }
-        }
-
-        if (tick.disconnects != null)
-        {
-            foreach (var disconnect in tick.disconnects)
-            {
-                this.onDisconnectEventReceived(disconnect);
-            }
-        }
-
-        if (tick.moves != null)
-        {
-            foreach (var move in tick.moves)
-            {
-                this.onMoveEventReceived(move);
-            }
-        }
-
-        if (tick.attacks != null)
-        {
-            foreach (var attack in tick.attacks)
-            {
-                this.onAttackEventReceived(attack);
-            }
-        }
-
-        if (tick.damage != null)
-        {
-            GD.Print("damage not none");
-            foreach (var damage in tick.damage)
-            {
-                this.onDamageEventReceived(damage);
+                case (uint)ClientActionType.ACTION_CONNECT:
+                    var connect = JsonSerializer.Deserialize<Connect>(action.value);
+                    if (connect.playerId == player.id) continue;
+                    opponents.OnPlayerConnected(connect.playerId, connect.spawn, connect.color);
+                    break;
+                case (uint)ClientActionType.ACTION_DISCONNECT:
+                    var disconnect = JsonSerializer.Deserialize<Disconnect>(action.value);
+                    this.onDisconnectEventReceived(disconnect);
+                    break;
+                case (uint)ClientActionType.ACTION_MOVE:
+                    var move = JsonSerializer.Deserialize<Move>(action.value);
+                    this.onMoveEventReceived(move);
+                    break;
+                case (uint)ClientActionType.ACTION_ATTACK:
+                    var attack = JsonSerializer.Deserialize<Attack>(action.value);
+                    this.onAttackEventReceived(attack);
+                    break;
+                case (uint)ClientActionType.ACTION_DAMAGE:
+                    var damage = JsonSerializer.Deserialize<Damage>(action.value);
+                    this.onDamageEventReceived(damage);
+                    break;
+                case (uint)ClientActionType.ACTION_DEATH:
+                    GD.Print("got death - nyi");
+                    break;
+                case (uint)ClientActionType.ACTION_RESPAWN:
+                    GD.Print("got respawn - nyi");
+                    break;
+                default:
+                    break;
             }
         }
     }

@@ -60,13 +60,19 @@ message ServerMessage {
   string payload = 2;
 }
 
+message GameTickAction {
+  uint32 type = 1;
+  string value = 2;
+}
+
 message GameTick {
   uint32 tick = 1;
-  repeated Connect connects = 2;
-  repeated Disconnect disconnects = 3;
-  repeated Move moves = 4;
-  repeated Attack attacks = 5;
-  repeated Damage damage = 6;
+  repeated GameTickAction actions = 2;
+  // repeated Connect connects = 2;
+  // repeated Disconnect disconnects = 3;
+  // repeated Move moves = 4;
+  // repeated Attack attacks = 5;
+  // repeated Damage damage = 6;
 }
 
 message JoinGameResponse

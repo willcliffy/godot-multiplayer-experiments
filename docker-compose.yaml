@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.local
+      args:
+        GAMESERVER_WEBSOCKET_URL: "ws://localhost:8080/ws/v1/connect"
     command: CompileDaemon -log-prefix=false -build="go build -o /dist/app /app/main.go" -command="/dist/app"
     ports:
       - 8080:8080

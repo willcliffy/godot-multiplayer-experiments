@@ -21,6 +21,8 @@ namespace Game
         ACTION_MOVE = 3,
         ACTION_ATTACK = 4,
         ACTION_DAMAGE = 5,
+        ACTION_DEATH = 6,
+        ACTION_RESPAWN = 7,
     }
 
     public class ClientAction
@@ -83,13 +85,15 @@ namespace Game
         public Connect[] others { get; set; }
     }
 
+    public class GameTickAction
+    {
+        public uint type { get; set; }
+        public string value { get; set; }
+    }
+
     public class GameTick
     {
         public uint tick { get; set; }
-        public Connect[] connects { get; set; }
-        public Disconnect[] disconnects { get; set; }
-        public Move[] moves { get; set; }
-        public Attack[] attacks { get; set; }
-        public Damage[] damage { get; set; }
+        public GameTickAction[] actions { get; set; }
     }
 }
