@@ -48,17 +48,13 @@ func (m *GameMap) RemovePlayer(playerId uint64) {
 	delete(m.players, playerId)
 }
 
-func (m *GameMap) SpawnPlayer(p *Player) (*pb.Location, error) {
+func (m *GameMap) SpawnPlayer(p *Player) {
 	m.addPlayer(p)
 
 	x := uint32(rand.Intn(spawn_range_x)) + 1
 	z := uint32(rand.Intn(spawn_range_z)) + 1
 
-	spawn := &pb.Location{X: x, Z: z}
-
-	p.Location = spawn
-
-	return spawn, nil
+	p.Location = &pb.Location{X: x, Z: z}
 }
 
 func (m *GameMap) DespawnPlayer() error {
@@ -87,15 +83,15 @@ func (m *GameMap) InRangeToAttack(damage *pb.Damage) bool {
 	return dist < PLAYER_ATTACK_RANGE
 }
 
-func (m *GameMap) ApplyDamage(damage *pb.Damage) (int, error) {
+func (m *GameMap) ApplyDamage(damage *pb.Damage) (killedTarget bool, err error) {
 	target, ok := m.players[damage.TargetPlayerId]
 	if !ok {
-		return 0, ErrPlayerNotInGame
+		return false, ErrPlayerNotInGame
 	}
 
 	source, ok := m.players[damage.SourcePlayerId]
 	if !ok {
-		return 0, ErrPlayerNotInGame
+		return false, ErrPlayerNotInGame
 	}
 
 	return target.ApplyDamage(source.AttackDamage()), nil

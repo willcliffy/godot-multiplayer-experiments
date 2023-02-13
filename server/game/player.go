@@ -58,8 +58,13 @@ func (p *Player) AttackDamage() int {
 	return p.combat.AD
 }
 
-func (p *Player) ApplyDamage(dmg int) int {
+func (p *Player) ApplyDamage(dmg int) bool {
 	return p.combat.ApplyDamage(dmg)
+}
+
+func (p *Player) Respawn() {
+	p.combat.currentHP = p.combat.HP
+	p.combat.Alive = true
 }
 
 type PlayerCombatStats struct {
@@ -69,14 +74,18 @@ type PlayerCombatStats struct {
 
 	currentHP        int
 	ticksToNextRegen int
+
+	Alive          bool
+	ticksToRespawn int
 }
 
 func NewPlayerCombatStats() *PlayerCombatStats {
 	return &PlayerCombatStats{
 		HP:               10,
 		AD:               1,
-		Regen:            10,
-		ticksToNextRegen: 10,
+		Regen:            100,
+		ticksToNextRegen: 100,
+		Alive:            true,
 	}
 }
 
@@ -92,7 +101,12 @@ func (p *PlayerCombatStats) Tick() {
 	}
 }
 
-func (p *PlayerCombatStats) ApplyDamage(dmg int) int {
+func (p *PlayerCombatStats) ApplyDamage(dmg int) bool {
 	p.HP -= dmg
-	return dmg
+	if p.HP <= 0 {
+		p.Alive = false
+		p.ticksToRespawn = 500
+		return true
+	}
+	return false
 }

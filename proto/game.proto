@@ -14,6 +14,8 @@ enum ClientActionType {
   ACTION_MOVE = 3;
   ACTION_ATTACK = 4;
   ACTION_DAMAGE = 5;
+  ACTION_DEATH = 6;
+  ACTION_RESPAWN = 7;
 }
 
 message ClientAction {
@@ -47,6 +49,16 @@ message Damage {
   uint64 sourcePlayerId = 1;
   uint64 targetPlayerId = 2;
   int32 damageDealt = 3;
+}
+
+message Death {
+  uint64 playerId = 1;
+  Location location = 2;
+}
+
+message Respawn {
+  uint64 playerId = 1;
+  Location spawn = 2;
 }
 
 enum ServerMessageType {

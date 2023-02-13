@@ -24,11 +24,14 @@ type Game struct {
 	gameMap *GameMap
 	players map[uint64]*Player
 
+	deathTimers map[uint64]uint32
+
 	connectsQueued    map[uint64]*pb.Connect
 	disconnectsQueued map[uint64]*pb.Disconnect
 	movementsQueued   map[uint64]*pb.Move
 	attacksQueued     map[uint64]*pb.Attack
 	damageQueued      map[uint64]*pb.Damage
+	respawnsQueued    map[uint64]*pb.Respawn
 }
 
 func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
@@ -69,6 +72,27 @@ func (g *Game) run() {
 			break
 		case <-g.clock.C:
 			g.tick += 1
+
+			for pId, player := range g.players {
+				player.Tick()
+				ticksLeft, ok := g.deathTimers[pId]
+				if !ok {
+					continue
+				}
+				g.deathTimers[pId]--
+				if ticksLeft > 0 {
+					continue
+				}
+				delete(g.deathTimers, pId)
+				player := g.players[pId]
+				player.Respawn()
+				g.gameMap.SpawnPlayer(player)
+				g.respawnsQueued[pId] = &pb.Respawn{
+					PlayerId: pId,
+					Spawn:    player.Location,
+				}
+			}
+
 			tickResult := g.processQueue()
 			if tickResult == nil || len(tickResult.Actions) == 0 {
 				continue
@@ -90,11 +114,7 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		g.players[playerId] = p
 	}
 
-	_, err := g.gameMap.SpawnPlayer(p)
-	if err != nil {
-		delete(g.players, p.Id)
-		return err
-	}
+	g.gameMap.SpawnPlayer(p)
 
 	var playerList []*pb.Connect
 
@@ -236,7 +256,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			log.Warn().Msgf("should have rejected client damage as attacker was out of range!")
 		}
 
-		_, err := g.gameMap.ApplyDamage(damage)
+		killedTarget, err := g.gameMap.ApplyDamage(damage)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
 			continue
@@ -247,6 +267,19 @@ func (g *Game) processQueue() *pb.GameTick {
 			Type:  uint32(pb.ClientActionType_ACTION_DAMAGE),
 			Value: string(damageBytes),
 		})
+
+		if killedTarget {
+			// TODO - on player death, start respawn countdown
+			g.deathTimers[damage.TargetPlayerId] = 500
+			deathBytes, _ := json.Marshal(pb.Death{
+				PlayerId: damage.TargetPlayerId,
+				Location: g.players[damage.TargetPlayerId].Location,
+			})
+			actions = append(actions, &pb.GameTickAction{
+				Type:  uint32(pb.ClientActionType_ACTION_DEATH),
+				Value: string(deathBytes),
+			})
+		}
 	}
 
 	// reset actionQueue for the next tick

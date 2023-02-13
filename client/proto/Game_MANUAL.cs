@@ -64,6 +64,19 @@ namespace Game
         public int damageDealt { get; set; }
     }
 
+
+    public class Death
+    {
+        ulong playerId { get; set; }
+        Location location { get; set; }
+    }
+
+    public class Respawn
+    {
+        ulong playerId { get; set; }
+        Location spawn { get; set; }
+    }
+
     public enum ServerMessageType
     {
         MESSAGE_PING = 0,
