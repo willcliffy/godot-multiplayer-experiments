@@ -36,7 +36,7 @@ public class Player : KinematicBody
 
         this.alive = true;
         this.hp = MAX_HP;
-        this.healthBar = GetNode<MeshInstance>("HealthBar/Health");
+        this.healthBar = GetNode<MeshInstance>("Robot/HealthBar/Health");
 
         // TODO - hacky way to check if this is the local player
         if (Visible)
