@@ -6,12 +6,14 @@ public class World : Spatial
     const int RAY_TRACE_DISTANCE = 500;
     const float CAMERA_MIN_ZOOM = 2;
     const float CAMERA_MAX_ZOOM = 12;
+    const float CAMERA_ROTATION_SPEED = 1.5f;
     Vector3 CAMERA_ZOOM_SPEED = new Vector3(0, 0.5f, 0.5f);
 
     MessageBroker mb;
     Player player;
     Camera camera;
     Spatial cameraBase;
+    float cameraRotation;
 
     public override void _Ready()
     {
@@ -21,18 +23,24 @@ public class World : Spatial
         cameraBase = GetNode<Spatial>("MessageBroker/Player/CameraBase");
     }
 
+    public override void _Process(float delta)
+    {
+        cameraBase.RotateY(cameraRotation * delta * CAMERA_ROTATION_SPEED);
+    }
+
     public override void _Input(InputEvent @event)
     {
-        // Rotate camers
-        if (@event is InputEventKey keyboardKey && @event.IsPressed())
+        // rotate camera
+        if (@event.IsActionReleased("move_right") || @event.IsActionReleased("move_left"))
         {
-            var x = keyboardKey.GetActionStrength("move_right") - keyboardKey.GetActionStrength("move_left");
-            cameraBase.RotateY(x * 0.05f);
-            return;
+            cameraRotation = 0;
         }
+        if (!@event.IsPressed()) return;
+
+        cameraRotation = @event.GetActionStrength("move_right") - @event.GetActionStrength("move_left");
 
         // Zoom Camera
-        if (!(@event is InputEventMouseButton eventKey) || !@event.IsPressed()) return;
+        if (!(@event is InputEventMouseButton eventKey)) return;
         if (eventKey.ButtonIndex == (int)ButtonList.WheelUp)
         {
             if (camera.Translation.y > CAMERA_MIN_ZOOM)
