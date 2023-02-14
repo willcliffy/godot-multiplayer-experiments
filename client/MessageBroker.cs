@@ -6,7 +6,7 @@ using Game;
 public class MessageBroker : Node
 {
     [Export]
-    string wsUrl = "ws://localhost:8080/ws/v1/connect";
+    string wsUrl = "ws://kilnwood-game.com/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
