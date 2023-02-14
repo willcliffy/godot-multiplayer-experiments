@@ -16,6 +16,8 @@ public class Player : KinematicBody
     private MessageBroker mb;
     private AnimationNodeStateMachinePlayback animations;
     private MeshInstance healthBar;
+    private MeshInstance healthBarBase;
+    private CollisionShape collider;
 
     private bool moving;
     private bool attacking;
@@ -37,6 +39,11 @@ public class Player : KinematicBody
         this.alive = true;
         this.hp = MAX_HP;
         this.healthBar = GetNode<MeshInstance>("Robot/HealthBar/Health");
+        this.healthBarBase = GetNode<MeshInstance>("Robot/HealthBar/Base");
+
+        this.collider = GetNode<CollisionShape>("CollisionShape");
+
+        this.collider.Disabled = true;
 
         // TODO - hacky way to check if this is the local player
         if (Visible)
@@ -117,8 +124,6 @@ public class Player : KinematicBody
         this.targetLocation = targetLocation;
         this.animations.Travel("walk");
         this.target?.SetLocation(targetLocation, attacking = true);
-        targetLocation.y = Translation.y;
-        this.model.LookAt(-targetLocation, Vector3.Up);
     }
 
     public bool IsAttacking(ulong? playerId)
@@ -137,13 +142,17 @@ public class Player : KinematicBody
         if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
-        this.animations.Travel("punch");
         this.target?.OnArrived();
 
         if (targetPlayerId.HasValue)
         {
             this.mb?.PlayerRequestedDamage(this.targetPlayerId.GetValueOrDefault());
         }
+    }
+
+    public void PlayAttackingAnimation()
+    {
+        this.animations.Travel("punch");
     }
 
     private void setIdle()
@@ -168,25 +177,39 @@ public class Player : KinematicBody
     public void ApplyDamage(int amount)
     {
         if (!this.alive) return;
-        if (this.hp <= amount)
-        {
-            this.alive = false;
-            this.hp = 0;
-            if (this.healthBar != null)
-            {
-                this.healthBar.Visible = false;
-            }
+        if (this.hp <= amount) return;
 
-            this.animations.Travel("death");
-            // Play death animation. Restrict movement. Respawn soon?
-        }
         this.hp -= amount;
-        if (this.healthBar != null)
-        {
-            var hpMesh = (CapsuleMesh)this.healthBar.Mesh.Duplicate();
-            hpMesh.MidHeight = 1.0f * this.hp / MAX_HP;
-            this.healthBar.Mesh = hpMesh;
-            this.healthBar.Translation -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
-        }
+        var hpMesh = (CapsuleMesh)this.healthBar.Mesh.Duplicate();
+        hpMesh.MidHeight = 1.0f * this.hp / MAX_HP;
+        this.healthBar.Mesh = hpMesh;
+        this.healthBar.Translation -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
+    }
+
+    public void Die()
+    {
+        this.alive = false;
+        this.hp = 0;
+        this.healthBar.Visible = false;
+        this.healthBar.Translation = new Vector3(0, 1.75f, 0);
+        this.healthBarBase.Visible = false;
+        this.collider.Disabled = true;
+        this.animations.Travel("death");
+    }
+
+    public void Spawn(Location spawn)
+    {
+        this.Visible = true;
+        this.alive = true;
+        this.hp = MAX_HP;
+        this.healthBar.Visible = true;
+        this.healthBarBase.Visible = true;
+        this.collider.Disabled = false;
+        this.Translation = new Vector3(spawn.x, 0, spawn.z);
+        ((CapsuleMesh)this.healthBar.Mesh).MidHeight = 1.0f;
+        this.setIdle();
+
+        // TODO - hacky, might need this to refresh the hp bar meshes
+        //this.ApplyDamage(0);
     }
 }

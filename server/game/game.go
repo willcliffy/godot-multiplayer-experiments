@@ -24,7 +24,7 @@ type Game struct {
 	gameMap *GameMap
 	players map[uint64]*Player
 
-	deathTimers map[uint64]uint32
+	deathTimers map[uint64]int32
 
 	connectsQueued    map[uint64]*pb.Connect
 	disconnectsQueued map[uint64]*pb.Disconnect
@@ -43,11 +43,14 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		gameMap: NewGameMap(),
 		players: make(map[uint64]*Player),
 
+		deathTimers: make(map[uint64]int32),
+
 		connectsQueued:    make(map[uint64]*pb.Connect),
 		disconnectsQueued: make(map[uint64]*pb.Disconnect),
 		movementsQueued:   make(map[uint64]*pb.Move),
 		attacksQueued:     make(map[uint64]*pb.Attack),
 		damageQueued:      make(map[uint64]*pb.Damage),
+		respawnsQueued:    make(map[uint64]*pb.Respawn),
 	}
 }
 
@@ -83,10 +86,6 @@ func (g *Game) run() {
 				if ticksLeft > 0 {
 					continue
 				}
-				delete(g.deathTimers, pId)
-				player := g.players[pId]
-				player.Respawn()
-				g.gameMap.SpawnPlayer(player)
 				g.respawnsQueued[pId] = &pb.Respawn{
 					PlayerId: pId,
 					Spawn:    player.Location,
@@ -269,8 +268,7 @@ func (g *Game) processQueue() *pb.GameTick {
 		})
 
 		if killedTarget {
-			// TODO - on player death, start respawn countdown
-			g.deathTimers[damage.TargetPlayerId] = 500
+			g.deathTimers[damage.TargetPlayerId] = 50
 			deathBytes, _ := json.Marshal(pb.Death{
 				PlayerId: damage.TargetPlayerId,
 				Location: g.players[damage.TargetPlayerId].Location,
@@ -282,12 +280,25 @@ func (g *Game) processQueue() *pb.GameTick {
 		}
 	}
 
+	for pId, respawn := range g.respawnsQueued {
+		delete(g.deathTimers, pId)
+		player := g.players[pId]
+		player.Respawn()
+		g.gameMap.SpawnPlayer(player)
+		respawnBytes, _ := json.Marshal(respawn)
+		actions = append(actions, &pb.GameTickAction{
+			Type:  uint32(pb.ClientActionType_ACTION_RESPAWN),
+			Value: string(respawnBytes),
+		})
+	}
+
 	// reset actionQueue for the next tick
 	g.connectsQueued = make(map[uint64]*pb.Connect)
 	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
 	g.movementsQueued = make(map[uint64]*pb.Move)
 	g.attacksQueued = make(map[uint64]*pb.Attack)
 	g.damageQueued = make(map[uint64]*pb.Damage)
+	g.respawnsQueued = make(map[uint64]*pb.Respawn)
 
 	tick := &pb.GameTick{
 		Tick:    g.tick,

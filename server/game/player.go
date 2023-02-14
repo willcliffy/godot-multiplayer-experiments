@@ -17,6 +17,8 @@ const (
 	TeamColor_Teal   string = "#59a7af"
 
 	NumberOfTeamColors = 8
+
+	PlayerMaxHP = 10
 )
 
 var allTeamColors = []string{
@@ -63,16 +65,14 @@ func (p *Player) ApplyDamage(dmg int) bool {
 }
 
 func (p *Player) Respawn() {
-	p.combat.currentHP = p.combat.HP
+	p.combat.HP = PlayerMaxHP
 	p.combat.Alive = true
 }
 
 type PlayerCombatStats struct {
-	HP    int // in HP units
-	AD    int // in HP units
-	Regen int // in ticks
-
-	currentHP        int
+	HP               int // in HP units
+	AD               int // in HP units
+	Regen            int // in ticks
 	ticksToNextRegen int
 
 	Alive          bool
@@ -81,7 +81,7 @@ type PlayerCombatStats struct {
 
 func NewPlayerCombatStats() *PlayerCombatStats {
 	return &PlayerCombatStats{
-		HP:               10,
+		HP:               PlayerMaxHP,
 		AD:               1,
 		Regen:            100,
 		ticksToNextRegen: 100,
@@ -90,7 +90,7 @@ func NewPlayerCombatStats() *PlayerCombatStats {
 }
 
 func (p *PlayerCombatStats) Tick() {
-	if p.currentHP == 0 || p.currentHP >= p.HP {
+	if p.HP == 0 || p.HP >= PlayerMaxHP {
 		return
 	}
 

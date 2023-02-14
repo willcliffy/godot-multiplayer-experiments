@@ -37,9 +37,8 @@ public class OpponentController : Node
         }
 
         p.id = id;
-        p.Translation = new Vector3(spawn.x, 0, spawn.z);
         p.SetTeam(color);
-        p.Visible = true;
+        p.Spawn(spawn);
     }
 
     public void OnPlayerDisconnected(ulong id)
@@ -85,5 +84,23 @@ public class OpponentController : Node
     {
         if (!inUse.TryGetValue(playerId, out var p)) return;
         p.ApplyDamage(amount);
+    }
+
+    public void PlayAttackingAnimation(ulong playerId)
+    {
+        if (!inUse.TryGetValue(playerId, out var p)) return;
+        p.PlayAttackingAnimation();
+    }
+
+    public void Die(ulong playerId)
+    {
+        if (!inUse.TryGetValue(playerId, out var p)) return;
+        p.Die();
+    }
+
+    public void Spawn(ulong playerId, Location spawn)
+    {
+        if (!inUse.TryGetValue(playerId, out var p)) return;
+        p.Spawn(spawn);
     }
 }

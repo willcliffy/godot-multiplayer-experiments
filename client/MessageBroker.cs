@@ -6,7 +6,7 @@ using Game;
 public class MessageBroker : Node
 {
     [Export]
-    string wsUrl = "ws://kilnwood-game.com/ws/v1/connect";
+    string wsUrl = "ws://localhost:8080/ws/v1/connect";
 
     WebSocketClient client = null;
     Player player;
@@ -114,8 +114,6 @@ public class MessageBroker : Node
         // TODO - 🍝
         foreach (var action in tick.actions)
         {
-            GD.Print(action.type);
-            GD.Print(action.value);
             switch (action.type)
             {
                 case (uint)ClientActionType.ACTION_CONNECT:
@@ -140,10 +138,14 @@ public class MessageBroker : Node
                     this.onDamageEventReceived(damage);
                     break;
                 case (uint)ClientActionType.ACTION_DEATH:
-                    GD.Print("got death - nyi");
+                    var death = JsonSerializer.Deserialize<Death>(action.value);
+                    if (death.playerId == player.id) player.Die();
+                    else opponents.Die(death.playerId);
                     break;
                 case (uint)ClientActionType.ACTION_RESPAWN:
-                    GD.Print("got respawn - nyi");
+                    var respawn = JsonSerializer.Deserialize<Respawn>(action.value);
+                    if (respawn.playerId == player.id) player.Spawn(respawn.spawn);
+                    else opponents.Spawn(respawn.playerId, respawn.spawn);
                     break;
                 default:
                     break;
@@ -154,8 +156,8 @@ public class MessageBroker : Node
     private void onLocalPlayerJoinedGame(JoinGameResponse msg)
     {
         player.id = msg.playerId;
-        player.Translation = new Vector3(msg.spawn.x, 0, msg.spawn.z);
         player.SetTeam(msg.color);
+        player.Spawn(msg.spawn);
 
         if (msg.others != null)
         {
@@ -207,10 +209,19 @@ public class MessageBroker : Node
         GD.Print("damage received");
         if (damage.targetPlayerId == player.id)
         {
+            this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
             this.player.ApplyDamage(damage.damageDealt);
             return;
         }
 
+        if (damage.sourcePlayerId == player.id)
+        {
+            this.player.PlayAttackingAnimation();
+        }
+        else
+        {
+            this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
+        }
         this.opponents.ApplyDamage(damage.targetPlayerId, damage.damageDealt);
     }
     #endregion

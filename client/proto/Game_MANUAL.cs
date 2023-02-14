@@ -67,14 +67,14 @@ namespace Game
 
     public class Death
     {
-        ulong playerId { get; set; }
-        Location location { get; set; }
+        public ulong playerId { get; set; }
+        public Location location { get; set; }
     }
 
     public class Respawn
     {
-        ulong playerId { get; set; }
-        Location spawn { get; set; }
+        public ulong playerId { get; set; }
+        public Location spawn { get; set; }
     }
 
     public enum ServerMessageType
