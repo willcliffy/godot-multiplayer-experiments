@@ -4,7 +4,7 @@ using Godot;
 public class Player : KinematicBody
 {
     const int MAX_HP = 10;
-    const int SPEED = 3;
+    const int SPEED = 5;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
     const float ATTACK_RANGE = 1 + 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
 
@@ -53,12 +53,19 @@ public class Player : KinematicBody
         }
     }
 
+    private static float distance2d(Vector3 one, Vector3 two)
+    {
+        var oneNorm = new Vector3(one.x, 0, one.z);
+        var twoNorm = new Vector3(two.x, 0, two.z);
+        return (oneNorm - twoNorm).Length();
+    }
+
     public override void _PhysicsProcess(float delta)
     {
         if (Input.IsActionJustPressed("exit")) GetTree().Quit();
         if (!this.moving) return;
 
-        var distToTarget = (this.targetLocation - this.Translation).Length();
+        var distToTarget = distance2d(this.targetLocation, this.Translation);
         if (attacking && distToTarget < ATTACK_RANGE)
         {
             this.setAttackingTargetReached();
