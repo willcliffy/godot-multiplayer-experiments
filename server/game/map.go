@@ -51,8 +51,8 @@ func (m *GameMap) RemovePlayer(playerId uint64) {
 func (m *GameMap) SpawnPlayer(p *Player) {
 	m.addPlayer(p)
 
-	x := uint32(rand.Intn(spawn_range_x)) + 1
-	z := uint32(rand.Intn(spawn_range_z)) + 1
+	x := int32(rand.Intn(spawn_range_x)) + 1
+	z := int32(rand.Intn(spawn_range_z)) + 1
 
 	p.Location = &pb.Location{X: x, Z: z}
 }

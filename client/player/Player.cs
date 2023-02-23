@@ -4,7 +4,7 @@ using Godot;
 public class Player : KinematicBody
 {
     const int MAX_HP = 10;
-    const int SPEED = 5;
+    const int SPEED = 10;
     const float ACCEPTABLE_DIST_TO_TARGET_RANGE = 0.05f;
     const float ATTACK_RANGE = 1 + 2 * ACCEPTABLE_DIST_TO_TARGET_RANGE;
 
@@ -109,7 +109,7 @@ public class Player : KinematicBody
         this.targetPlayerId = null;
         this.targetLocation = target;
         this.nav.SetTargetLocation(target);
-        this.animations.Travel("walk");
+        this.animations.Travel("run");
         this.target?.SetLocation(target);
     }
 
@@ -129,7 +129,7 @@ public class Player : KinematicBody
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
         this.targetLocation = targetLocation;
-        this.animations.Travel("walk");
+        this.animations.Travel("run");
         this.target?.SetLocation(targetLocation, attacking = true);
     }
 
@@ -176,8 +176,8 @@ public class Player : KinematicBody
     {
         return new Location()
         {
-            x = (uint)Mathf.RoundToInt(this.Translation.x),
-            z = (uint)Mathf.RoundToInt(this.Translation.z),
+            x = Mathf.RoundToInt(this.Translation.x),
+            z = Mathf.RoundToInt(this.Translation.z),
         };
     }
 

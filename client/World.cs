@@ -5,7 +5,7 @@ public class World : Spatial
 {
     const int RAY_TRACE_DISTANCE = 1000;
     const float CAMERA_MIN_ZOOM = 2;
-    const float CAMERA_MAX_ZOOM = 20;
+    const float CAMERA_MAX_ZOOM = 50;
     const float CAMERA_ROTATION_SPEED = 1.5f;
     Vector3 CAMERA_ZOOM_SPEED = new Vector3(0, 0.5f, 0.5f);
 
@@ -77,8 +77,8 @@ public class World : Spatial
         var targetVec3 = (Vector3)result["position"];
         var targetLocation = new Location()
         {
-            x = (uint)Mathf.RoundToInt(targetVec3.x),
-            z = (uint)Mathf.RoundToInt(targetVec3.z),
+            x = Mathf.RoundToInt(targetVec3.x),
+            z = Mathf.RoundToInt(targetVec3.z),
         };
 
         var targetPlayer = result["collider"] as Player;

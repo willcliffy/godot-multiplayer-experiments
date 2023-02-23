@@ -3,8 +3,8 @@ package game;
 option go_package = "./proto";
 
 message Location {
-  uint32 x = 1;
-  uint32 z = 2;
+  int32 x = 1;
+  int32 z = 2;
 }
 
 enum ClientActionType {

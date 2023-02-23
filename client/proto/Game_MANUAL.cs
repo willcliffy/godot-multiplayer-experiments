@@ -4,8 +4,8 @@ namespace Game
 {
     public class Location
     {
-        public uint x { get; set; }
-        public uint z { get; set; }
+        public int x { get; set; }
+        public int z { get; set; }
 
         public Vector3 ToVector3()
         {
