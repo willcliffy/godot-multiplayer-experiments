@@ -5,289 +5,289 @@ using Game;
 
 public class MessageBroker : Node
 {
-    [Export]
-    string wsUrl = "ws://kilnwood-game.com/ws/v1/connect";
+	[Export]
+	string wsUrl = "ws://kilnwood-game.com/ws/v1/connect";
 
-    WebSocketClient client = null;
-    Player player;
-    OpponentController opponents;
+	WebSocketClient client = null;
+	Player player;
+	OpponentController opponents;
 
-    #region GODOT
-    public override void _Ready()
-    {
-
-
-        this.player = GetNode<Player>("Player");
-        this.opponents = GetNode<OpponentController>("OpponentController");
-
-        this.client = new WebSocketClient();
-
-        this.client.Connect("connection_established", this, nameof(onConnectionEstablished));
-        this.client.Connect("data_received", this, nameof(onDataReceived));
-        this.client.Connect("server_close_request", this, nameof(onServerCloseRequest));
-        this.client.Connect("connection_closed", this, nameof(onConnectionClosed));
+	#region GODOT
+	public override void _Ready()
+	{
 
 
-        if (OS.HasEnvironment("GAMESERVER_WEBSOCKET_URL"))
-        {
-            this.wsUrl = OS.GetEnvironment("GAMESERVER_WEBSOCKET_URL");
-        }
-        else
-        {
-            GD.Print($"falling back to default WS URL: {wsUrl}");
-        }
+		this.player = GetNode<Player>("Player");
+		this.opponents = GetNode<OpponentController>("OpponentController");
 
-        Error error = client.ConnectToUrl(this.wsUrl);
-        if (error != Error.Ok)
-        {
-            client.GetPeer(1).Close();
-            GD.Print("Error connect to " + this.wsUrl);
-            return;
-        }
+		this.client = new WebSocketClient();
 
-        GD.Print("Starting socket connetion to " + this.wsUrl);
-    }
+		this.client.Connect("connection_established", this, nameof(onConnectionEstablished));
+		this.client.Connect("data_received", this, nameof(onDataReceived));
+		this.client.Connect("server_close_request", this, nameof(onServerCloseRequest));
+		this.client.Connect("connection_closed", this, nameof(onConnectionClosed));
 
-    public override void _Process(float delta)
-    {
-        if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected ||
-            client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connecting)
-        {
-            client.Poll();
-        }
-    }
-    #endregion
 
-    #region WEBSOCKET
-    private void onConnectionEstablished(string protocol)
-    {
-        var msg = new ClientAction();
-        msg.type = (int)ClientActionType.ACTION_CONNECT;
-        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        Error error = client.GetPeer(1).PutPacket(msgBytes);
-        if (error != Error.Ok)
-        {
-            GD.Print($"Failed to establish connection: {error}");
-            return;
-        }
-        GD.Print("Connection established");
-    }
+		if (OS.HasEnvironment("GAMESERVER_WEBSOCKET_URL"))
+		{
+			this.wsUrl = OS.GetEnvironment("GAMESERVER_WEBSOCKET_URL");
+		}
+		else
+		{
+			GD.Print($"falling back to default WS URL: {wsUrl}");
+		}
 
-    private void onServerCloseRequest(int code, string reason)
-    {
-        GD.Print("Close request, reason: " + reason);
-    }
+		Error error = client.ConnectToUrl(this.wsUrl);
+		if (error != Error.Ok)
+		{
+			client.GetPeer(1).Close();
+			GD.Print("Error connect to " + this.wsUrl);
+			return;
+		}
 
-    private void onConnectionClosed(bool wasCleanClose)
-    {
-        GD.Print("Connection closed. was clean close: " + wasCleanClose.ToString());
-    }
-    #endregion
+		GD.Print("Starting socket connetion to " + this.wsUrl);
+	}
 
-    #region SERVER_TO_CLIENT
-    private void onDataReceived()
-    {
-        var packet = client.GetPeer(1).GetPacket();
-        GD.Print(Encoding.UTF8.GetString(packet));
-        var action = JsonSerializer.Deserialize<ServerMessage>(packet);
-        switch ((ServerMessageType)action.type)
-        {
-            case ServerMessageType.MESSAGE_PING:
-                GD.Print("ping"); // TODO
-                break;
-            case ServerMessageType.MESSAGE_JOIN:
-                var joinGameRes = JsonSerializer.Deserialize<JoinGameResponse>(action.payload);
-                this.onLocalPlayerJoinedGame(joinGameRes);
-                break;
-            case ServerMessageType.MESSAGE_TICK:
-                var tick = JsonSerializer.Deserialize<GameTick>(action.payload);
-                this.processGameTick(tick);
-                break;
-            default:
-                GD.Print($"Unknown server message type: '{action.type}'");
-                break;
-        }
-    }
+	public override void _Process(float delta)
+	{
+		if (client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connected ||
+			client.GetConnectionStatus() == NetworkedMultiplayerPeer.ConnectionStatus.Connecting)
+		{
+			client.Poll();
+		}
+	}
+	#endregion
 
-    private void processGameTick(GameTick tick)
-    {
-        // TODO - 🍝
-        foreach (var action in tick.actions)
-        {
-            switch (action.type)
-            {
-                case (uint)ClientActionType.ACTION_CONNECT:
-                    var connect = JsonSerializer.Deserialize<Connect>(action.value);
-                    if (connect.playerId == player.id) continue;
-                    opponents.OnPlayerConnected(connect.playerId, connect.spawn, connect.color);
-                    break;
-                case (uint)ClientActionType.ACTION_DISCONNECT:
-                    var disconnect = JsonSerializer.Deserialize<Disconnect>(action.value);
-                    this.onDisconnectEventReceived(disconnect);
-                    break;
-                case (uint)ClientActionType.ACTION_MOVE:
-                    var move = JsonSerializer.Deserialize<Move>(action.value);
-                    this.onMoveEventReceived(move);
-                    break;
-                case (uint)ClientActionType.ACTION_ATTACK:
-                    var attack = JsonSerializer.Deserialize<Attack>(action.value);
-                    this.onAttackEventReceived(attack);
-                    break;
-                case (uint)ClientActionType.ACTION_DAMAGE:
-                    var damage = JsonSerializer.Deserialize<Damage>(action.value);
-                    this.onDamageEventReceived(damage);
-                    break;
-                case (uint)ClientActionType.ACTION_DEATH:
-                    var death = JsonSerializer.Deserialize<Death>(action.value);
-                    if (death.playerId == player.id) player.Die();
-                    else opponents.Die(death.playerId);
-                    break;
-                case (uint)ClientActionType.ACTION_RESPAWN:
-                    var respawn = JsonSerializer.Deserialize<Respawn>(action.value);
-                    if (respawn.playerId == player.id) player.Spawn(respawn.spawn);
-                    else opponents.Spawn(respawn.playerId, respawn.spawn);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
+	#region WEBSOCKET
+	private void onConnectionEstablished(string protocol)
+	{
+		var msg = new ClientAction();
+		msg.type = (int)ClientActionType.ACTION_CONNECT;
+		var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
+		Error error = client.GetPeer(1).PutPacket(msgBytes);
+		if (error != Error.Ok)
+		{
+			GD.Print($"Failed to establish connection: {error}");
+			return;
+		}
+		GD.Print("Connection established");
+	}
 
-    private void onLocalPlayerJoinedGame(JoinGameResponse msg)
-    {
-        player.id = msg.playerId;
-        player.SetTeam(msg.color);
-        player.Spawn(msg.spawn);
+	private void onServerCloseRequest(int code, string reason)
+	{
+		GD.Print("Close request, reason: " + reason);
+	}
 
-        if (msg.others != null)
-        {
-            foreach (var other in msg.others)
-            {
-                opponents.OnPlayerConnected(other.playerId, other.spawn, other.color);
-            }
-        }
-    }
+	private void onConnectionClosed(bool wasCleanClose)
+	{
+		GD.Print("Connection closed. was clean close: " + wasCleanClose.ToString());
+	}
+	#endregion
 
-    private void onMoveEventReceived(Move move)
-    {
-        if (move.playerId == player.id)
-        {
-            player.SetMoving(move.target.ToVector3());
-            opponents.StopAttacking(player.id);
-            return;
-        }
+	#region SERVER_TO_CLIENT
+	private void onDataReceived()
+	{
+		var packet = client.GetPeer(1).GetPacket();
+		GD.Print(Encoding.UTF8.GetString(packet));
+		var action = JsonSerializer.Deserialize<ServerMessage>(packet);
+		switch ((ServerMessageType)action.type)
+		{
+			case ServerMessageType.MESSAGE_PING:
+				GD.Print("ping"); // TODO
+				break;
+			case ServerMessageType.MESSAGE_JOIN:
+				var joinGameRes = JsonSerializer.Deserialize<JoinGameResponse>(action.payload);
+				this.onLocalPlayerJoinedGame(joinGameRes);
+				break;
+			case ServerMessageType.MESSAGE_TICK:
+				var tick = JsonSerializer.Deserialize<GameTick>(action.payload);
+				this.processGameTick(tick);
+				break;
+			default:
+				GD.Print($"Unknown server message type: '{action.type}'");
+				break;
+		}
+	}
 
-        opponents.SetMoving(move.playerId, move.target.ToVector3());
-        player.StopAttacking();
-    }
+	private void processGameTick(GameTick tick)
+	{
+		// TODO - 🍝
+		foreach (var action in tick.actions)
+		{
+			switch (action.type)
+			{
+				case (uint)ClientActionType.ACTION_CONNECT:
+					var connect = JsonSerializer.Deserialize<Connect>(action.value);
+					if (connect.playerId == player.id) continue;
+					opponents.OnPlayerConnected(connect.playerId, connect.spawn, connect.color);
+					break;
+				case (uint)ClientActionType.ACTION_DISCONNECT:
+					var disconnect = JsonSerializer.Deserialize<Disconnect>(action.value);
+					this.onDisconnectEventReceived(disconnect);
+					break;
+				case (uint)ClientActionType.ACTION_MOVE:
+					var move = JsonSerializer.Deserialize<Move>(action.value);
+					this.onMoveEventReceived(move);
+					break;
+				case (uint)ClientActionType.ACTION_ATTACK:
+					var attack = JsonSerializer.Deserialize<Attack>(action.value);
+					this.onAttackEventReceived(attack);
+					break;
+				case (uint)ClientActionType.ACTION_DAMAGE:
+					var damage = JsonSerializer.Deserialize<Damage>(action.value);
+					this.onDamageEventReceived(damage);
+					break;
+				case (uint)ClientActionType.ACTION_DEATH:
+					var death = JsonSerializer.Deserialize<Death>(action.value);
+					if (death.playerId == player.id) player.Die();
+					else opponents.Die(death.playerId);
+					break;
+				case (uint)ClientActionType.ACTION_RESPAWN:
+					var respawn = JsonSerializer.Deserialize<Respawn>(action.value);
+					if (respawn.playerId == player.id) player.Spawn(respawn.spawn);
+					else opponents.Spawn(respawn.playerId, respawn.spawn);
+					break;
+				default:
+					break;
+			}
+		}
+	}
 
-    private void onDisconnectEventReceived(Disconnect disconnect)
-    {
-        if (disconnect.playerId == player.id)
-        {
-            this.client.DisconnectFromHost();
-            // TODO - handle this in UI
-            return;
-        }
+	private void onLocalPlayerJoinedGame(JoinGameResponse msg)
+	{
+		player.id = msg.playerId;
+		player.SetTeam(msg.color);
+		player.Spawn(msg.spawn);
 
-        this.opponents.OnPlayerDisconnected(disconnect.playerId);
-    }
+		if (msg.others != null)
+		{
+			foreach (var other in msg.others)
+			{
+				opponents.OnPlayerConnected(other.playerId, other.spawn, other.color);
+			}
+		}
+	}
 
-    private void onAttackEventReceived(Attack attack)
-    {
-        if (attack.sourcePlayerId == player.id)
-        {
-            this.player.SetAttacking(attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
-            return;
-        }
+	private void onMoveEventReceived(Move move)
+	{
+		if (move.playerId == player.id)
+		{
+			player.SetMoving(move.target.ToVector3());
+			opponents.StopAttacking(player.id);
+			return;
+		}
 
-        this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
-    }
+		opponents.SetMoving(move.playerId, move.target.ToVector3());
+		player.StopAttacking();
+	}
 
-    private void onDamageEventReceived(Damage damage)
-    {
-        GD.Print("damage received");
-        if (damage.targetPlayerId == player.id)
-        {
-            this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
-            this.player.ApplyDamage(damage.damageDealt);
-            return;
-        }
+	private void onDisconnectEventReceived(Disconnect disconnect)
+	{
+		if (disconnect.playerId == player.id)
+		{
+			this.client.DisconnectFromHost();
+			// TODO - handle this in UI
+			return;
+		}
 
-        if (damage.sourcePlayerId == player.id)
-        {
-            this.player.PlayAttackingAnimation();
-        }
-        else
-        {
-            this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
-        }
-        this.opponents.ApplyDamage(damage.targetPlayerId, damage.damageDealt);
-    }
-    #endregion
+		this.opponents.OnPlayerDisconnected(disconnect.playerId);
+	}
 
-    #region CLIENT_TO_SERVER
-    public void PlayerRequestedMove(Location target)
-    {
-        var msg = new ClientAction()
-        {
-            type = (int)ClientActionType.ACTION_MOVE,
-            payload = JsonSerializer.Serialize(new Move()
-            {
-                playerId = player.id,
-                target = target,
-            })
-        };
-        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        Error error = client.GetPeer(1).PutPacket(msgBytes);
-        if (error != Error.Ok)
-        {
-            GD.Print($"Failed to request move: {error}");
-            return;
-        }
-    }
+	private void onAttackEventReceived(Attack attack)
+	{
+		if (attack.sourcePlayerId == player.id)
+		{
+			this.player.SetAttacking(attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
+			return;
+		}
 
-    public void PlayerRequestedAttack(ulong targetPlayerId)
-    {
-        var msg = new ClientAction()
-        {
-            type = (int)ClientActionType.ACTION_ATTACK,
-            payload = JsonSerializer.Serialize(new Attack()
-            {
-                sourcePlayerId = player.id,
-                sourcePlayerLocation = player.CurrentLocation(),
-                targetPlayerId = targetPlayerId,
-                targetPlayerLocation = opponents.CurrentLocation(targetPlayerId),
-            })
-        };
-        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        Error error = client.GetPeer(1).PutPacket(msgBytes);
-        if (error != Error.Ok)
-        {
-            GD.Print($"Failed to request move: {error}");
-            return;
-        }
-    }
+		this.opponents.SetAttacking(attack.sourcePlayerId, attack.targetPlayerId, attack.targetPlayerLocation.ToVector3());
+	}
 
-    public void PlayerRequestedDamage(ulong targetPlayerId)
-    {
-        var msg = new ClientAction()
-        {
-            type = (int)ClientActionType.ACTION_DAMAGE,
-            payload = JsonSerializer.Serialize(new Damage()
-            {
-                sourcePlayerId = player.id,
-                targetPlayerId = targetPlayerId,
-                damageDealt = 1,
-            })
-        };
-        var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        Error error = client.GetPeer(1).PutPacket(msgBytes);
-        if (error != Error.Ok)
-        {
-            GD.Print($"Failed to request move: {error}");
-            return;
-        }
-    }
-    #endregion
+	private void onDamageEventReceived(Damage damage)
+	{
+		GD.Print("damage received");
+		if (damage.targetPlayerId == player.id)
+		{
+			this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
+			this.player.ApplyDamage(damage.damageDealt);
+			return;
+		}
+
+		if (damage.sourcePlayerId == player.id)
+		{
+			this.player.PlayAttackingAnimation();
+		}
+		else
+		{
+			this.opponents.PlayAttackingAnimation(damage.sourcePlayerId);
+		}
+		this.opponents.ApplyDamage(damage.targetPlayerId, damage.damageDealt);
+	}
+	#endregion
+
+	#region CLIENT_TO_SERVER
+	public void PlayerRequestedMove(Location target)
+	{
+		var msg = new ClientAction()
+		{
+			type = (int)ClientActionType.ACTION_MOVE,
+			payload = JsonSerializer.Serialize(new Move()
+			{
+				playerId = player.id,
+				target = target,
+			})
+		};
+		var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
+		Error error = client.GetPeer(1).PutPacket(msgBytes);
+		if (error != Error.Ok)
+		{
+			GD.Print($"Failed to request move: {error}");
+			return;
+		}
+	}
+
+	public void PlayerRequestedAttack(ulong targetPlayerId)
+	{
+		var msg = new ClientAction()
+		{
+			type = (int)ClientActionType.ACTION_ATTACK,
+			payload = JsonSerializer.Serialize(new Attack()
+			{
+				sourcePlayerId = player.id,
+				sourcePlayerLocation = player.CurrentLocation(),
+				targetPlayerId = targetPlayerId,
+				targetPlayerLocation = opponents.CurrentLocation(targetPlayerId),
+			})
+		};
+		var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
+		Error error = client.GetPeer(1).PutPacket(msgBytes);
+		if (error != Error.Ok)
+		{
+			GD.Print($"Failed to request move: {error}");
+			return;
+		}
+	}
+
+	public void PlayerRequestedDamage(ulong targetPlayerId)
+	{
+		var msg = new ClientAction()
+		{
+			type = (int)ClientActionType.ACTION_DAMAGE,
+			payload = JsonSerializer.Serialize(new Damage()
+			{
+				sourcePlayerId = player.id,
+				targetPlayerId = targetPlayerId,
+				damageDealt = 1,
+			})
+		};
+		var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
+		Error error = client.GetPeer(1).PutPacket(msgBytes);
+		if (error != Error.Ok)
+		{
+			GD.Print($"Failed to request move: {error}");
+			return;
+		}
+	}
+	#endregion
 }
