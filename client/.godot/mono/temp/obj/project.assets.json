@@ -2,13 +2,13 @@
   "version": 3,
   "targets": {
     "net6.0": {
-      "Godot.SourceGenerators/4.0.0-rc.5": {
+      "Godot.SourceGenerators/4.0.0": {
         "type": "package",
         "build": {
           "build/Godot.SourceGenerators.props": {}
         }
       },
-      "GodotSharp/4.0.0-rc.5": {
+      "GodotSharp/4.0.0": {
         "type": "package",
         "compile": {
           "lib/net6.0/GodotSharp.dll": {
@@ -21,10 +21,10 @@
           }
         }
       },
-      "GodotSharpEditor/4.0.0-rc.5": {
+      "GodotSharpEditor/4.0.0": {
         "type": "package",
         "dependencies": {
-          "GodotSharp": "4.0.0-rc.5"
+          "GodotSharp": "4.0.0"
         },
         "compile": {
           "lib/net6.0/GodotSharpEditor.dll": {
@@ -34,75 +34,112 @@
         "runtime": {
           "lib/net6.0/GodotSharpEditor.dll": {
             "related": ".xml"
+          }
+        }
+      },
+      "Google.Protobuf/3.19.5": {
+        "type": "package",
+        "compile": {
+          "lib/net5.0/Google.Protobuf.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net5.0/Google.Protobuf.dll": {
+            "related": ".pdb;.xml"
           }
         }
       }
     }
   },
   "libraries": {
-    "Godot.SourceGenerators/4.0.0-rc.5": {
-      "sha512": "Cdn7nh0ZfhkNiyFf3tXrUnZflAzyk44rFT5K9u0FeL4hjQ1wP0IVsTrnc/VJkKuVMdmtWHALYYlgJphHOcd9Ww==",
+    "Godot.SourceGenerators/4.0.0": {
+      "sha512": "Q2y2g4L1mO62/QFsR2bH3ywdIYvE0xbEx4yJ/Me+t6xuoigFVxKFxWhP0yFYDCh3PxdaVeuqJV3Y6S+8U78INA==",
       "type": "package",
-      "path": "godot.sourcegenerators/4.0.0-rc.5",
+      "path": "godot.sourcegenerators/4.0.0",
       "files": [
         ".nupkg.metadata",
         "analyzers/dotnet/cs/Godot.SourceGenerators.dll",
         "build/Godot.SourceGenerators.props",
-        "godot.sourcegenerators.4.0.0-rc.5.nupkg.sha512",
+        "godot.sourcegenerators.4.0.0.nupkg.sha512",
         "godot.sourcegenerators.nuspec"
       ]
     },
-    "GodotSharp/4.0.0-rc.5": {
-      "sha512": "2waBd0jXEbvLk7aAqkf9HkybOsWZs8UdVQJsei96Vomt0zi11/xbubQo+sWMfUjXc+LT/WbACI7tzY05Ek4jyA==",
+    "GodotSharp/4.0.0": {
+      "sha512": "wYnnG9kXdoeACIz2EGNwwd8LHVx1BP9vdlOsw8qvYgno8PYgzXAUsIC1S+atXUP6IVRCtPEwO1TcUUZG9cjTqg==",
       "type": "package",
-      "path": "godotsharp/4.0.0-rc.5",
+      "path": "godotsharp/4.0.0",
       "files": [
         ".nupkg.metadata",
-        "godotsharp.4.0.0-rc.5.nupkg.sha512",
+        "godotsharp.4.0.0.nupkg.sha512",
         "godotsharp.nuspec",
         "lib/net6.0/GodotSharp.dll",
         "lib/net6.0/GodotSharp.xml"
       ]
     },
-    "GodotSharpEditor/4.0.0-rc.5": {
-      "sha512": "8fuTy4yXCOa/uQLcOnkLQX/6bbBDK9GcQ6iuodtZgI58uUh6jgqNypdIgjllBdwLBaXI0fs8LgS9aUt/h/U6Aw==",
+    "GodotSharpEditor/4.0.0": {
+      "sha512": "SgpReFIUklzrA1wzgdWxO3PPuAPZhnjr/OVLssVg7JN2/PSh9eVdB6HjbT3dzen0R0lFQt0ZuHTlTDbW/Y0acQ==",
       "type": "package",
-      "path": "godotsharpeditor/4.0.0-rc.5",
+      "path": "godotsharpeditor/4.0.0",
       "files": [
         ".nupkg.metadata",
-        "godotsharpeditor.4.0.0-rc.5.nupkg.sha512",
+        "godotsharpeditor.4.0.0.nupkg.sha512",
         "godotsharpeditor.nuspec",
         "lib/net6.0/GodotSharpEditor.dll",
         "lib/net6.0/GodotSharpEditor.xml"
+      ]
+    },
+    "Google.Protobuf/3.19.5": {
+      "sha512": "cRwOsWe3vfjl7rq4/skNCwhcJNA1HjpZ3fg6dK4CX46Pwzraca0vE1OCzjw0ZBTFwyWKv3ycCnP8l9U8Ujrm/A==",
+      "type": "package",
+      "path": "google.protobuf/3.19.5",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.protobuf.3.19.5.nupkg.sha512",
+        "google.protobuf.nuspec",
+        "lib/net45/Google.Protobuf.dll",
+        "lib/net45/Google.Protobuf.pdb",
+        "lib/net45/Google.Protobuf.xml",
+        "lib/net5.0/Google.Protobuf.dll",
+        "lib/net5.0/Google.Protobuf.pdb",
+        "lib/net5.0/Google.Protobuf.xml",
+        "lib/netstandard1.1/Google.Protobuf.dll",
+        "lib/netstandard1.1/Google.Protobuf.pdb",
+        "lib/netstandard1.1/Google.Protobuf.xml",
+        "lib/netstandard2.0/Google.Protobuf.dll",
+        "lib/netstandard2.0/Google.Protobuf.pdb",
+        "lib/netstandard2.0/Google.Protobuf.xml"
       ]
     }
   },
   "projectFileDependencyGroups": {
     "net6.0": [
-      "Godot.SourceGenerators >= 4.0.0-rc.5",
-      "GodotSharp >= 4.0.0-rc.5",
-      "GodotSharpEditor >= 4.0.0-rc.5"
+      "Godot.SourceGenerators >= 4.0.0",
+      "GodotSharp >= 4.0.0",
+      "GodotSharpEditor >= 4.0.0",
+      "Google.Protobuf >= 3.19.5"
     ]
   },
   "packageFolders": {
-    "/home/will/.nuget/packages/": {},
-    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder": {}
+    "/Users/cliff/.nuget/packages/": {},
+    "/Users/cliff/Library/Application Support/Godot/mono/GodotNuGetFallbackFolder": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/will/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
+      "projectUniqueName": "/Users/cliff/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
       "projectName": "Kilnwood Godot Client",
-      "projectPath": "/home/will/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
-      "packagesPath": "/home/will/.nuget/packages/",
-      "outputPath": "/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/",
+      "projectPath": "/Users/cliff/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
+      "packagesPath": "/Users/cliff/.nuget/packages/",
+      "outputPath": "/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder"
+        "/Users/cliff/Library/Application Support/Godot/mono/GodotNuGetFallbackFolder"
       ],
       "configFilePaths": [
-        "/home/will/.nuget/NuGet/NuGet.Config",
-        "/home/will/.nuget/NuGet/config/Godot.Offline.Config"
+        "/Users/cliff/.nuget/NuGet/NuGet.Config",
+        "/Users/cliff/.nuget/NuGet/config/Godot.Offline.Config"
       ],
       "originalTargetFrameworks": [
         "net6.0"
@@ -128,15 +165,19 @@
         "dependencies": {
           "Godot.SourceGenerators": {
             "target": "Package",
-            "version": "[4.0.0-rc.5, )"
+            "version": "[4.0.0, )"
           },
           "GodotSharp": {
             "target": "Package",
-            "version": "[4.0.0-rc.5, )"
+            "version": "[4.0.0, )"
           },
           "GodotSharpEditor": {
             "target": "Package",
-            "version": "[4.0.0-rc.5, )"
+            "version": "[4.0.0, )"
+          },
+          "Google.Protobuf": {
+            "target": "Package",
+            "version": "[3.19.5, )"
           }
         },
         "imports": [
@@ -155,7 +196,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/6.0.406/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/6.0.406/RuntimeIdentifierGraph.json"
       }
     }
   }

@@ -207,8 +207,8 @@ func (g *Game) processQueue() *pb.GameTick {
 	for _, connect := range g.connectsQueued {
 		connectBytes, _ := json.Marshal(connect)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_CONNECT),
-			Value: string(connectBytes),
+			Type:  pb.ClientActionType_ACTION_CONNECT,
+			Value: connectBytes,
 		})
 	}
 
@@ -216,8 +216,8 @@ func (g *Game) processQueue() *pb.GameTick {
 		g.OnPlayerDisconnected(disconnect.PlayerId)
 		disconnectBytes, _ := json.Marshal(disconnect)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_DISCONNECT),
-			Value: string(disconnectBytes),
+			Type:  pb.ClientActionType_ACTION_DISCONNECT,
+			Value: disconnectBytes,
 		})
 	}
 
@@ -230,8 +230,8 @@ func (g *Game) processQueue() *pb.GameTick {
 
 		moveBytes, _ := json.Marshal(move)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_MOVE),
-			Value: string(moveBytes),
+			Type:  pb.ClientActionType_ACTION_MOVE,
+			Value: moveBytes,
 		})
 	}
 
@@ -245,8 +245,8 @@ func (g *Game) processQueue() *pb.GameTick {
 
 		attackBytes, _ := json.Marshal(attack)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_ATTACK),
-			Value: string(attackBytes),
+			Type:  pb.ClientActionType_ACTION_ATTACK,
+			Value: attackBytes,
 		})
 	}
 
@@ -263,8 +263,8 @@ func (g *Game) processQueue() *pb.GameTick {
 
 		damageBytes, _ := json.Marshal(damage)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_DAMAGE),
-			Value: string(damageBytes),
+			Type:  pb.ClientActionType_ACTION_DAMAGE,
+			Value: damageBytes,
 		})
 
 		if killedTarget {
@@ -274,8 +274,8 @@ func (g *Game) processQueue() *pb.GameTick {
 				Location: g.players[damage.TargetPlayerId].Location,
 			})
 			actions = append(actions, &pb.GameTickAction{
-				Type:  uint32(pb.ClientActionType_ACTION_DEATH),
-				Value: string(deathBytes),
+				Type:  pb.ClientActionType_ACTION_DEATH,
+				Value: deathBytes,
 			})
 		}
 	}
@@ -287,8 +287,8 @@ func (g *Game) processQueue() *pb.GameTick {
 		g.gameMap.SpawnPlayer(player)
 		respawnBytes, _ := json.Marshal(respawn)
 		actions = append(actions, &pb.GameTickAction{
-			Type:  uint32(pb.ClientActionType_ACTION_RESPAWN),
-			Value: string(respawnBytes),
+			Type:  pb.ClientActionType_ACTION_RESPAWN,
+			Value: respawnBytes,
 		})
 	}
 

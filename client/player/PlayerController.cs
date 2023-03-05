@@ -1,4 +1,3 @@
-using Game;
 using Godot;
 using System.Collections.Generic;
 
@@ -25,21 +24,21 @@ public partial class PlayerController : Node
         this.target = this.GetParent().GetNode<Target>("Target");
     }
 
-    public Player OnLocalPlayerJoined(JoinGameResponse msg)
+    public Player OnLocalPlayerJoined(Proto.JoinGameResponse msg)
     {
-        this.localPlayer = this.OnPlayerConnected(msg.playerId, msg.spawn, msg.color);
-        if (msg.others != null)
+        this.localPlayer = this.OnPlayerConnected(msg.PlayerId, msg.Spawn, msg.Color);
+        if (msg.Others != null)
         {
-            foreach (var other in msg.others)
+            foreach (var other in msg.Others)
             {
-                this.OnPlayerConnected(other.playerId, other.spawn, other.color);
+                this.OnPlayerConnected(other.PlayerId, other.Spawn, other.Color);
             }
         }
 
         return this.localPlayer;
     }
 
-    public Player OnPlayerConnected(ulong id, Location spawn, string color)
+    public Player OnPlayerConnected(ulong id, Proto.Location spawn, string color)
     {
         Player p;
         if (this.players.ContainsKey(id))
@@ -72,24 +71,26 @@ public partial class PlayerController : Node
         this.players.Remove(id);
     }
 
-    public Location CurrentLocation(ulong id)
+    public Proto.Location CurrentLocation(ulong id)
     {
         if (!this.players.TryGetValue(id, out var p)) return null;
         return p.CurrentLocation();
     }
 
-    public void SetMoving(ulong id, Vector3 target)
+    public void SetMoving(ulong id, Proto.Location target)
     {
         if (!this.players.TryGetValue(id, out var p)) return;
-        p.SetMoving(target);
-        if (id == this.LocalPlayerId) this.target.SetLocation(target);
+        var targetVec3 = new Vector3(target.X, 0, target.Z);
+        p.SetMoving(targetVec3);
+        if (id == this.LocalPlayerId) this.target.SetLocation(targetVec3);
     }
 
-    public void SetAttacking(ulong sourcePlayerId, ulong targetPlayerId, Vector3 target)
+    public void SetAttacking(ulong sourcePlayerId, ulong targetPlayerId, Proto.Location target)
     {
         if (!this.players.TryGetValue(sourcePlayerId, out var p)) return;
-        p.SetAttacking(targetPlayerId, target);
-        if (sourcePlayerId == this.LocalPlayerId) this.target.SetLocation(target, true);
+        var targetVec3 = new Vector3(target.X, 0, target.Z);
+        p.SetAttacking(targetPlayerId, targetVec3);
+        if (sourcePlayerId == this.LocalPlayerId) this.target.SetLocation(targetVec3, true);
     }
 
     public void StopAttacking(ulong playerId)
@@ -122,7 +123,7 @@ public partial class PlayerController : Node
         p.Die();
     }
 
-    public void Spawn(ulong playerId, Location spawn)
+    public void Spawn(ulong playerId, Proto.Location spawn)
     {
         if (!this.players.TryGetValue(playerId, out var p)) return;
         p.Spawn(spawn);

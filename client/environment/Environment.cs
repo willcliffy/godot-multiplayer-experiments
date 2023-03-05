@@ -1,4 +1,4 @@
-using Game;
+using Proto;
 using Godot;
 
 public partial class Environment : Node
@@ -34,8 +34,8 @@ public partial class Environment : Node
         var targetVec3 = (Vector3)result["position"];
         var targetLocation = new Location()
         {
-            x = Mathf.RoundToInt(targetVec3.X),
-            z = Mathf.RoundToInt(targetVec3.Z),
+            X = Mathf.RoundToInt(targetVec3.X),
+            Z = Mathf.RoundToInt(targetVec3.Z),
         };
 
 

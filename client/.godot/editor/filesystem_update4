@@ -1,3 +1,4 @@
-res://player/player.tscn
 res://level.tscn
-res://default_env.tres
+res://proto/Game.cs
+res://player/Player.cs
+res://player/PlayerController.cs

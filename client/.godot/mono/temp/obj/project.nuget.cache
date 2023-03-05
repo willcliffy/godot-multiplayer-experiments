@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "ic3M14hPJHlZgunkPD4eoQcsqlZfeiHJfh91GK+9fAUXVY2Nl2Td1dZyFi0U8UeHRAkZTqWfnDoyRF7FrjHmYA==",
+  "dgSpecHash": "ChbqKitaDh1ZppPw9F2sJiZUn9EWXdQcr8o7F3QBQWIWlSlwZl1czsGKniVc/V5BY3RWuBlDtHkh5HecDtvFWA==",
   "success": true,
-  "projectFilePath": "/home/will/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
+  "projectFilePath": "/Users/cliff/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
   "expectedPackageFiles": [
-    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godot.sourcegenerators/4.0.0-rc.5/godot.sourcegenerators.4.0.0-rc.5.nupkg.sha512",
-    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godotsharp/4.0.0-rc.5/godotsharp.4.0.0-rc.5.nupkg.sha512",
-    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godotsharpeditor/4.0.0-rc.5/godotsharpeditor.4.0.0-rc.5.nupkg.sha512"
+    "/Users/cliff/Library/Application Support/Godot/mono/GodotNuGetFallbackFolder/godot.sourcegenerators/4.0.0/godot.sourcegenerators.4.0.0.nupkg.sha512",
+    "/Users/cliff/Library/Application Support/Godot/mono/GodotNuGetFallbackFolder/godotsharp/4.0.0/godotsharp.4.0.0.nupkg.sha512",
+    "/Users/cliff/Library/Application Support/Godot/mono/GodotNuGetFallbackFolder/godotsharpeditor/4.0.0/godotsharpeditor.4.0.0.nupkg.sha512",
+    "/Users/cliff/.nuget/packages/google.protobuf/3.19.5/google.protobuf.3.19.5.nupkg.sha512"
   ],
   "logs": []
 }

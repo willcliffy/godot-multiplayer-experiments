@@ -115,8 +115,8 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 	}
 
 	message := &pb.ServerMessage{
-		Type:    int32(pb.ServerMessageType_MESSAGE_JOIN),
-		Payload: string(responseBytes),
+		Type:    pb.ServerMessageType_MESSAGE_JOIN,
+		Payload: responseBytes,
 	}
 
 	messageBytes, err := json.Marshal(&message)
@@ -152,8 +152,8 @@ func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
 	}
 
 	message := &pb.ServerMessage{
-		Type:    int32(pb.ServerMessageType_MESSAGE_TICK),
-		Payload: string(tickBytes),
+		Type:    pb.ServerMessageType_MESSAGE_TICK,
+		Payload: tickBytes,
 	}
 
 	messageBytes, err := json.Marshal(&message)

@@ -10,3 +10,19 @@
 /home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/refint/Kilnwood Godot Client.dll
 /home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.pdb
 /home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/ref/Kilnwood Godot Client.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.csproj.AssemblyReference.cache
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.GeneratedMSBuildEditorConfig.editorconfig
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.AssemblyInfoInputs.cache
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.AssemblyInfo.cs
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.csproj.CoreCompileInputs.cache
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/refint/Kilnwood Godot Client.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.pdb
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.deps.json
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.pdb
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/ref/Kilnwood Godot Client.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/GodotSharp.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/GodotSharpEditor.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Google.Protobuf.dll
+/Users/cliff/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.csproj.CopyComplete
