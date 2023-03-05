@@ -7,8 +7,8 @@ public partial class Target : MeshInstance3D
         if (this.Visible)
         {
             this.RotateY((float)delta);
-            this.Transparency -= (float)delta;
-            if (this.Transparency <= 0) this.Visible = false;
+            this.Transparency += (float)delta;
+            if (this.Transparency >= 1.0) this.Visible = false;
         }
     }
 
@@ -26,7 +26,7 @@ public partial class Target : MeshInstance3D
             this.Position = location + new Vector3(0, 1 / 3f, 0);
             var mat = (StandardMaterial3D)Mesh.SurfaceGetMaterial(0).Duplicate();
             mat.AlbedoColor = new Color(0, 0, 1);
-            this.Transparency = 1.0f;
+            this.Transparency = 0.0f;
             this.SetSurfaceOverrideMaterial(0, mat);
         }
         this.Visible = true;

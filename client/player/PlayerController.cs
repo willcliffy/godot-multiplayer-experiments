@@ -4,8 +4,6 @@ using System.Collections.Generic;
 
 public partial class PlayerController : Node
 {
-    const int RAY_TRACE_DISTANCE = 1000;
-
     private Player localPlayer;
 
     public ulong LocalPlayerId
@@ -13,50 +11,18 @@ public partial class PlayerController : Node
         get { return localPlayer.Id; }
     }
 
+    public Godot.Rid LocalPlayerRid
+    {
+        get { return this.players[this.LocalPlayerId].GetRid(); }
+    }
+
     private Dictionary<ulong, Player> players = new Dictionary<ulong, Player>();
 
     private Target target;
-    private MessageBroker mb;
-    private Camera3D camera;
 
     public override void _Ready()
     {
-        this.mb = this.GetParent<MessageBroker>();
-        this.target = this.mb.GetNode<Target>("Target");
-    }
-
-    public override void _Input(InputEvent @event)
-    {
-        if (camera == null) return;
-        if (!(@event is InputEventMouseButton eventKey)) return;
-        // Move character
-        if (eventKey.ButtonIndex != MouseButton.Left) return;
-
-        var from = camera.ProjectRayOrigin(eventKey.Position);
-        var to = from + camera.ProjectRayNormal(eventKey.Position) * RAY_TRACE_DISTANCE;
-        var exclude = new Godot.Collections.Array<Rid>();
-        exclude.Add(this.players[this.LocalPlayerId].GetRid());
-        var param = PhysicsRayQueryParameters3D.Create(from, to, exclude: exclude);
-
-        // TODO - spagooti
-        var result = this.mb.GetParent<Node3D>().GetWorld3D().DirectSpaceState.IntersectRay(param);
-        if (result == null || !result.ContainsKey("position")) return;
-
-        var targetVec3 = (Vector3)result["position"];
-        var targetLocation = new Location()
-        {
-            x = Mathf.RoundToInt(targetVec3.X),
-            z = Mathf.RoundToInt(targetVec3.Z),
-        };
-
-        var targetPlayer = result["collider"].As<Player>();
-        if (targetPlayer != null)
-        {
-            this.mb.PlayerRequestedAttack(targetPlayer.Id);
-            return;
-        }
-
-        this.mb.PlayerRequestedMove(targetLocation);
+        this.target = this.GetParent().GetNode<Target>("Target");
     }
 
     public Player OnLocalPlayerJoined(JoinGameResponse msg)
@@ -85,7 +51,7 @@ public partial class PlayerController : Node
             var scene = ResourceLoader.Load<PackedScene>("res://player/player.tscn");
             p = scene.Instantiate() as Player;
             p.Visible = true;
-            p.Scale = new Vector3(0.25f, 0.25f, 0.25f); // TODO - do this in blender instead for better visual effect
+            //p.Scale = new Vector3(0.25f, 0.25f, 0.25f); // TODO - do this in blender instead for better visual effect
             this.AddChild(p);
             this.players[id] = p;
         }

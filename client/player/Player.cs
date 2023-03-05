@@ -4,7 +4,7 @@ using Godot;
 public partial class Player : CharacterBody3D
 {
     const int MAX_HP = 10;
-    const int SPEED = 10;
+    const int SPEED = 1000;
 
     public ulong Id { get; set; }
 
@@ -43,25 +43,19 @@ public partial class Player : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
-        if (Input.IsActionJustPressed("exit")) GetTree().Quit();
-        if (!this.moving) return;
-
         if (this.nav.IsTargetReached())
         {
-            if (attacking)
-            {
-                this.setAttackingTargetReached();
-                return;
-            }
-            this.setIdle();
+            if (attacking) this.setAttackingTargetReached();
+            else if (moving) this.setIdle();
             return;
         }
 
-        var direction = (this.nav.GetNextPathPosition() - this.Position).Normalized();
-        var _collision = MoveAndCollide(direction * (float)delta * SPEED);
-        var facingDirection = this.Position - direction;
-        facingDirection.Y = this.Position.Y;
-        this.model.LookAt(facingDirection, Vector3.Up);
+        var direction = this.GlobalPosition.DirectionTo(this.nav.GetNextPathPosition());
+        GD.Print(direction);
+        var velocity = direction * (float)delta * SPEED;
+        this.nav.SetVelocity(velocity);
+        this.Velocity = velocity;
+        this.MoveAndSlide();
     }
 
     public void SetTeam(string color)
@@ -76,26 +70,18 @@ public partial class Player : CharacterBody3D
     public void SetMoving(Vector3 target)
     {
         if (!this.alive) return;
+        this.nav.TargetPosition = targetLocation;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
         this.targetLocation = target;
-        this.nav.TargetPosition = target;
         this.animations.Travel("run");
     }
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetLocation)
     {
         if (!this.alive) return;
-        var currentLocation = this.Position;
         this.nav.TargetPosition = targetLocation;
-        if (!this.nav.IsTargetReachable())
-        {
-            GD.Print($"FAILED TO SET ATTACKING! cannot reach {targetLocation} from {currentLocation}");
-            this.nav.TargetPosition = currentLocation;
-            return;
-        }
-
         this.moving = true;
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
