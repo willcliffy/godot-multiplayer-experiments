@@ -21,7 +21,6 @@ public partial class Player : CharacterBody3D
     private bool attacking;
     private bool alive;
 
-    private Vector3 targetLocation;
     private ulong? targetPlayerId;
 
     public override void _Ready()
@@ -66,25 +65,23 @@ public partial class Player : CharacterBody3D
         head.SetSurfaceOverrideMaterial(0, material);
     }
 
-    public void SetMoving(Vector3 target)
+    public void SetMoving(Vector3 targetVec3)
     {
         if (!this.alive) return;
-        this.nav.TargetPosition = targetLocation;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
-        this.targetLocation = target;
+        this.nav.TargetPosition = targetVec3;
         this.animations.Travel("run");
     }
 
-    public void SetAttacking(ulong targetPlayerId, Vector3 targetLocation)
+    public void SetAttacking(ulong targetPlayerId, Vector3 targetVec3)
     {
         if (!this.alive) return;
-        this.nav.TargetPosition = targetLocation;
         this.moving = true;
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
-        this.targetLocation = targetLocation;
+        this.nav.TargetPosition = targetVec3;
         this.animations.Travel("run");
     }
 
