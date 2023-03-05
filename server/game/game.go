@@ -1,13 +1,13 @@
 package game
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/broadcast"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // 600 bpm or 10 bps
@@ -159,13 +159,13 @@ func (g *Game) Close() {
 }
 
 func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
-	// TODO - replace json with proto if/when migrating off of Websockets to support protobuf
-	switch pb.ClientActionType(action.Type) {
+	log.Info().Msgf("action received: %v", action.Type)
+	switch action.Type {
 	case pb.ClientActionType_ACTION_PING:
 		// nyi
 	case pb.ClientActionType_ACTION_DISCONNECT:
 		var disconnect pb.Disconnect
-		err := json.Unmarshal([]byte(action.Payload), &disconnect)
+		err := proto.Unmarshal([]byte(action.Payload), &disconnect)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
 		}
@@ -173,15 +173,17 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		g.disconnectsQueued[playerId] = &disconnect
 	case pb.ClientActionType_ACTION_MOVE:
 		var move pb.Move
-		err := json.Unmarshal([]byte(action.Payload), &move)
+		err := proto.Unmarshal([]byte(action.Payload), &move)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal move: %s", action.Payload)
 		}
 
+		log.Info().Msgf("move received: %v %v", move.PlayerId, move.Target)
+
 		g.movementsQueued[playerId] = &move
 	case pb.ClientActionType_ACTION_ATTACK:
 		var attack pb.Attack
-		err := json.Unmarshal([]byte(action.Payload), &attack)
+		err := proto.Unmarshal([]byte(action.Payload), &attack)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal attack")
 		}
@@ -189,7 +191,7 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		g.attacksQueued[playerId] = &attack
 	case pb.ClientActionType_ACTION_DAMAGE:
 		var damage pb.Damage
-		err := json.Unmarshal([]byte(action.Payload), &damage)
+		err := proto.Unmarshal([]byte(action.Payload), &damage)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal damage")
 		}
@@ -205,7 +207,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	actions := make([]*pb.GameTickAction, 0)
 
 	for _, connect := range g.connectsQueued {
-		connectBytes, _ := json.Marshal(connect)
+		connectBytes, _ := proto.Marshal(connect)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_CONNECT,
 			Value: connectBytes,
@@ -214,7 +216,7 @@ func (g *Game) processQueue() *pb.GameTick {
 
 	for _, disconnect := range g.disconnectsQueued {
 		g.OnPlayerDisconnected(disconnect.PlayerId)
-		disconnectBytes, _ := json.Marshal(disconnect)
+		disconnectBytes, _ := proto.Marshal(disconnect)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_DISCONNECT,
 			Value: disconnectBytes,
@@ -228,7 +230,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		moveBytes, _ := json.Marshal(move)
+		moveBytes, _ := proto.Marshal(move)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_MOVE,
 			Value: moveBytes,
@@ -243,7 +245,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		attackBytes, _ := json.Marshal(attack)
+		attackBytes, _ := proto.Marshal(attack)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_ATTACK,
 			Value: attackBytes,
@@ -261,7 +263,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			continue
 		}
 
-		damageBytes, _ := json.Marshal(damage)
+		damageBytes, _ := proto.Marshal(damage)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_DAMAGE,
 			Value: damageBytes,
@@ -269,7 +271,7 @@ func (g *Game) processQueue() *pb.GameTick {
 
 		if killedTarget {
 			g.deathTimers[damage.TargetPlayerId] = 50
-			deathBytes, _ := json.Marshal(pb.Death{
+			deathBytes, _ := proto.Marshal(&pb.Death{
 				PlayerId: damage.TargetPlayerId,
 				Location: g.players[damage.TargetPlayerId].Location,
 			})
@@ -285,7 +287,7 @@ func (g *Game) processQueue() *pb.GameTick {
 		player := g.players[pId]
 		player.Respawn()
 		g.gameMap.SpawnPlayer(player)
-		respawnBytes, _ := json.Marshal(respawn)
+		respawnBytes, _ := proto.Marshal(respawn)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_RESPAWN,
 			Value: respawnBytes,

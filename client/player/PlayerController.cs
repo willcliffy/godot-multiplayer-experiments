@@ -50,7 +50,6 @@ public partial class PlayerController : Node
             var scene = ResourceLoader.Load<PackedScene>("res://player/player.tscn");
             p = scene.Instantiate() as Player;
             p.Visible = true;
-            //p.Scale = new Vector3(0.25f, 0.25f, 0.25f); // TODO - do this in blender instead for better visual effect
             this.AddChild(p);
             this.players[id] = p;
         }

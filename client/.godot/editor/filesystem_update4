@@ -1,4 +1,2 @@
 res://level.tscn
-res://proto/Game.cs
-res://player/Player.cs
-res://player/PlayerController.cs
+res://player/player.tscn

@@ -1,0 +1,2 @@
+﻿49837
+/Users/cliff/Desktop/Godot_mono.app/Contents/MacOS/Godot

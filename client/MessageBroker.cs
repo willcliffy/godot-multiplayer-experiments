@@ -28,7 +28,7 @@ public partial class MessageBroker : Node
         if (error != Error.Ok)
         {
             this.client.Close();
-            GD.Print("Error connect to " + this.wsUrl);
+            GD.Print("Error connecting to " + this.wsUrl);
             return;
         }
 
@@ -46,28 +46,22 @@ public partial class MessageBroker : Node
     #region SERVER_TO_CLIENT
     private void onDataReceived()
     {
-        var packet = this.client.GetPacket();
-        GD.Print(Encoding.UTF8.GetString(packet));
-        // var action = JsonSerializer.Deserialize<Proto.ServerMessage>(packet);
-
-
-        var action = Proto.ServerMessage.Parser.ParseFrom(packet);
-        GD.Print(action);
+        var action = Proto.ServerMessage.Parser.ParseFrom(this.client.GetPacket());
         switch (action.Type)
         {
             case Proto.ServerMessageType.MessagePing:
                 GD.Print("ping"); // TODO
                 break;
             case Proto.ServerMessageType.MessageJoin:
-                // var joinGameRes = JsonSerializer.Deserialize<Proto.JoinGameResponse>(action.Payload);
-                // var localPlayer = this.players.OnLocalPlayerJoined(joinGameRes);
-                // // TODO - spagoot
-                // var cameraFollowing = this.GetParent().GetNode<RemoteTransform3D>("CameraBase/Following");
-                // cameraFollowing.RemotePath = localPlayer.GetPath();
+                var joinGameRes = Proto.JoinGameResponse.Parser.ParseFrom(action.Payload);
+                var localPlayer = this.players.OnLocalPlayerJoined(joinGameRes);
+                // TODO - spagoot
+                var cameraFollowing = this.GetParent().GetNode<RemoteTransform3D>("CameraBase/Following");
+                cameraFollowing.RemotePath = localPlayer.GetPath();
                 break;
             case Proto.ServerMessageType.MessageTick:
-                // var tick = JsonSerializer.Deserialize<Proto.GameTick>(action.Payload);
-                // this.processGameTick(tick);
+                var tick = Proto.GameTick.Parser.ParseFrom(action.Payload);
+                this.processGameTick(tick);
                 break;
             default:
                 GD.Print($"Unknown server message type: '{action.Type}'");
@@ -83,42 +77,41 @@ public partial class MessageBroker : Node
             switch (action.Type)
             {
                 case Proto.ClientActionType.ActionConnect:
-                    // var connect = JsonSerializer.Deserialize<Proto.Connect>(action.Value);
-                    // if (connect.PlayerId == this.players.LocalPlayerId) return;
-                    // this.players.OnPlayerConnected(connect.PlayerId, connect.Spawn, connect.Color);
+                    var connect = Proto.Connect.Parser.ParseFrom(action.Value);
+                    if (connect.PlayerId == this.players.LocalPlayerId) return;
+                    this.players.OnPlayerConnected(connect.PlayerId, connect.Spawn, connect.Color);
                     break;
                 case Proto.ClientActionType.ActionDisconnect:
-                    // var disconnect = JsonSerializer.Deserialize<Proto.Disconnect>(action.Value);
-                    // this.players.OnPlayerDisconnected(disconnect.PlayerId);
+                    var disconnect = Proto.Disconnect.Parser.ParseFrom(action.Value);
+                    this.players.OnPlayerDisconnected(disconnect.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionMove:
-                    // var move = JsonSerializer.Deserialize<Proto.Move>(action.Value);
-                    // this.players.SetMoving(move.PlayerId, move.Target);
-                    // this.players.StopAttacking(move.PlayerId);
+                    var move = Proto.Move.Parser.ParseFrom(action.Value);
+                    this.players.SetMoving(move.PlayerId, move.Target);
+                    this.players.StopAttacking(move.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionAttack:
-                    // var attack = JsonSerializer.Deserialize<Proto.Attack>(action.Value);
-                    // this.players.SetAttacking(
-                    //     attack.SourcePlayerId,
-                    //     attack.TargetPlayerId,
-                    //     attack.TargetPlayerLocation);
+                    var attack = Proto.Attack.Parser.ParseFrom(action.Value);
+                    this.players.SetAttacking(
+                        attack.SourcePlayerId,
+                        attack.TargetPlayerId,
+                        attack.TargetPlayerLocation);
                     break;
                 case Proto.ClientActionType.ActionDamage:
-                    // var damage = JsonSerializer.Deserialize<Proto.Damage>(action.Value);
-                    // GD.Print("damage received");
-                    // this.players.PlayAttackingAnimation(damage.SourcePlayerId);
-                    // this.players.ApplyDamage(damage.TargetPlayerId, damage.DamageDealt);
+                    var damage = Proto.Damage.Parser.ParseFrom(action.Value);
+                    this.players.PlayAttackingAnimation(damage.SourcePlayerId);
+                    this.players.ApplyDamage(damage.TargetPlayerId, damage.DamageDealt);
                     break;
                 case Proto.ClientActionType.ActionDeath:
-                    // var death = JsonSerializer.Deserialize<Proto.Death>(action.Value);
-                    // this.players.Die(death.PlayerId);
+                    var death = Proto.Death.Parser.ParseFrom(action.Value);
+                    this.players.Die(death.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionRespawn:
-                    // var respawn = JsonSerializer.Deserialize<Proto.Respawn>(action.Value);
-                    // this.players.Spawn(respawn.PlayerId, respawn.Spawn);
+                    var respawn = Proto.Respawn.Parser.ParseFrom(action.Value);
+                    this.players.Spawn(respawn.PlayerId, respawn.Spawn);
                     break;
                 default:
-                    GD.Print($"Got unexpected client action from server: {action.Type}");
+                    GD.Print($"Got unexpected client action: {action.Type}");
                     break;
             }
         }
@@ -137,8 +130,10 @@ public partial class MessageBroker : Node
         var actionStreamMem = new MemoryStream();
         var actionStream = new Google.Protobuf.CodedOutputStream(actionStreamMem, false);
         msg.WriteTo(actionStream);
+        actionStream.Flush();
+        actionStreamMem.Flush();
 
-        Error error = this.client.PutPacket(actionStreamMem.ToArray());
+        Error error = this.client.Send(actionStreamMem.ToArray());
         if (error != Error.Ok)
         {
             GD.Print($"Failed to write packet: {error}");
@@ -152,13 +147,16 @@ public partial class MessageBroker : Node
     public void PlayerRequestedMove(Proto.Location target)
     {
         var moveStreamMem = new MemoryStream();
-        var moveStream = new Google.Protobuf.CodedOutputStream(new MemoryStream(), false);
+        var moveStream = new Google.Protobuf.CodedOutputStream(moveStreamMem, false);
 
         new Proto.Move()
         {
             PlayerId = this.players.LocalPlayerId,
             Target = target,
         }.WriteTo(moveStream);
+
+        moveStream.Flush();
+        moveStreamMem.Flush();
 
         this.writeClientActionToServer(
             Proto.ClientActionType.ActionMove,
@@ -169,45 +167,47 @@ public partial class MessageBroker : Node
 
     public void PlayerRequestedAttack(ulong targetPlayerId)
     {
-        // var msg = new Proto.ClientAction()
-        // {
-        //     Type = Proto.ClientActionType.ActionAttack,
-        //     Payload = JsonSerializer.Serialize(new Proto.Attack()
-        //     {
-        //         SourcePlayerId = this.players.LocalPlayerId,
-        //         SourcePlayerLocation = this.players.CurrentLocation(this.players.LocalPlayerId),
-        //         TargetPlayerId = targetPlayerId,
-        //         TargetPlayerLocation = this.players.CurrentLocation(targetPlayerId),
-        //     })
-        // };
-        // var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        // Error error = this.client.PutPacket(msgBytes);
-        // if (error != Error.Ok)
-        // {
-        //     GD.Print($"Failed to request move: {error}");
-        //     return;
-        // }
+        var attackStreamMem = new MemoryStream();
+        var attackStream = new Google.Protobuf.CodedOutputStream(attackStreamMem, false);
+
+        new Proto.Attack()
+        {
+            SourcePlayerId = this.players.LocalPlayerId,
+            SourcePlayerLocation = this.players.CurrentLocation(this.players.LocalPlayerId),
+            TargetPlayerId = targetPlayerId,
+            TargetPlayerLocation = this.players.CurrentLocation(targetPlayerId),
+        }.WriteTo(attackStream);
+
+        attackStream.Flush();
+        attackStreamMem.Flush();
+
+        this.writeClientActionToServer(
+            Proto.ClientActionType.ActionAttack,
+            attackStreamMem.ToArray());
+
+        attackStream.Dispose();
     }
 
     public void PlayerRequestedDamage(ulong targetPlayerId)
     {
-        // var msg = new Proto.ClientAction()
-        // {
-        //     Type = Proto.ClientActionType.ActionDamage,
-        //     Payload = JsonSerializer.Serialize(new Proto.Damage()
-        //     {
-        //         SourcePlayerId = this.players.LocalPlayerId,
-        //         TargetPlayerId = targetPlayerId,
-        //         DamageDealt = 1,
-        //     })
-        // };
-        // var msgBytes = JsonSerializer.SerializeToUtf8Bytes(msg);
-        // Error error = this.client.PutPacket(msgBytes);
-        // if (error != Error.Ok)
-        // {
-        //     GD.Print($"Failed to request move: {error}");
-        //     return;
-        // }
+        var dmgStreamMem = new MemoryStream();
+        var dmgStream = new Google.Protobuf.CodedOutputStream(dmgStreamMem, false);
+
+        new Proto.Damage()
+        {
+            SourcePlayerId = this.players.LocalPlayerId,
+            TargetPlayerId = targetPlayerId,
+            DamageDealt = 1,
+        }.WriteTo(dmgStream);
+
+        dmgStream.Flush();
+        dmgStreamMem.Flush();
+
+        this.writeClientActionToServer(
+            Proto.ClientActionType.ActionDamage,
+            dmgStreamMem.ToArray());
+
+        dmgStream.Dispose();
     }
     #endregion
 }

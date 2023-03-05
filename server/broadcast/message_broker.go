@@ -1,7 +1,6 @@
 package broadcast
 
 import (
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sony/sonyflake"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type MessageBroker struct {
@@ -72,7 +72,7 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 		}
 
 		var action pb.ClientAction
-		err = json.Unmarshal(message, &action)
+		err = proto.Unmarshal(message, &action)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal client action")
 			continue
@@ -108,7 +108,7 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 		response.Others = []*pb.Connect{}
 	}
 
-	responseBytes, err := json.Marshal(response)
+	responseBytes, err := proto.Marshal(response)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal join game response: %+v", response)
 		return
@@ -119,13 +119,11 @@ func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.
 		Payload: responseBytes,
 	}
 
-	messageBytes, err := json.Marshal(&message)
+	messageBytes, err := proto.Marshal(message)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal player join response: %v", message)
 		return
 	}
-	log.Debug().Msg(string(responseBytes))
-	log.Debug().Msg(string(messageBytes))
 
 	mb.broadcastToPlayer(playerId, messageBytes)
 }
@@ -145,7 +143,7 @@ func (mb *MessageBroker) OnPlayerLeftGame(gameId, playerId uint64) {
 
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
-	tickBytes, err := json.Marshal(tick)
+	tickBytes, err := proto.Marshal(tick)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal game tick: %v", tick)
 		return
@@ -156,7 +154,7 @@ func (mb *MessageBroker) OnGameTick(gameId uint64, tick *pb.GameTick) {
 		Payload: tickBytes,
 	}
 
-	messageBytes, err := json.Marshal(&message)
+	messageBytes, err := proto.Marshal(message)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to marshal game tick server message: %v", tick)
 		return
@@ -181,11 +179,13 @@ func (mb *MessageBroker) broadcastToGame(gameId uint64, payload []byte) {
 
 	// todo - support multiple games. This blasts to all
 	for _, conn := range mb.playerConns {
-		err := conn.WriteMessage(websocket.TextMessage, payload)
+		err := conn.WriteMessage(websocket.BinaryMessage, payload)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to broadcast to player")
 		}
 	}
+
+	log.Debug().Msgf("broadcasted tick")
 }
 
 func (mb *MessageBroker) broadcastToPlayer(playerId uint64, payload []byte) {
@@ -198,7 +198,7 @@ func (mb *MessageBroker) broadcastToPlayer(playerId uint64, payload []byte) {
 		return
 	}
 
-	err := conn.WriteMessage(websocket.TextMessage, payload)
+	err := conn.WriteMessage(websocket.BinaryMessage, payload)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to broadcast to player")
 	}
