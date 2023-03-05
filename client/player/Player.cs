@@ -160,7 +160,7 @@ public partial class Player : CharacterBody3D
 
         this.Hp -= amount;
         var hpMesh = (CapsuleMesh)this.healthBar.Mesh.Duplicate();
-        hpMesh.Height = 1.0f * this.Hp / MAX_HP;
+        hpMesh.Height = 10.0f * this.Hp / MAX_HP;
         this.healthBar.Mesh = hpMesh;
         this.healthBar.Position -= new Vector3(0.5f * amount / MAX_HP, 0, 0);
     }
@@ -185,7 +185,7 @@ public partial class Player : CharacterBody3D
         this.healthBarBase.Visible = true;
         this.collider.Disabled = false;
         this.Position = new Vector3(spawn.x, 0, spawn.z);
-        ((CapsuleMesh)this.healthBar.Mesh).Height = 1.0f;
+        ((CapsuleMesh)this.healthBar.Mesh).Height = 10.0f;
         this.setIdle();
 
         // TODO - hacky, might need this to refresh the hp bar meshes
