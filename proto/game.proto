@@ -9,13 +9,12 @@ message Location {
 
 enum ClientActionType {
   ACTION_PING = 0;
-  ACTION_CONNECT = 1;
-  ACTION_DISCONNECT = 2;
-  ACTION_MOVE = 3;
-  ACTION_ATTACK = 4;
-  ACTION_DAMAGE = 5;
-  ACTION_DEATH = 6;
-  ACTION_RESPAWN = 7;
+  ACTION_DISCONNECT = 1;
+  ACTION_MOVE = 2;
+  ACTION_ATTACK = 3;
+  ACTION_DAMAGE = 4;
+  ACTION_DEATH = 5;
+  ACTION_RESPAWN = 6;
 }
 
 message ClientAction {

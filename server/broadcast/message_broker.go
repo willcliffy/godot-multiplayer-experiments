@@ -49,6 +49,14 @@ func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Co
 
 	start := time.Now()
 	log.Info().Msgf("Connected to new player assigned id: '%d'", playerId)
+	for _, g := range mb.games {
+		err := g.OnPlayerConnected(playerId)
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to onplayerconnected")
+			return
+		}
+	}
+	log.Info().Msg("Starting read loop")
 	mb.clientReadLoop(playerId, conn)
 	log.Info().
 		Msgf("Disconnected from player '%d'. Connection duration %v", playerId, time.Since(start))
@@ -71,13 +79,6 @@ func (mb *MessageBroker) clientReadLoop(playerId uint64, conn *websocket.Conn) {
 		}
 
 		for _, g := range mb.games {
-			if action.Type == int32(pb.ClientActionType_ACTION_CONNECT) {
-				err := g.OnPlayerConnected(playerId)
-				if err != nil {
-					log.Error().Msgf("failed to onplayerconnected")
-				}
-				continue
-			}
 			g.OnActionReceived(playerId, &action)
 		}
 	}

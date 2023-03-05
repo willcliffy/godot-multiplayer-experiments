@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "ic3M14hPJHlZgunkPD4eoQcsqlZfeiHJfh91GK+9fAUXVY2Nl2Td1dZyFi0U8UeHRAkZTqWfnDoyRF7FrjHmYA==",
+  "success": true,
+  "projectFilePath": "/home/will/Documents/personal/kilnwood/client/Kilnwood Godot Client.csproj",
+  "expectedPackageFiles": [
+    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godot.sourcegenerators/4.0.0-rc.5/godot.sourcegenerators.4.0.0-rc.5.nupkg.sha512",
+    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godotsharp/4.0.0-rc.5/godotsharp.4.0.0-rc.5.nupkg.sha512",
+    "/home/will/.local/share/godot/mono/GodotNuGetFallbackFolder/godotsharpeditor/4.0.0-rc.5/godotsharpeditor.4.0.0-rc.5.nupkg.sha512"
+  ],
+  "logs": []
+}

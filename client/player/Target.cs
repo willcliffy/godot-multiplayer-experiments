@@ -1,37 +1,39 @@
 using Godot;
 
-public class Target : MeshInstance
+public partial class Target : MeshInstance3D
 {
-	public override void _Process(float delta)
-	{
-		if (this.Visible)
-		{
-			RotateY(delta);
-		}
+    public override void _Process(double delta)
+    {
+        if (this.Visible)
+        {
+            this.RotateY((float)delta);
+            this.Transparency -= (float)delta;
+            if (this.Transparency <= 0) this.Visible = false;
+        }
+    }
 
-	}
+    public void SetLocation(Vector3 location, bool attacking = false)
+    {
+        if (attacking)
+        {
+            this.Position = location + new Vector3(0, 5 / 3f, 0);
+            var mat = (StandardMaterial3D)Mesh.SurfaceGetMaterial(0).Duplicate();
+            mat.AlbedoColor = new Color(1, 0, 0);
+            this.SetSurfaceOverrideMaterial(0, mat);
+        }
+        else
+        {
+            this.Position = location + new Vector3(0, 1 / 3f, 0);
+            var mat = (StandardMaterial3D)Mesh.SurfaceGetMaterial(0).Duplicate();
+            mat.AlbedoColor = new Color(0, 0, 1);
+            this.Transparency = 1.0f;
+            this.SetSurfaceOverrideMaterial(0, mat);
+        }
+        this.Visible = true;
+    }
 
-	public void SetLocation(Vector3 location, bool attacking = false)
-	{
-		if (attacking)
-		{
-			Translation = location + new Vector3(0, 5 / 3f, 0);
-			var mat = (SpatialMaterial)Mesh.SurfaceGetMaterial(0).Duplicate();
-			mat.AlbedoColor = new Color(1, 0, 0);
-			SetSurfaceMaterial(0, mat);
-		}
-		else
-		{
-			Translation = location + new Vector3(0, 1 / 3f, 0);
-			var mat = (SpatialMaterial)Mesh.SurfaceGetMaterial(0).Duplicate();
-			mat.AlbedoColor = new Color(0, 0, 1);
-			SetSurfaceMaterial(0, mat);
-		}
-		this.Visible = true;
-	}
-
-	public void OnArrived()
-	{
-		this.Visible = false;
-	}
+    public void OnArrived()
+    {
+        this.Visible = false;
+    }
 }

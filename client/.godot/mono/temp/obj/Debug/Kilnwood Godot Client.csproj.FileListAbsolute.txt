@@ -1,0 +1,12 @@
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.csproj.AssemblyReference.cache
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.GeneratedMSBuildEditorConfig.editorconfig
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.AssemblyInfoInputs.cache
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.AssemblyInfo.cs
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.csproj.CoreCompileInputs.cache
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.deps.json
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.dll
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/bin/Debug/Kilnwood Godot Client.pdb
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.dll
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/refint/Kilnwood Godot Client.dll
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/Kilnwood Godot Client.pdb
+/home/will/Documents/personal/kilnwood/client/.godot/mono/temp/obj/Debug/ref/Kilnwood Godot Client.dll

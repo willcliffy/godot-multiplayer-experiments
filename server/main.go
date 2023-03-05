@@ -16,7 +16,7 @@ import (
 
 const (
 	PORT              string = "8080"
-	WEBCLIENT_ENABLED bool   = true
+	WEBCLIENT_ENABLED bool   = false
 )
 
 var (
