@@ -29,30 +29,29 @@ namespace Proto {
             "Q2xpZW50QWN0aW9uVHlwZRIPCgdwYXlsb2FkGAIgASgMIkkKB0Nvbm5lY3QS",
             "EAoIcGxheWVySWQYASABKAQSDQoFY29sb3IYAiABKAkSHQoFc3Bhd24YAyAB",
             "KAsyDi5nYW1lLkxvY2F0aW9uIh4KCkRpc2Nvbm5lY3QSEAoIcGxheWVySWQY",
-            "ASABKAQiVgoETW92ZRIQCghwbGF5ZXJJZBgBIAEoBBIeCgZ0YXJnZXQYAiAB",
-            "KAsyDi5nYW1lLkxvY2F0aW9uEhwKBHBhdGgYAyADKAsyDi5nYW1lLkxvY2F0",
-            "aW9uIpQBCgZBdHRhY2sSFgoOc291cmNlUGxheWVySWQYASABKAQSLAoUc291",
-            "cmNlUGxheWVyTG9jYXRpb24YAiABKAsyDi5nYW1lLkxvY2F0aW9uEhYKDnRh",
-            "cmdldFBsYXllcklkGAMgASgEEiwKFHRhcmdldFBsYXllckxvY2F0aW9uGAQg",
-            "ASgLMg4uZ2FtZS5Mb2NhdGlvbiJNCgZEYW1hZ2USFgoOc291cmNlUGxheWVy",
-            "SWQYASABKAQSFgoOdGFyZ2V0UGxheWVySWQYAiABKAQSEwoLZGFtYWdlRGVh",
-            "bHQYAyABKAUiOwoFRGVhdGgSEAoIcGxheWVySWQYASABKAQSIAoIbG9jYXRp",
-            "b24YAiABKAsyDi5nYW1lLkxvY2F0aW9uIjoKB1Jlc3Bhd24SEAoIcGxheWVy",
-            "SWQYASABKAQSHQoFc3Bhd24YAiABKAsyDi5nYW1lLkxvY2F0aW9uIkcKDVNl",
-            "cnZlck1lc3NhZ2USJQoEdHlwZRgBIAEoDjIXLmdhbWUuU2VydmVyTWVzc2Fn",
-            "ZVR5cGUSDwoHcGF5bG9hZBgCIAEoDCJFCg5HYW1lVGlja0FjdGlvbhIkCgR0",
-            "eXBlGAEgASgOMhYuZ2FtZS5DbGllbnRBY3Rpb25UeXBlEg0KBXZhbHVlGAIg",
-            "ASgMIj8KCEdhbWVUaWNrEgwKBHRpY2sYASABKA0SJQoHYWN0aW9ucxgCIAMo",
-            "CzIULmdhbWUuR2FtZVRpY2tBY3Rpb24icQoQSm9pbkdhbWVSZXNwb25zZRIQ",
-            "CghwbGF5ZXJJZBgBIAEoBBINCgVjb2xvchgCIAEoCRIdCgVzcGF3bhgDIAEo",
-            "CzIOLmdhbWUuTG9jYXRpb24SHQoGb3RoZXJzGAQgAygLMg0uZ2FtZS5Db25u",
-            "ZWN0KqsBChBDbGllbnRBY3Rpb25UeXBlEg8KC0FDVElPTl9QSU5HEAASEgoO",
-            "QUNUSU9OX0NPTk5FQ1QQARIVChFBQ1RJT05fRElTQ09OTkVDVBACEg8KC0FD",
-            "VElPTl9NT1ZFEAMSEQoNQUNUSU9OX0FUVEFDSxAEEhEKDUFDVElPTl9EQU1B",
-            "R0UQBRIQCgxBQ1RJT05fREVBVEgQBhISCg5BQ1RJT05fUkVTUEFXThAHKkkK",
-            "EVNlcnZlck1lc3NhZ2VUeXBlEhAKDE1FU1NBR0VfUElORxAAEhAKDE1FU1NB",
-            "R0VfSk9JThABEhAKDE1FU1NBR0VfVElDSxACQhFaBy4vcHJvdG+qAgVQcm90",
-            "b2IGcHJvdG8z"));
+            "ASABKAQiNgoETW92ZRIQCghwbGF5ZXJJZBgBIAEoBBIcCgRwYXRoGAMgAygL",
+            "Mg4uZ2FtZS5Mb2NhdGlvbiKUAQoGQXR0YWNrEhYKDnNvdXJjZVBsYXllcklk",
+            "GAEgASgEEiwKFHNvdXJjZVBsYXllckxvY2F0aW9uGAIgASgLMg4uZ2FtZS5M",
+            "b2NhdGlvbhIWCg50YXJnZXRQbGF5ZXJJZBgDIAEoBBIsChR0YXJnZXRQbGF5",
+            "ZXJMb2NhdGlvbhgEIAEoCzIOLmdhbWUuTG9jYXRpb24iTQoGRGFtYWdlEhYK",
+            "DnNvdXJjZVBsYXllcklkGAEgASgEEhYKDnRhcmdldFBsYXllcklkGAIgASgE",
+            "EhMKC2RhbWFnZURlYWx0GAMgASgFIjsKBURlYXRoEhAKCHBsYXllcklkGAEg",
+            "ASgEEiAKCGxvY2F0aW9uGAIgASgLMg4uZ2FtZS5Mb2NhdGlvbiI6CgdSZXNw",
+            "YXduEhAKCHBsYXllcklkGAEgASgEEh0KBXNwYXduGAIgASgLMg4uZ2FtZS5M",
+            "b2NhdGlvbiJHCg1TZXJ2ZXJNZXNzYWdlEiUKBHR5cGUYASABKA4yFy5nYW1l",
+            "LlNlcnZlck1lc3NhZ2VUeXBlEg8KB3BheWxvYWQYAiABKAwiRQoOR2FtZVRp",
+            "Y2tBY3Rpb24SJAoEdHlwZRgBIAEoDjIWLmdhbWUuQ2xpZW50QWN0aW9uVHlw",
+            "ZRINCgV2YWx1ZRgCIAEoDCI/CghHYW1lVGljaxIMCgR0aWNrGAEgASgNEiUK",
+            "B2FjdGlvbnMYAiADKAsyFC5nYW1lLkdhbWVUaWNrQWN0aW9uInEKEEpvaW5H",
+            "YW1lUmVzcG9uc2USEAoIcGxheWVySWQYASABKAQSDQoFY29sb3IYAiABKAkS",
+            "HQoFc3Bhd24YAyABKAsyDi5nYW1lLkxvY2F0aW9uEh0KBm90aGVycxgEIAMo",
+            "CzINLmdhbWUuQ29ubmVjdCqrAQoQQ2xpZW50QWN0aW9uVHlwZRIPCgtBQ1RJ",
+            "T05fUElORxAAEhIKDkFDVElPTl9DT05ORUNUEAESFQoRQUNUSU9OX0RJU0NP",
+            "Tk5FQ1QQAhIPCgtBQ1RJT05fTU9WRRADEhEKDUFDVElPTl9BVFRBQ0sQBBIR",
+            "Cg1BQ1RJT05fREFNQUdFEAUSEAoMQUNUSU9OX0RFQVRIEAYSEgoOQUNUSU9O",
+            "X1JFU1BBV04QBypJChFTZXJ2ZXJNZXNzYWdlVHlwZRIQCgxNRVNTQUdFX1BJ",
+            "TkcQABIQCgxNRVNTQUdFX0pPSU4QARIQCgxNRVNTQUdFX1RJQ0sQAkIRWgcu",
+            "L3Byb3RvqgIFUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Proto.ClientActionType), typeof(global::Proto.ServerMessageType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -60,7 +59,7 @@ namespace Proto {
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.ClientAction), global::Proto.ClientAction.Parser, new[]{ "Type", "Payload" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Connect), global::Proto.Connect.Parser, new[]{ "PlayerId", "Color", "Spawn" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Disconnect), global::Proto.Disconnect.Parser, new[]{ "PlayerId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Move), global::Proto.Move.Parser, new[]{ "PlayerId", "Target", "Path" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Move), global::Proto.Move.Parser, new[]{ "PlayerId", "Path" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Attack), global::Proto.Attack.Parser, new[]{ "SourcePlayerId", "SourcePlayerLocation", "TargetPlayerId", "TargetPlayerLocation" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Damage), global::Proto.Damage.Parser, new[]{ "SourcePlayerId", "TargetPlayerId", "DamageDealt" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Proto.Death), global::Proto.Death.Parser, new[]{ "PlayerId", "Location" }, null, null, null, null),
@@ -1043,7 +1042,6 @@ namespace Proto {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public Move(Move other) : this() {
       playerId_ = other.playerId_;
-      target_ = other.target_ != null ? other.target_.Clone() : null;
       path_ = other.path_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -1063,18 +1061,6 @@ namespace Proto {
       get { return playerId_; }
       set {
         playerId_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "target" field.</summary>
-    public const int TargetFieldNumber = 2;
-    private global::Proto.Location target_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Proto.Location Target {
-      get { return target_; }
-      set {
-        target_ = value;
       }
     }
 
@@ -1105,7 +1091,6 @@ namespace Proto {
         return true;
       }
       if (PlayerId != other.PlayerId) return false;
-      if (!object.Equals(Target, other.Target)) return false;
       if(!path_.Equals(other.path_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1115,7 +1100,6 @@ namespace Proto {
     public override int GetHashCode() {
       int hash = 1;
       if (PlayerId != 0UL) hash ^= PlayerId.GetHashCode();
-      if (target_ != null) hash ^= Target.GetHashCode();
       hash ^= path_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1139,10 +1123,6 @@ namespace Proto {
         output.WriteRawTag(8);
         output.WriteUInt64(PlayerId);
       }
-      if (target_ != null) {
-        output.WriteRawTag(18);
-        output.WriteMessage(Target);
-      }
       path_.WriteTo(output, _repeated_path_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1158,10 +1138,6 @@ namespace Proto {
         output.WriteRawTag(8);
         output.WriteUInt64(PlayerId);
       }
-      if (target_ != null) {
-        output.WriteRawTag(18);
-        output.WriteMessage(Target);
-      }
       path_.WriteTo(ref output, _repeated_path_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1175,9 +1151,6 @@ namespace Proto {
       int size = 0;
       if (PlayerId != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(PlayerId);
-      }
-      if (target_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Target);
       }
       size += path_.CalculateSize(_repeated_path_codec);
       if (_unknownFields != null) {
@@ -1194,12 +1167,6 @@ namespace Proto {
       }
       if (other.PlayerId != 0UL) {
         PlayerId = other.PlayerId;
-      }
-      if (other.target_ != null) {
-        if (target_ == null) {
-          Target = new global::Proto.Location();
-        }
-        Target.MergeFrom(other.Target);
       }
       path_.Add(other.path_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
@@ -1219,13 +1186,6 @@ namespace Proto {
             break;
           case 8: {
             PlayerId = input.ReadUInt64();
-            break;
-          }
-          case 18: {
-            if (target_ == null) {
-              Target = new global::Proto.Location();
-            }
-            input.ReadMessage(Target);
             break;
           }
           case 26: {
@@ -1249,13 +1209,6 @@ namespace Proto {
             break;
           case 8: {
             PlayerId = input.ReadUInt64();
-            break;
-          }
-          case 18: {
-            if (target_ == null) {
-              Target = new global::Proto.Location();
-            }
-            input.ReadMessage(Target);
             break;
           }
           case 26: {

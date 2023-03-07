@@ -2,10 +2,10 @@ using Godot;
 
 public partial class CameraBase : Node3D
 {
-    private const float CAMERA_MIN_ZOOM = 2;
+    private const float CAMERA_MIN_ZOOM = 5;
     private const float CAMERA_MAX_ZOOM = 50;
 
-    private Vector3 CAMERA_ZOOM_SPEED = new Vector3(0, 0.5f, 0.5f);
+    private Vector3 CAMERA_ZOOM_SPEED = new Vector3(0, 2, 1);
     private Camera3D camera;
 
     public override void _Ready()

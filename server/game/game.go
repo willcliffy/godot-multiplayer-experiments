@@ -6,6 +6,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/broadcast"
+	"github.com/willcliffy/kilnwood-game-server/game/player"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
 	"google.golang.org/protobuf/proto"
 )
@@ -21,8 +22,7 @@ type Game struct {
 	clock *time.Ticker
 	tick  uint32
 
-	gameMap *GameMap
-	players map[uint64]*Player
+	players map[uint64]*player.Player
 
 	deathTimers map[uint64]int32
 
@@ -40,8 +40,7 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		broadcaster: broadcaster,
 		done:        make(chan bool),
 
-		gameMap: NewGameMap(),
-		players: make(map[uint64]*Player),
+		players: make(map[uint64]*player.Player),
 
 		deathTimers: make(map[uint64]int32),
 
@@ -77,18 +76,17 @@ func (g *Game) run() {
 			g.tick += 1
 
 			for pId, player := range g.players {
-				player.Tick()
-				ticksLeft, ok := g.deathTimers[pId]
-				if !ok {
-					continue
-				}
-				g.deathTimers[pId]--
-				if ticksLeft > 0 {
-					continue
-				}
-				g.respawnsQueued[pId] = &pb.Respawn{
-					PlayerId: pId,
-					Spawn:    player.Location,
+				result := player.Tick()
+				if result.Respawn {
+					g.respawnsQueued[pId] = &pb.Respawn{
+						PlayerId: pId,
+						Spawn:    player.Movement.GetLocation(),
+					}
+				} else if result.Location != nil {
+					g.movementsQueued[pId] = &pb.Move{
+						PlayerId: pId,
+						Path:     []*pb.Location{result.Location},
+					}
 				}
 			}
 
@@ -106,12 +104,12 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 	p, playerInGame := g.players[playerId]
 	if !playerInGame {
 		// TODO - allow specifying team. for now, give everyone a random color
-		color := RandomTeamColor()
-		p = NewPlayer(playerId, color)
+		color := player.RandomTeamColor()
+		p = player.NewPlayer(playerId, color)
 		g.players[playerId] = p
 	}
 
-	g.gameMap.SpawnPlayer(p)
+	p.Spawn(nil)
 
 	var playerList []*pb.Connect
 
@@ -123,21 +121,21 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		playerList = append(playerList, &pb.Connect{
 			PlayerId: pId,
 			Color:    p.Color,
-			Spawn:    p.Location,
+			Spawn:    p.Movement.GetLocation(),
 		})
 	}
 
 	msg := &pb.JoinGameResponse{
 		PlayerId: p.Id,
 		Color:    p.Color,
-		Spawn:    p.Location,
+		Spawn:    p.Movement.GetLocation(),
 		Others:   playerList,
 	}
 
 	g.connectsQueued[p.Id] = &pb.Connect{
 		PlayerId: p.Id,
 		Color:    p.Color,
-		Spawn:    p.Location,
+		Spawn:    p.Movement.GetLocation(),
 	}
 
 	g.broadcaster.OnPlayerJoinGame(g.id, playerId, msg)
@@ -175,7 +173,7 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 			log.Warn().Err(err).Msgf("failed to unmarshal move: %s", action.Payload)
 		}
 
-		g.movementsQueued[playerId] = &move
+		g.players[playerId].Movement.SetPath(move.Path)
 	case pb.ClientActionType_ACTION_ATTACK:
 		var attack pb.Attack
 		err := proto.Unmarshal([]byte(action.Payload), &attack)
@@ -219,12 +217,6 @@ func (g *Game) processQueue() *pb.GameTick {
 	}
 
 	for _, move := range g.movementsQueued {
-		err := g.gameMap.ApplyMovement(move.PlayerId, move.Target)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
-			continue
-		}
-
 		moveBytes, _ := proto.Marshal(move)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_MOVE,
@@ -232,32 +224,23 @@ func (g *Game) processQueue() *pb.GameTick {
 		})
 	}
 
-	for _, attack := range g.attacksQueued {
-		// TODO - as far as the server is concerned, the attacking player just teleported to the target's exact location
-		err := g.gameMap.ApplyMovement(attack.TargetPlayerId, attack.TargetPlayerLocation)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
-			continue
-		}
+	// Temporarily disable combat
+	// for _, attack := range g.attacksQueued {
+	// 	err := g.gameMap.ApplyMovement(attack.TargetPlayerId, attack.TargetPlayerLocation)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
+	// 		continue
+	// 	}
 
-		attackBytes, _ := proto.Marshal(attack)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_ATTACK,
-			Value: attackBytes,
-		})
-	}
+	// 	attackBytes, _ := proto.Marshal(attack)
+	// 	actions = append(actions, &pb.GameTickAction{
+	// 		Type:  pb.ClientActionType_ACTION_ATTACK,
+	// 		Value: attackBytes,
+	// 	})
+	// }
 
 	for _, damage := range g.damageQueued {
-		if !g.gameMap.InRangeToAttack(damage) {
-			log.Warn().Msgf("should have rejected client damage as attacker was out of range!")
-		}
-
-		killedTarget, err := g.gameMap.ApplyDamage(damage)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
-			continue
-		}
-
+		killedTarget := g.players[damage.TargetPlayerId].Combat.ApplyDamage(damage.DamageDealt)
 		damageBytes, _ := proto.Marshal(damage)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_DAMAGE,
@@ -268,7 +251,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			g.deathTimers[damage.TargetPlayerId] = 50
 			deathBytes, _ := proto.Marshal(&pb.Death{
 				PlayerId: damage.TargetPlayerId,
-				Location: g.players[damage.TargetPlayerId].Location,
+				Location: g.players[damage.TargetPlayerId].Movement.GetLocation(),
 			})
 			actions = append(actions, &pb.GameTickAction{
 				Type:  pb.ClientActionType_ACTION_DEATH,
@@ -280,8 +263,7 @@ func (g *Game) processQueue() *pb.GameTick {
 	for pId, respawn := range g.respawnsQueued {
 		delete(g.deathTimers, pId)
 		player := g.players[pId]
-		player.Respawn()
-		g.gameMap.SpawnPlayer(player)
+		player.Spawn(nil)
 		respawnBytes, _ := proto.Marshal(respawn)
 		actions = append(actions, &pb.GameTickAction{
 			Type:  pb.ClientActionType_ACTION_RESPAWN,

@@ -1,10 +1,11 @@
 using Proto;
 using Godot;
+using System;
 
 public partial class Player : CharacterBody3D
 {
     const int MAX_HP = 10;
-    const int SPEED = 1000;
+    const int SPEED = 500;
 
     public ulong Id { get; set; }
 
@@ -22,9 +23,7 @@ public partial class Player : CharacterBody3D
         }
     }
 
-    private Node3D model;
     public NavigationAgent3D Nav;
-    private AnimationNodeStateMachinePlayback animations;
     private MeshInstance3D healthBar;
     private MeshInstance3D healthBarBase;
     private CollisionShape3D collider;
@@ -37,11 +36,7 @@ public partial class Player : CharacterBody3D
 
     public override void _Ready()
     {
-        this.model = GetNode<Node3D>("Robot");
         this.Nav = GetNode<NavigationAgent3D>("NavigationAgent");
-
-        var animationNode = GetNode<AnimationTree>("AnimationTree");
-        this.animations = (AnimationNodeStateMachinePlayback)animationNode.Get("parameters/playback");
 
         this.alive = true;
         this.Hp = MAX_HP;
@@ -57,30 +52,27 @@ public partial class Player : CharacterBody3D
         if (!this.moving) return;
         if (this.Nav.IsTargetReached())
         {
-            GD.Print("t reached");
+            GD.Print($"{DateTime.Now} Target Reached");
             if (attacking) this.setAttackingTargetReached();
             else if (moving) this.setIdle();
             return;
         }
 
-        // TODO - why is this coming up zero when nav.Target is getting set properly
         var next = this.Nav.GetNextPathPosition();
-
         var direction = this.GlobalPosition.DirectionTo(next);
         var velocity = direction * (float)delta * SPEED;
         this.Nav.SetVelocity(velocity);
         this.Velocity = velocity;
         this.MoveAndSlide();
-        GD.Print($"moving towards {this.Nav.GetCurrentNavigationPath().Length} with velocity. {this.Nav.TargetPosition}");
     }
 
     public void SetTeam(string color)
     {
         // TODO HACKY
-        var head = GetNode<MeshInstance3D>("Robot/RobotArmature/Skeleton3D/Head_2/Head_2");
-        var material = (StandardMaterial3D)head.Mesh.SurfaceGetMaterial(0).Duplicate();
+        var mesh = GetNode<MeshInstance3D>("Mesh");
+        var material = (StandardMaterial3D)mesh.Mesh.SurfaceGetMaterial(0).Duplicate();
         material.AlbedoColor = new Color(color);
-        head.SetSurfaceOverrideMaterial(0, material);
+        mesh.SetSurfaceOverrideMaterial(0, material);
     }
 
     public void SetMoving(Vector3 targetVec3)
@@ -90,8 +82,6 @@ public partial class Player : CharacterBody3D
         this.attacking = false;
         this.targetPlayerId = null;
         this.Nav.TargetPosition = targetVec3;
-        this.animations.Travel("run");
-        GD.Print($"set moving towards {targetVec3}");
     }
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetVec3)
@@ -101,7 +91,6 @@ public partial class Player : CharacterBody3D
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
         this.Nav.TargetPosition = targetVec3;
-        this.animations.Travel("run");
     }
 
     public bool IsAttacking(ulong? playerId)
@@ -130,20 +119,15 @@ public partial class Player : CharacterBody3D
         // }
     }
 
-    public void PlayAttackingAnimation()
-    {
-        this.animations.Travel("punch");
-    }
-
     private void setIdle()
     {
+        GD.Print("idle");
         if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
         this.targetPlayerId = null;
         this.Nav.SetVelocity(Vector3.Zero);
         this.Velocity = Vector3.Zero;
-        this.animations.Travel("idle");
     }
 
     public void ApplyDamage(int amount)
@@ -166,7 +150,6 @@ public partial class Player : CharacterBody3D
         this.healthBar.Position = new Vector3(0, 0, 0); // todo
         this.healthBarBase.Visible = false;
         this.collider.Disabled = true;
-        this.animations.Travel("death");
     }
 
     public void Spawn(Location spawn)

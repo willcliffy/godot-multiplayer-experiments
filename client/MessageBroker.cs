@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.IO;
 
 public partial class MessageBroker : Node
@@ -70,9 +71,6 @@ public partial class MessageBroker : Node
             case Proto.ServerMessageType.MessageJoin:
                 var joinGameRes = Proto.JoinGameResponse.Parser.ParseFrom(action.Payload);
                 var localPlayer = this.players.OnLocalPlayerJoined(joinGameRes);
-                // TODO - spagoot
-                var cameraFollowing = this.GetParent().GetNode<RemoteTransform3D>("CameraBase/Following");
-                cameraFollowing.RemotePath = localPlayer.GetPath();
                 break;
             case Proto.ServerMessageType.MessageTick:
                 var tick = Proto.GameTick.Parser.ParseFrom(action.Payload);
@@ -102,8 +100,9 @@ public partial class MessageBroker : Node
                     break;
                 case Proto.ClientActionType.ActionMove:
                     var move = Proto.Move.Parser.ParseFrom(action.Value);
-                    this.players.SetMoving(move.PlayerId, move.Target);
-                    this.players.StopAttacking(move.PlayerId);
+                    GD.Print($"{DateTime.Now} got move");
+                    // this.players.SetMoving(move.PlayerId, move.Path[0]);
+                    // this.players.StopAttacking(move.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionAttack:
                     var attack = Proto.Attack.Parser.ParseFrom(action.Value);
@@ -114,7 +113,6 @@ public partial class MessageBroker : Node
                     break;
                 case Proto.ClientActionType.ActionDamage:
                     var damage = Proto.Damage.Parser.ParseFrom(action.Value);
-                    this.players.PlayAttackingAnimation(damage.SourcePlayerId);
                     this.players.ApplyDamage(damage.TargetPlayerId, damage.DamageDealt);
                     break;
                 case Proto.ClientActionType.ActionDeath:
@@ -158,10 +156,11 @@ public partial class MessageBroker : Node
 
     public void PlayerRequestedMove(Vector3[] target)
     {
+        this.players.SetMoving(
+            this.players.LocalPlayerId, vector3ToLocation(target[target.Length - 1]));
         var moveAction = new Proto.Move()
         {
             PlayerId = this.players.LocalPlayerId,
-            Target = vector3ToLocation(target[target.Length - 1]),
         };
         foreach (var vector3 in target)
         {

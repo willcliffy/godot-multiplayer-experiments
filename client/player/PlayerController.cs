@@ -115,12 +115,6 @@ public partial class PlayerController : Node
         p.ApplyDamage(amount);
     }
 
-    public void PlayAttackingAnimation(ulong playerId)
-    {
-        if (!this.players.TryGetValue(playerId, out var p)) return;
-        p.PlayAttackingAnimation();
-    }
-
     public void Die(ulong playerId)
     {
         if (!this.players.TryGetValue(playerId, out var p)) return;
