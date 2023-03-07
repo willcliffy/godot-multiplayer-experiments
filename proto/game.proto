@@ -37,6 +37,7 @@ message Disconnect {
 message Move {
   uint64 playerId = 1;
   Location target = 2;
+  repeated Location path = 3;
 }
 
 message Attack {

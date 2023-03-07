@@ -10,8 +10,20 @@ public partial class Player : CharacterBody3D
 
     public int Hp { get; set; }
 
+    public Proto.Location CurrentLocation
+    {
+        get
+        {
+            return new Location()
+            {
+                X = Mathf.RoundToInt(this.Position.X),
+                Z = Mathf.RoundToInt(this.Position.Z),
+            };
+        }
+    }
+
     private Node3D model;
-    private NavigationAgent3D nav;
+    public NavigationAgent3D Nav;
     private AnimationNodeStateMachinePlayback animations;
     private MeshInstance3D healthBar;
     private MeshInstance3D healthBarBase;
@@ -26,7 +38,7 @@ public partial class Player : CharacterBody3D
     public override void _Ready()
     {
         this.model = GetNode<Node3D>("Robot");
-        this.nav = GetNode<NavigationAgent3D>("NavigationAgent");
+        this.Nav = GetNode<NavigationAgent3D>("NavigationAgent");
 
         var animationNode = GetNode<AnimationTree>("AnimationTree");
         this.animations = (AnimationNodeStateMachinePlayback)animationNode.Get("parameters/playback");
@@ -42,18 +54,24 @@ public partial class Player : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
-        if (this.nav.IsTargetReached())
+        if (!this.moving) return;
+        if (this.Nav.IsTargetReached())
         {
+            GD.Print("t reached");
             if (attacking) this.setAttackingTargetReached();
             else if (moving) this.setIdle();
             return;
         }
 
-        var direction = this.GlobalPosition.DirectionTo(this.nav.GetNextPathPosition());
+        // TODO - why is this coming up zero when nav.Target is getting set properly
+        var next = this.Nav.GetNextPathPosition();
+
+        var direction = this.GlobalPosition.DirectionTo(next);
         var velocity = direction * (float)delta * SPEED;
-        this.nav.SetVelocity(velocity);
+        this.Nav.SetVelocity(velocity);
         this.Velocity = velocity;
         this.MoveAndSlide();
+        GD.Print($"moving towards {this.Nav.GetCurrentNavigationPath().Length} with velocity. {this.Nav.TargetPosition}");
     }
 
     public void SetTeam(string color)
@@ -71,8 +89,9 @@ public partial class Player : CharacterBody3D
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
-        this.nav.TargetPosition = targetVec3;
+        this.Nav.TargetPosition = targetVec3;
         this.animations.Travel("run");
+        GD.Print($"set moving towards {targetVec3}");
     }
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetVec3)
@@ -81,7 +100,7 @@ public partial class Player : CharacterBody3D
         this.moving = true;
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
-        this.nav.TargetPosition = targetVec3;
+        this.Nav.TargetPosition = targetVec3;
         this.animations.Travel("run");
     }
 
@@ -101,7 +120,6 @@ public partial class Player : CharacterBody3D
         if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
-
 
         // TODO - Player should not be responsible for this - this should happen on the server
         // The reason it doesnt now is because the golang server doesnt understand pathfinding
@@ -123,16 +141,9 @@ public partial class Player : CharacterBody3D
         this.moving = false;
         this.attacking = false;
         this.targetPlayerId = null;
+        this.Nav.SetVelocity(Vector3.Zero);
+        this.Velocity = Vector3.Zero;
         this.animations.Travel("idle");
-    }
-
-    public Location CurrentLocation()
-    {
-        return new Location()
-        {
-            X = Mathf.RoundToInt(this.Position.X),
-            Z = Mathf.RoundToInt(this.Position.Z),
-        };
     }
 
     public void ApplyDamage(int amount)
@@ -152,7 +163,7 @@ public partial class Player : CharacterBody3D
         this.alive = false;
         this.Hp = 0;
         this.healthBar.Visible = false;
-        this.healthBar.Position = new Vector3(0, 1.75f, 0);
+        this.healthBar.Position = new Vector3(0, 0, 0); // todo
         this.healthBarBase.Visible = false;
         this.collider.Disabled = true;
         this.animations.Travel("death");

@@ -97,8 +97,6 @@ func (g *Game) run() {
 				continue
 			}
 
-			log.Debug().Msgf("tick: %+v", tickResult)
-
 			g.broadcaster.OnGameTick(g.id, tickResult)
 		}
 	}
@@ -159,7 +157,6 @@ func (g *Game) Close() {
 }
 
 func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
-	log.Info().Msgf("action received: %v", action.Type)
 	switch action.Type {
 	case pb.ClientActionType_ACTION_PING:
 		// nyi
@@ -177,8 +174,6 @@ func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal move: %s", action.Payload)
 		}
-
-		log.Info().Msgf("move received: %v %v", move.PlayerId, move.Target)
 
 		g.movementsQueued[playerId] = &move
 	case pb.ClientActionType_ACTION_ATTACK:

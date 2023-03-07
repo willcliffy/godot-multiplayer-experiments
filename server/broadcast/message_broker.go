@@ -56,7 +56,6 @@ func (mb *MessageBroker) RegisterAndHandleWebsocketConnection(conn *websocket.Co
 			return
 		}
 	}
-	log.Info().Msg("Starting read loop")
 	mb.clientReadLoop(playerId, conn)
 	log.Info().
 		Msgf("Disconnected from player '%d'. Connection duration %v", playerId, time.Since(start))
@@ -184,8 +183,6 @@ func (mb *MessageBroker) broadcastToGame(gameId uint64, payload []byte) {
 			log.Warn().Err(err).Msgf("Failed to broadcast to player")
 		}
 	}
-
-	log.Debug().Msgf("broadcasted tick")
 }
 
 func (mb *MessageBroker) broadcastToPlayer(playerId uint64, payload []byte) {

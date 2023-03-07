@@ -7,7 +7,7 @@ public partial class Target : MeshInstance3D
         if (this.Visible)
         {
             this.RotateY((float)delta);
-            this.Transparency += (float)delta;
+            this.Transparency += (float)delta / 2.0f;
             if (this.Transparency >= 1.0) this.Visible = false;
         }
     }
@@ -30,10 +30,5 @@ public partial class Target : MeshInstance3D
             this.SetSurfaceOverrideMaterial(0, mat);
         }
         this.Visible = true;
-    }
-
-    public void OnArrived()
-    {
-        this.Visible = false;
     }
 }

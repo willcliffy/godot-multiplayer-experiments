@@ -17,22 +17,14 @@ public partial class CameraBase : Node3D
     {
         // TODO - allow camera rotation?
 
-        if (!@event.IsPressed() || !(@event is InputEventMouseButton eventKey)) return;
-        if (eventKey.ButtonIndex == MouseButton.WheelUp)
+        if (!@event.IsPressed() || !(@event is InputEventMouseButton e)) return;
+        if (e.ButtonIndex == MouseButton.WheelUp && camera.Position.Y > CAMERA_MIN_ZOOM)
         {
-            if (camera.Position.Y > CAMERA_MIN_ZOOM)
-            {
-                camera.Position -= CAMERA_ZOOM_SPEED;
-            }
-            return;
+            camera.Position -= CAMERA_ZOOM_SPEED;
         }
-        else if (eventKey.ButtonIndex == MouseButton.WheelDown)
+        else if (e.ButtonIndex == MouseButton.WheelDown && camera.Position.Y < CAMERA_MAX_ZOOM)
         {
-            if (camera.Position.Y < CAMERA_MAX_ZOOM)
-            {
-                camera.Position += CAMERA_ZOOM_SPEED;
-            }
-            return;
+            camera.Position += CAMERA_ZOOM_SPEED;
         }
     }
 }

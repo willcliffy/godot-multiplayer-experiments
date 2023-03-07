@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 public partial class PlayerController : Node
 {
-    private Player localPlayer;
+    public Player LocalPlayer;
 
     public ulong LocalPlayerId
     {
-        get { return localPlayer.Id; }
+        get { return LocalPlayer.Id; }
     }
 
     public Godot.Rid LocalPlayerRid
     {
-        get { return this.players[this.LocalPlayerId].GetRid(); }
+        get { return LocalPlayer.GetRid(); }
     }
 
     private Dictionary<ulong, Player> players = new Dictionary<ulong, Player>();
@@ -21,12 +21,14 @@ public partial class PlayerController : Node
 
     public override void _Ready()
     {
+        this.LocalPlayer = this.GetNode<Player>("Player");
         this.target = this.GetParent().GetNode<Target>("Target");
     }
 
     public Player OnLocalPlayerJoined(Proto.JoinGameResponse msg)
     {
-        this.localPlayer = this.OnPlayerConnected(msg.PlayerId, msg.Spawn, msg.Color);
+        this.LocalPlayer = this.OnPlayerConnected(msg.PlayerId, msg.Spawn, msg.Color);
+        this.players[msg.PlayerId] = this.LocalPlayer;
         if (msg.Others != null)
         {
             foreach (var other in msg.Others)
@@ -35,7 +37,7 @@ public partial class PlayerController : Node
             }
         }
 
-        return this.localPlayer;
+        return this.LocalPlayer;
     }
 
     public Player OnPlayerConnected(ulong id, Proto.Location spawn, string color)
@@ -44,6 +46,10 @@ public partial class PlayerController : Node
         if (this.players.ContainsKey(id))
         {
             p = this.players[id];
+        }
+        else if (id != this.LocalPlayerId)
+        {
+            p = this.LocalPlayer;
         }
         else
         {
@@ -73,7 +79,7 @@ public partial class PlayerController : Node
     public Proto.Location CurrentLocation(ulong id)
     {
         if (!this.players.TryGetValue(id, out var p)) return null;
-        return p.CurrentLocation();
+        return p.CurrentLocation;
     }
 
     public void SetMoving(ulong id, Proto.Location target)
@@ -99,7 +105,6 @@ public partial class PlayerController : Node
             if (kvp.Value.IsAttacking(playerId))
             {
                 kvp.Value.StopAttacking();
-                if (playerId == this.LocalPlayerId) this.target.OnArrived();
             }
         }
     }

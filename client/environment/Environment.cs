@@ -1,5 +1,6 @@
 using Proto;
 using Godot;
+using System.Collections.Generic;
 
 public partial class Environment : Node
 {
@@ -7,10 +8,18 @@ public partial class Environment : Node
     private Camera3D camera;
     private MessageBroker mb;
 
+    private Godot.Rid mapRid;
+
     public override void _Ready()
     {
         this.camera = this.GetParent().GetNode<Camera3D>("CameraBase/Camera");
         this.mb = this.GetParent().GetNode<MessageBroker>("MessageBroker");
+        // TODO - Doing this allows us to pre-calculate the route, but breaks pathfinding for characters
+        // this.mapRid = NavigationServer3D.MapCreate();
+        // NavigationServer3D.MapSetUp(mapRid, Vector3.Up);
+        // NavigationServer3D.MapSetActive(mapRid, true);
+        // var navRegionRid = this.GetNode<NavigationRegion3D>("NavRegion").GetRegionRid();
+        // NavigationServer3D.RegionSetMap(navRegionRid, mapRid);
     }
 
     public override void _Input(InputEvent @event)
@@ -38,7 +47,6 @@ public partial class Environment : Node
             Z = Mathf.RoundToInt(targetVec3.Z),
         };
 
-
         var targetPlayer = result["collider"].AsGodotObject();
         if (targetPlayer is Player)
         {
@@ -46,6 +54,23 @@ public partial class Environment : Node
             return;
         }
 
-        this.mb.PlayerRequestedMove(targetLocation);
+        //var path = this.calculatePath(players.LocalPlayer.Position, targetVec3);
+        this.mb.PlayerRequestedMove(new Vector3[] { targetVec3 });
+    }
+
+    private Vector3[] calculatePath(Vector3 from, Vector3 to)
+    {
+        var pathVectors = NavigationServer3D.MapGetPath(this.mapRid, from, to, false);
+        var finalPathVectors = new List<Vector3>();
+        var last = Vector3.Inf;
+        foreach (var vec in pathVectors)
+        {
+            var vecRounded = vec.Round();
+            if (!vecRounded.IsEqualApprox(last))
+            {
+                finalPathVectors.Add(vecRounded);
+            }
+        }
+        return finalPathVectors.ToArray();
     }
 }

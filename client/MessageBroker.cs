@@ -1,6 +1,5 @@
 using Godot;
 using System.IO;
-using System.Text;
 
 public partial class MessageBroker : Node
 {
@@ -42,6 +41,22 @@ public partial class MessageBroker : Node
         if (this.websocketState != WebSocketPeer.State.Open) return;
         if (this.client.GetAvailablePacketCount() > 0) this.onDataReceived();
     }
+
+    #region UTILS
+    private Proto.Location vector3ToLocation(Vector3 vector3)
+    {
+        return new Proto.Location()
+        {
+            X = (int)vector3.X,
+            Z = (int)vector3.Z,
+        };
+    }
+
+    private Vector3 locationToVector3d(Proto.Location location)
+    {
+        return new Vector3(location.X, 0, location.Z);
+    }
+    #endregion
 
     #region SERVER_TO_CLIENT
     private void onDataReceived()
@@ -131,32 +146,33 @@ public partial class MessageBroker : Node
         var actionStream = new Google.Protobuf.CodedOutputStream(actionStreamMem, false);
         msg.WriteTo(actionStream);
         actionStream.Flush();
-        actionStreamMem.Flush();
 
         Error error = this.client.Send(actionStreamMem.ToArray());
         if (error != Error.Ok)
         {
             GD.Print($"Failed to write packet: {error}");
-            actionStream.Dispose();
-            return;
         }
 
         actionStream.Dispose();
     }
 
-    public void PlayerRequestedMove(Proto.Location target)
+    public void PlayerRequestedMove(Vector3[] target)
     {
-        var moveStreamMem = new MemoryStream();
-        var moveStream = new Google.Protobuf.CodedOutputStream(moveStreamMem, false);
-
-        new Proto.Move()
+        var moveAction = new Proto.Move()
         {
             PlayerId = this.players.LocalPlayerId,
-            Target = target,
-        }.WriteTo(moveStream);
+            Target = vector3ToLocation(target[target.Length - 1]),
+        };
+        foreach (var vector3 in target)
+        {
+            moveAction.Path.Add(vector3ToLocation(vector3));
+        }
+
+        var moveStreamMem = new MemoryStream();
+        var moveStream = new Google.Protobuf.CodedOutputStream(moveStreamMem, false);
+        moveAction.WriteTo(moveStream);
 
         moveStream.Flush();
-        moveStreamMem.Flush();
 
         this.writeClientActionToServer(
             Proto.ClientActionType.ActionMove,
@@ -167,19 +183,18 @@ public partial class MessageBroker : Node
 
     public void PlayerRequestedAttack(ulong targetPlayerId)
     {
-        var attackStreamMem = new MemoryStream();
-        var attackStream = new Google.Protobuf.CodedOutputStream(attackStreamMem, false);
-
-        new Proto.Attack()
+        var attackAction = new Proto.Attack()
         {
             SourcePlayerId = this.players.LocalPlayerId,
             SourcePlayerLocation = this.players.CurrentLocation(this.players.LocalPlayerId),
             TargetPlayerId = targetPlayerId,
             TargetPlayerLocation = this.players.CurrentLocation(targetPlayerId),
-        }.WriteTo(attackStream);
+        };
 
+        var attackStreamMem = new MemoryStream();
+        var attackStream = new Google.Protobuf.CodedOutputStream(attackStreamMem, false);
+        attackAction.WriteTo(attackStream);
         attackStream.Flush();
-        attackStreamMem.Flush();
 
         this.writeClientActionToServer(
             Proto.ClientActionType.ActionAttack,
@@ -190,18 +205,17 @@ public partial class MessageBroker : Node
 
     public void PlayerRequestedDamage(ulong targetPlayerId)
     {
-        var dmgStreamMem = new MemoryStream();
-        var dmgStream = new Google.Protobuf.CodedOutputStream(dmgStreamMem, false);
-
-        new Proto.Damage()
+        var damageAction = new Proto.Damage()
         {
             SourcePlayerId = this.players.LocalPlayerId,
             TargetPlayerId = targetPlayerId,
             DamageDealt = 1,
-        }.WriteTo(dmgStream);
+        };
 
+        var dmgStreamMem = new MemoryStream();
+        var dmgStream = new Google.Protobuf.CodedOutputStream(dmgStreamMem, false);
+        damageAction.WriteTo(dmgStream);
         dmgStream.Flush();
-        dmgStreamMem.Flush();
 
         this.writeClientActionToServer(
             Proto.ClientActionType.ActionDamage,
