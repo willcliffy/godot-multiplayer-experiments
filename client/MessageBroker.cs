@@ -100,7 +100,7 @@ public partial class MessageBroker : Node
                     break;
                 case Proto.ClientActionType.ActionMove:
                     var move = Proto.Move.Parser.ParseFrom(action.Value);
-                    GD.Print($"{DateTime.Now} got move");
+                    GD.Print($"{DateTime.Now.Second}.{DateTime.Now.Millisecond} got move");
                     // this.players.SetMoving(move.PlayerId, move.Path[0]);
                     // this.players.StopAttacking(move.PlayerId);
                     break;
@@ -154,15 +154,17 @@ public partial class MessageBroker : Node
         actionStream.Dispose();
     }
 
-    public void PlayerRequestedMove(Vector3[] target)
+    public void PlayerRequestedMove(Vector3 target)
     {
-        this.players.SetMoving(
-            this.players.LocalPlayerId, vector3ToLocation(target[target.Length - 1]));
+        var path = this.players.SetMoving(
+            this.players.LocalPlayerId,
+            vector3ToLocation(target));
+
         var moveAction = new Proto.Move()
         {
             PlayerId = this.players.LocalPlayerId,
         };
-        foreach (var vector3 in target)
+        foreach (var vector3 in path)
         {
             moveAction.Path.Add(vector3ToLocation(vector3));
         }

@@ -6,13 +6,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/willcliffy/kilnwood-game-server/broadcast"
+	"github.com/willcliffy/kilnwood-game-server/constants"
 	"github.com/willcliffy/kilnwood-game-server/game/player"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
 	"google.golang.org/protobuf/proto"
 )
-
-// 600 bpm or 10 bps
-const gameTick = 100 * time.Millisecond
 
 type Game struct {
 	id          uint64
@@ -58,7 +56,7 @@ func (g Game) Id() string {
 }
 
 func (g *Game) Start() {
-	g.clock = time.NewTicker(gameTick)
+	g.clock = time.NewTicker(constants.GAME_TICK_DURATION)
 	go g.run()
 }
 

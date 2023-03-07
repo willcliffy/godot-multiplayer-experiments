@@ -82,12 +82,12 @@ public partial class PlayerController : Node
         return p.CurrentLocation;
     }
 
-    public void SetMoving(ulong id, Proto.Location target)
+    public Vector3[] SetMoving(ulong id, Proto.Location target)
     {
-        if (!this.players.TryGetValue(id, out var p)) return;
+        if (!this.players.TryGetValue(id, out var p)) return null;
         var targetVec3 = new Vector3(target.X, 0, target.Z);
-        p.SetMoving(targetVec3);
         if (id == this.LocalPlayerId) this.target.SetLocation(targetVec3);
+        return p.SetMoving(targetVec3);
     }
 
     public void SetAttacking(ulong sourcePlayerId, ulong targetPlayerId, Proto.Location target)

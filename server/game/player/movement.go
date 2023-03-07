@@ -3,6 +3,7 @@ package player
 import (
 	"math"
 
+	"github.com/willcliffy/kilnwood-game-server/constants"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
 )
 
@@ -63,7 +64,7 @@ func (p *PlayerMovement) moveToNextLocationOnPath() {
 
 func (p PlayerMovement) calculateTicksToNextLocation() int32 {
 	dist := DistanceBetweenLocations(p.location, p.path[0])
-	return int32(math.Round(dist / PLAYER_MOVE_SPEED))
+	return int32(math.Round(dist/PLAYER_MOVE_SPEED) / constants.GAME_TICK_DURATION.Seconds())
 }
 
 func DistanceBetweenLocations(loc1, loc2 *pb.Location) float64 {

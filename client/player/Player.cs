@@ -5,7 +5,7 @@ using System;
 public partial class Player : CharacterBody3D
 {
     const int MAX_HP = 10;
-    const int SPEED = 500;
+    const int SPEED = 300;
 
     public ulong Id { get; set; }
 
@@ -52,7 +52,7 @@ public partial class Player : CharacterBody3D
         if (!this.moving) return;
         if (this.Nav.IsTargetReached())
         {
-            GD.Print($"{DateTime.Now} Target Reached");
+            GD.Print($"{DateTime.Now.Second}.{DateTime.Now.Millisecond} Target Reached");
             if (attacking) this.setAttackingTargetReached();
             else if (moving) this.setIdle();
             return;
@@ -75,13 +75,15 @@ public partial class Player : CharacterBody3D
         mesh.SetSurfaceOverrideMaterial(0, material);
     }
 
-    public void SetMoving(Vector3 targetVec3)
+    public Vector3[] SetMoving(Vector3 targetVec3)
     {
-        if (!this.alive) return;
+        if (!this.alive) return null;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
         this.Nav.TargetPosition = targetVec3;
+        this.Nav.GetNextPathPosition();
+        return this.Nav.GetCurrentNavigationPath();
     }
 
     public void SetAttacking(ulong targetPlayerId, Vector3 targetVec3)

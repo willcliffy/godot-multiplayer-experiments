@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	PLAYER_MOVE_SPEED   = 1
+	PLAYER_MOVE_SPEED   = 5
 	PLAYER_ATTACK_RANGE = 2
 
 	SPAWN_RANGE_X = 10
