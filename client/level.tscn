@@ -44,6 +44,7 @@ visible = false
 
 [node name="Target" type="MeshInstance3D" parent="MessageBroker"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.75, 5)
+visible = false
 cast_shadow = 0
 mesh = SubResource("182")
 script = ExtResource("5")
