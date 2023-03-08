@@ -19,12 +19,9 @@ type Player struct {
 	Color string
 
 	// Expose these interfaces
-	Combat   IPlayerCombat
-	Movement IPlayerMovement
-
-	// Allow calling underlying methods here though
-	combat   *PlayerCombat
-	movement *PlayerMovement
+	combat   IPlayerCombat
+	movement IPlayerMovement
+	crafting IPlayerCrafting
 }
 
 type PlayerTickResult struct {
@@ -33,26 +30,25 @@ type PlayerTickResult struct {
 }
 
 func NewPlayer(playerId uint64, color string) *Player {
-	combat := NewPlayerCombat()
-	movement := NewPlayerMovement()
-	return &Player{
-		Id:       playerId,
-		Color:    color,
-		Combat:   combat,
-		Movement: movement,
-		combat:   combat,
-		movement: movement,
+	player := &Player{
+		Id:    playerId,
+		Color: color,
 	}
+
+	combat := NewPlayerCombat(player)
+	player.combat = combat
+
+	movement := NewPlayerMovement(player)
+	player.movement = movement
+
+	return player
 }
 
-func (p *Player) Tick() *PlayerTickResult {
-	return &PlayerTickResult{
-		Respawn:  p.combat.Tick(),
-		Location: p.movement.Tick(),
-	}
+func (p *Player) Tick() []*pb.ClientAction {
+	return append(p.movement.Tick(p.Id), p.combat.Tick(p.Id)...)
 }
 
-func (p *Player) Spawn(location *pb.Location) {
+func (p *Player) Spawn(location *pb.Location) *pb.Location {
 	if location == nil {
 		location = &pb.Location{
 			X: int32(rand.Intn(SPAWN_RANGE_X)) + 1,
@@ -60,5 +56,19 @@ func (p *Player) Spawn(location *pb.Location) {
 		}
 	}
 
-	p.movement.location = location
+	p.movement.JumpToLocation(location)
+	return location
+}
+
+func (p *Player) HandleMovement(move *pb.Move) {
+	p.movement.SetPath(move.Path)
+	p.movement.QueueAction(move.Queued)
+}
+
+func (p *Player) HandleCollection(collect *pb.Collect) {
+	p.crafting.AddResource(collect.Type, 1)
+}
+
+func (p *Player) HandleBuild(build *pb.Build) bool {
+	return p.crafting.Craft(build.Location)
 }

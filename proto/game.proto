@@ -17,49 +17,60 @@ enum ClientActionType {
   ACTION_DAMAGE = 5;
   ACTION_DEATH = 6;
   ACTION_RESPAWN = 7;
+  ACTION_COLLECT = 8;
+  ACTION_BUILD = 9;
 }
 
 message ClientAction {
   ClientActionType type = 1;
-  bytes payload = 2;
+  uint64 playerId = 2;
+  bytes payload = 3;
 }
 
 message Connect {
-  uint64 playerId = 1;
-  string color = 2;
-  Location spawn = 3;
+  string color = 1;
+  Location spawn = 2;
 }
 
-message Disconnect {
-  uint64 playerId = 1;
-}
+message Disconnect {}
 
 message Move {
-  uint64 playerId = 1;
-  repeated Location path = 3;
+  repeated Location path = 1;
+  ClientAction queued = 2;
 }
 
 message Attack {
-  uint64 sourcePlayerId = 1;
-  Location sourcePlayerLocation = 2;
-  uint64 targetPlayerId = 3;
-  Location targetPlayerLocation = 4;
+  Location sourcePlayerLocation = 1;
+  uint64 targetPlayerId = 2;
+  Location targetPlayerLocation = 3;
 }
 
 message Damage {
-  uint64 sourcePlayerId = 1;
-  uint64 targetPlayerId = 2;
-  int32 damageDealt = 3;
+  uint64 targetPlayerId = 1;
+  int32 damageDealt = 2;
 }
 
 message Death {
-  uint64 playerId = 1;
-  Location location = 2;
+  Location location = 1;
 }
 
 message Respawn {
-  uint64 playerId = 1;
-  Location spawn = 2;
+  Location spawn = 1;
+}
+
+enum ResourceType {
+  EMPTY = 0;
+  RED = 1;
+  BLUE = 2;
+}
+
+message Collect {
+  Location location = 1;
+  ResourceType type = 2;
+}
+
+message Build {
+  Location location = 1;
 }
 
 enum ServerMessageType {
@@ -73,19 +84,9 @@ message ServerMessage {
   bytes payload = 2;
 }
 
-message GameTickAction {
-  ClientActionType type = 1;
-  bytes value = 2;
-}
-
 message GameTick {
   uint32 tick = 1;
-  repeated GameTickAction actions = 2;
-  // repeated Connect connects = 2;
-  // repeated Disconnect disconnects = 3;
-  // repeated Move moves = 4;
-  // repeated Attack attacks = 5;
-  // repeated Damage damage = 6;
+  repeated ClientAction actions = 2;
 }
 
 message JoinGameResponse
@@ -93,5 +94,5 @@ message JoinGameResponse
   uint64 playerId = 1;
   string color = 2;
   Location spawn = 3;
-  repeated Connect others = 4;
+  repeated ClientAction others = 4;
 }

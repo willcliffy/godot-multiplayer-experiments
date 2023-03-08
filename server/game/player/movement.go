@@ -5,24 +5,32 @@ import (
 
 	"github.com/willcliffy/kilnwood-game-server/constants"
 	pb "github.com/willcliffy/kilnwood-game-server/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type IPlayerMovement interface {
 	GetLocation() *pb.Location
+	JumpToLocation(*pb.Location)
 	SetPath([]*pb.Location)
+	QueueAction(*pb.ClientAction)
+	Tick(uint64) []*pb.ClientAction
 }
 
 type PlayerMovement struct {
+	super               *Player
 	location            *pb.Location
 	path                []*pb.Location
 	ticksToNextLocation int32
+	queuedAction        *pb.ClientAction
 }
 
-func NewPlayerMovement() *PlayerMovement {
-	return &PlayerMovement{}
+func NewPlayerMovement(player *Player) *PlayerMovement {
+	return &PlayerMovement{
+		super: player,
+	}
 }
 
-func (p *PlayerMovement) Tick() *pb.Location {
+func (p *PlayerMovement) Tick(playerId uint64) []*pb.ClientAction {
 	if len(p.path) == 0 {
 		return nil
 	}
@@ -32,13 +40,39 @@ func (p *PlayerMovement) Tick() *pb.Location {
 		return nil
 	}
 
-	p.moveToNextLocationOnPath()
+	var result []*pb.ClientAction
 
-	return p.location
+	p.location = p.path[0]
+	p.path = p.path[1:]
+
+	actionBytes, _ := proto.Marshal(&pb.Move{
+		Path: []*pb.Location{p.location},
+	})
+
+	result = append(result, &pb.ClientAction{
+		Type:     pb.ClientActionType_ACTION_MOVE,
+		PlayerId: playerId,
+		Payload:  actionBytes,
+	})
+
+	if len(p.path) != 0 {
+		p.ticksToNextLocation = p.calculateTicksToNextLocation()
+		return result
+	}
+
+	if p.queuedAction != nil {
+		result = append(result, p.queuedAction)
+	}
+
+	return result
 }
 
 func (p PlayerMovement) GetLocation() *pb.Location {
 	return p.location
+}
+
+func (p *PlayerMovement) JumpToLocation(location *pb.Location) {
+	p.location = location
 }
 
 func (p *PlayerMovement) SetPath(path []*pb.Location) {
@@ -50,16 +84,8 @@ func (p *PlayerMovement) SetPath(path []*pb.Location) {
 	p.ticksToNextLocation = 0
 }
 
-func (p *PlayerMovement) moveToNextLocationOnPath() {
-	p.location = p.path[0]
-	if len(p.path) == 0 {
-		return
-	}
-
-	p.path = p.path[1:]
-	if len(p.path) > 0 {
-		p.ticksToNextLocation = p.calculateTicksToNextLocation()
-	}
+func (p *PlayerMovement) QueueAction(action *pb.ClientAction) {
+	p.queuedAction = action
 }
 
 func (p PlayerMovement) calculateTicksToNextLocation() int32 {

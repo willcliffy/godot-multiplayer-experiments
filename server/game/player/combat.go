@@ -1,6 +1,9 @@
 package player
 
-import pb "github.com/willcliffy/kilnwood-game-server/proto"
+import (
+	pb "github.com/willcliffy/kilnwood-game-server/proto"
+	"google.golang.org/protobuf/proto"
+)
 
 const (
 	PlayerMaxHp          = 10
@@ -11,32 +14,39 @@ type IPlayerCombat interface {
 	IsAlive() bool
 	GetCurrentHp() int32
 	ApplyDamage(int32) bool
+	Tick(uint64) []*pb.ClientAction
 }
 
 type PlayerCombat struct {
+	super *Player
 	// Stats
 	Hp int32 // in HP units
 	Ad int   // in HP units
+
+	// State
+	IsInCombat bool
 
 	// Health Regen
 	ticksToNextRegen int
 
 	// Death and Respawn Timers
-	Alive          bool
+	isAlive        bool
 	ticksToRespawn int
 }
 
-func NewPlayerCombat() *PlayerCombat {
+func NewPlayerCombat(player *Player) *PlayerCombat {
 	return &PlayerCombat{
+		super:            player,
 		Hp:               PlayerMaxHp,
 		Ad:               1,
+		IsInCombat:       false,
 		ticksToNextRegen: PlayerRegenRateTicks,
-		Alive:            true,
+		isAlive:          true,
 	}
 }
 
 func (p PlayerCombat) IsAlive() bool {
-	return p.Alive
+	return p.isAlive
 }
 
 func (p PlayerCombat) GetCurrentHp() int32 {
@@ -47,35 +57,45 @@ func (p PlayerCombat) GetCurrentHp() int32 {
 func (p *PlayerCombat) ApplyDamage(dmg int32) bool {
 	p.Hp -= dmg
 	if p.Hp <= 0 {
-		p.Alive = false
+		p.isAlive = false
 		p.ticksToRespawn = 500
 		return true
 	}
 	return false
 }
 
-// Returns true if
-func (p *PlayerCombat) Tick() bool {
+func (p *PlayerCombat) Tick(playerId uint64) []*pb.ClientAction {
 	if p.Hp <= 0 {
 		p.ticksToRespawn--
-		return p.ticksToRespawn == 0
+		if p.ticksToRespawn == 0 {
+			actionBytes, _ := proto.Marshal(&pb.Respawn{
+				Spawn: p.super.Spawn(nil),
+			})
+			return []*pb.ClientAction{
+				{
+					PlayerId: playerId,
+					Payload:  actionBytes,
+				},
+			}
+		}
 	}
 
 	// regen HP
 	if p.Hp >= PlayerMaxHp {
-		return false
+		return nil
 	}
 
 	p.ticksToNextRegen--
 	if p.ticksToNextRegen <= 0 {
 		p.ticksToNextRegen = PlayerRegenRateTicks
 		p.Hp++
+		// todo - maybe one day add regen as clientaction?
 	}
 
-	return false
+	return nil
 }
 
 func (p *PlayerCombat) Respawn(spawn *pb.Location) {
 	p.Hp = PlayerMaxHp
-	p.Alive = true
+	p.isAlive = true
 }

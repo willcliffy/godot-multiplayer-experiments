@@ -20,16 +20,8 @@ type Game struct {
 	clock *time.Ticker
 	tick  uint32
 
-	players map[uint64]*player.Player
-
-	deathTimers map[uint64]int32
-
-	connectsQueued    map[uint64]*pb.Connect
-	disconnectsQueued map[uint64]*pb.Disconnect
-	movementsQueued   map[uint64]*pb.Move
-	attacksQueued     map[uint64]*pb.Attack
-	damageQueued      map[uint64]*pb.Damage
-	respawnsQueued    map[uint64]*pb.Respawn
+	players       map[uint64]*player.Player
+	actionsQueued map[uint64]map[pb.ClientActionType]*pb.ClientAction
 }
 
 func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
@@ -38,16 +30,8 @@ func NewGame(gameId uint64, broadcaster broadcast.MessageBroadcaster) *Game {
 		broadcaster: broadcaster,
 		done:        make(chan bool),
 
-		players: make(map[uint64]*player.Player),
-
-		deathTimers: make(map[uint64]int32),
-
-		connectsQueued:    make(map[uint64]*pb.Connect),
-		disconnectsQueued: make(map[uint64]*pb.Disconnect),
-		movementsQueued:   make(map[uint64]*pb.Move),
-		attacksQueued:     make(map[uint64]*pb.Attack),
-		damageQueued:      make(map[uint64]*pb.Damage),
-		respawnsQueued:    make(map[uint64]*pb.Respawn),
+		players:       make(map[uint64]*player.Player),
+		actionsQueued: make(map[uint64]map[pb.ClientActionType]*pb.ClientAction),
 	}
 }
 
@@ -75,16 +59,8 @@ func (g *Game) run() {
 
 			for pId, player := range g.players {
 				result := player.Tick()
-				if result.Respawn {
-					g.respawnsQueued[pId] = &pb.Respawn{
-						PlayerId: pId,
-						Spawn:    player.Movement.GetLocation(),
-					}
-				} else if result.Location != nil {
-					g.movementsQueued[pId] = &pb.Move{
-						PlayerId: pId,
-						Path:     []*pb.Location{result.Location},
-					}
+				for _, result := range result {
+					g.actionsQueued[pId][result.Type] = result
 				}
 			}
 
@@ -105,35 +81,44 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 		color := player.RandomTeamColor()
 		p = player.NewPlayer(playerId, color)
 		g.players[playerId] = p
+		g.actionsQueued[playerId] = make(map[pb.ClientActionType]*pb.ClientAction)
 	}
 
-	p.Spawn(nil)
+	location := p.Spawn(nil)
 
-	var playerList []*pb.Connect
+	var playerList []*pb.ClientAction
 
 	for pId, p := range g.players {
 		if p == nil || pId == playerId {
 			continue
 		}
 
-		playerList = append(playerList, &pb.Connect{
+		actionBytes, _ := proto.Marshal(&pb.Connect{
+			Color: p.Color,
+			Spawn: location,
+		})
+
+		playerList = append(playerList, &pb.ClientAction{
 			PlayerId: pId,
-			Color:    p.Color,
-			Spawn:    p.Movement.GetLocation(),
+			Payload:  actionBytes,
 		})
 	}
 
 	msg := &pb.JoinGameResponse{
 		PlayerId: p.Id,
 		Color:    p.Color,
-		Spawn:    p.Movement.GetLocation(),
+		Spawn:    location,
 		Others:   playerList,
 	}
 
-	g.connectsQueued[p.Id] = &pb.Connect{
+	actionBytes, _ := proto.Marshal(&pb.Connect{
+		Color: p.Color,
+		Spawn: location,
+	})
+
+	g.actionsQueued[p.Id][pb.ClientActionType_ACTION_CONNECT] = &pb.ClientAction{
 		PlayerId: p.Id,
-		Color:    p.Color,
-		Spawn:    p.Movement.GetLocation(),
+		Payload:  actionBytes,
 	}
 
 	g.broadcaster.OnPlayerJoinGame(g.id, playerId, msg)
@@ -142,144 +127,97 @@ func (g *Game) OnPlayerConnected(playerId uint64) error {
 
 func (g *Game) OnPlayerDisconnected(playerId uint64) {
 	delete(g.players, playerId)
-	g.disconnectsQueued[playerId] = &pb.Disconnect{PlayerId: playerId}
+	actionBytes, _ := proto.Marshal(&pb.Disconnect{})
+	g.actionsQueued[playerId][pb.ClientActionType_ACTION_DISCONNECT] = &pb.ClientAction{
+		PlayerId: playerId,
+		Payload:  actionBytes,
+	}
 	log.Info().Msgf("queued disconnect for player %d", playerId)
 }
 
 func (g *Game) Close() {
 	for pId := range g.players {
-		g.disconnectsQueued[pId] = &pb.Disconnect{PlayerId: pId}
+		actionBytes, _ := proto.Marshal(&pb.Disconnect{})
+		g.actionsQueued[pId][pb.ClientActionType_ACTION_DISCONNECT] = &pb.ClientAction{
+			PlayerId: pId,
+			Payload:  actionBytes,
+		}
 	}
 }
 
 func (g *Game) OnActionReceived(playerId uint64, action *pb.ClientAction) {
-	switch action.Type {
-	case pb.ClientActionType_ACTION_PING:
-		// nyi
-	case pb.ClientActionType_ACTION_DISCONNECT:
-		var disconnect pb.Disconnect
-		err := proto.Unmarshal([]byte(action.Payload), &disconnect)
-		if err != nil {
-			log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
-		}
-
-		g.disconnectsQueued[playerId] = &disconnect
-	case pb.ClientActionType_ACTION_MOVE:
+	if action.Type == pb.ClientActionType_ACTION_MOVE {
 		var move pb.Move
 		err := proto.Unmarshal([]byte(action.Payload), &move)
 		if err != nil {
 			log.Warn().Err(err).Msgf("failed to unmarshal move: %s", action.Payload)
 		}
 
-		g.players[playerId].Movement.SetPath(move.Path)
-	case pb.ClientActionType_ACTION_ATTACK:
-		var attack pb.Attack
-		err := proto.Unmarshal([]byte(action.Payload), &attack)
-		if err != nil {
-			log.Warn().Err(err).Msgf("failed to unmarshal attack")
-		}
-
-		g.attacksQueued[playerId] = &attack
-	case pb.ClientActionType_ACTION_DAMAGE:
-		var damage pb.Damage
-		err := proto.Unmarshal([]byte(action.Payload), &damage)
-		if err != nil {
-			log.Warn().Err(err).Msgf("failed to unmarshal damage")
-		}
-
-		g.damageQueued[playerId] = &damage
-	default:
-		log.Error().Msgf("could not unmarshal unknown action type: %v", action.Type)
+		g.players[playerId].HandleMovement(&move)
+		// TODO - handle queued actions
+		return
 	}
+	g.actionsQueued[playerId][action.Type] = action
+	// switch action.Type {
+	// case pb.ClientActionType_ACTION_PING:
+	// 	// nyi
+	// case pb.ClientActionType_ACTION_DISCONNECT:
+	// 	var disconnect pb.Disconnect
+	// 	err := proto.Unmarshal([]byte(action.Payload), &disconnect)
+	// 	if err != nil {
+	// 		log.Warn().Err(err).Msgf("failed to unmarshal disconnect")
+	// 	}
+
+	// 	g.disconnectsQueued[playerId] = &disconnect
+	// case pb.ClientActionType_ACTION_MOVE:
+
+	// case pb.ClientActionType_ACTION_ATTACK:
+	// 	var attack pb.Attack
+	// 	err := proto.Unmarshal([]byte(action.Payload), &attack)
+	// 	if err != nil {
+	// 		log.Warn().Err(err).Msgf("failed to unmarshal attack")
+	// 	}
+
+	// 	g.attacksQueued[playerId] = &attack
+	// case pb.ClientActionType_ACTION_DAMAGE:
+	// 	var damage pb.Damage
+	// 	err := proto.Unmarshal([]byte(action.Payload), &damage)
+	// 	if err != nil {
+	// 		log.Warn().Err(err).Msgf("failed to unmarshal damage")
+	// 	}
+
+	// 	g.damageQueued[playerId] = &damage
+	// default:
+	// 	log.Error().Msgf("could not unmarshal unknown action type: %v", action.Type)
+	// }
 }
 
 func (g *Game) processQueue() *pb.GameTick {
 	// TODO - 🍝
-	actions := make([]*pb.GameTickAction, 0)
+	processedActions := make([]*pb.ClientAction, 0)
 
-	for _, connect := range g.connectsQueued {
-		connectBytes, _ := proto.Marshal(connect)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_CONNECT,
-			Value: connectBytes,
-		})
-	}
-
-	for _, disconnect := range g.disconnectsQueued {
-		g.OnPlayerDisconnected(disconnect.PlayerId)
-		disconnectBytes, _ := proto.Marshal(disconnect)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_DISCONNECT,
-			Value: disconnectBytes,
-		})
-	}
-
-	for _, move := range g.movementsQueued {
-		moveBytes, _ := proto.Marshal(move)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_MOVE,
-			Value: moveBytes,
-		})
-	}
-
-	// Temporarily disable combat
-	// for _, attack := range g.attacksQueued {
-	// 	err := g.gameMap.ApplyMovement(attack.TargetPlayerId, attack.TargetPlayerLocation)
-	// 	if err != nil {
-	// 		log.Error().Err(err).Msgf("Failed action: could not apply MoveAction")
-	// 		continue
-	// 	}
-
-	// 	attackBytes, _ := proto.Marshal(attack)
-	// 	actions = append(actions, &pb.GameTickAction{
-	// 		Type:  pb.ClientActionType_ACTION_ATTACK,
-	// 		Value: attackBytes,
-	// 	})
-	// }
-
-	for _, damage := range g.damageQueued {
-		killedTarget := g.players[damage.TargetPlayerId].Combat.ApplyDamage(damage.DamageDealt)
-		damageBytes, _ := proto.Marshal(damage)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_DAMAGE,
-			Value: damageBytes,
-		})
-
-		if killedTarget {
-			g.deathTimers[damage.TargetPlayerId] = 50
-			deathBytes, _ := proto.Marshal(&pb.Death{
-				PlayerId: damage.TargetPlayerId,
-				Location: g.players[damage.TargetPlayerId].Movement.GetLocation(),
-			})
-			actions = append(actions, &pb.GameTickAction{
-				Type:  pb.ClientActionType_ACTION_DEATH,
-				Value: deathBytes,
-			})
+	for playerId, actions := range g.actionsQueued {
+		for actionType, action := range actions {
+			processedActions = append(processedActions, action)
+			switch actionType {
+			case pb.ClientActionType_ACTION_DISCONNECT:
+				g.OnPlayerDisconnected(playerId)
+			case pb.ClientActionType_ACTION_COLLECT:
+				var collect pb.Collect
+				_ = proto.Unmarshal(action.Payload, &collect)
+				g.players[playerId].HandleCollection(&collect)
+			case pb.ClientActionType_ACTION_BUILD:
+				var build pb.Build
+				_ = proto.Unmarshal(action.Payload, &build)
+				g.players[playerId].HandleBuild(&build)
+			}
 		}
+		g.actionsQueued[playerId] = make(map[pb.ClientActionType]*pb.ClientAction)
 	}
-
-	for pId, respawn := range g.respawnsQueued {
-		delete(g.deathTimers, pId)
-		player := g.players[pId]
-		player.Spawn(nil)
-		respawnBytes, _ := proto.Marshal(respawn)
-		actions = append(actions, &pb.GameTickAction{
-			Type:  pb.ClientActionType_ACTION_RESPAWN,
-			Value: respawnBytes,
-		})
-	}
-
-	// reset actionQueue for the next tick
-	g.connectsQueued = make(map[uint64]*pb.Connect)
-	g.disconnectsQueued = make(map[uint64]*pb.Disconnect)
-	g.movementsQueued = make(map[uint64]*pb.Move)
-	g.attacksQueued = make(map[uint64]*pb.Attack)
-	g.damageQueued = make(map[uint64]*pb.Damage)
-	g.respawnsQueued = make(map[uint64]*pb.Respawn)
 
 	tick := &pb.GameTick{
 		Tick:    g.tick,
-		Actions: actions,
+		Actions: processedActions,
 	}
 
 	return tick

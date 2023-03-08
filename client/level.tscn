@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://by8dj58ovob0j"]
+[gd_scene load_steps=21 format=3 uid="uid://by8dj58ovob0j"]
 
 [ext_resource type="Script" path="res://World.cs" id="1_srxlc"]
 [ext_resource type="Script" path="res://MessageBroker.cs" id="2"]
@@ -50,6 +50,18 @@ cell_height = 0.5
 region_min_size = 10.0
 region_merge_size = 50.0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h50oo"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_0xa55"]
+material = SubResource("StandardMaterial3D_h50oo")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d3f0u"]
+albedo_color = Color(0, 0, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_viu7a"]
+material = SubResource("StandardMaterial3D_d3f0u")
+
 [node name="World" type="Node3D"]
 script = ExtResource("1_srxlc")
 
@@ -97,3 +109,12 @@ transform = Transform3D(1.19249e-08, 0.707107, -0.707107, 0, 0.707107, 0.707107,
 navigation_mesh = SubResource("NavigationMesh_87j3y")
 
 [node name="texture" parent="Environment/NavRegion" instance=ExtResource("7_y57ad")]
+
+[node name="Resources" type="Node" parent="Environment"]
+
+[node name="RedResource" type="MeshInstance3D" parent="Environment/Resources"]
+mesh = SubResource("SphereMesh_0xa55")
+
+[node name="BlueResource1" type="MeshInstance3D" parent="Environment/Resources"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2.08165e-12, -25)
+mesh = SubResource("SphereMesh_viu7a")

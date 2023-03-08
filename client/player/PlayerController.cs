@@ -33,7 +33,8 @@ public partial class PlayerController : Node
         {
             foreach (var other in msg.Others)
             {
-                this.OnPlayerConnected(other.PlayerId, other.Spawn, other.Color);
+                var connect = Proto.Connect.Parser.ParseFrom(other.Payload);
+                this.OnPlayerConnected(other.PlayerId, connect.Spawn, connect.Color);
             }
         }
 

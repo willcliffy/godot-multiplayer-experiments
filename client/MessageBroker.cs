@@ -90,38 +90,36 @@ public partial class MessageBroker : Node
             switch (action.Type)
             {
                 case Proto.ClientActionType.ActionConnect:
-                    var connect = Proto.Connect.Parser.ParseFrom(action.Value);
-                    if (connect.PlayerId == this.players.LocalPlayerId) return;
-                    this.players.OnPlayerConnected(connect.PlayerId, connect.Spawn, connect.Color);
+                    if (action.PlayerId == this.players.LocalPlayerId) return;
+                    var connect = Proto.Connect.Parser.ParseFrom(action.Payload);
+                    this.players.OnPlayerConnected(action.PlayerId, connect.Spawn, connect.Color);
                     break;
                 case Proto.ClientActionType.ActionDisconnect:
-                    var disconnect = Proto.Disconnect.Parser.ParseFrom(action.Value);
-                    this.players.OnPlayerDisconnected(disconnect.PlayerId);
+                    this.players.OnPlayerDisconnected(action.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionMove:
-                    var move = Proto.Move.Parser.ParseFrom(action.Value);
+                    var move = Proto.Move.Parser.ParseFrom(action.Payload);
                     GD.Print($"{DateTime.Now.Second}.{DateTime.Now.Millisecond} got move");
                     // this.players.SetMoving(move.PlayerId, move.Path[0]);
                     // this.players.StopAttacking(move.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionAttack:
-                    var attack = Proto.Attack.Parser.ParseFrom(action.Value);
+                    var attack = Proto.Attack.Parser.ParseFrom(action.Payload);
                     this.players.SetAttacking(
-                        attack.SourcePlayerId,
+                        action.PlayerId,
                         attack.TargetPlayerId,
                         attack.TargetPlayerLocation);
                     break;
                 case Proto.ClientActionType.ActionDamage:
-                    var damage = Proto.Damage.Parser.ParseFrom(action.Value);
+                    var damage = Proto.Damage.Parser.ParseFrom(action.Payload);
                     this.players.ApplyDamage(damage.TargetPlayerId, damage.DamageDealt);
                     break;
                 case Proto.ClientActionType.ActionDeath:
-                    var death = Proto.Death.Parser.ParseFrom(action.Value);
-                    this.players.Die(death.PlayerId);
+                    this.players.Die(action.PlayerId);
                     break;
                 case Proto.ClientActionType.ActionRespawn:
-                    var respawn = Proto.Respawn.Parser.ParseFrom(action.Value);
-                    this.players.Spawn(respawn.PlayerId, respawn.Spawn);
+                    var respawn = Proto.Respawn.Parser.ParseFrom(action.Payload);
+                    this.players.Spawn(action.PlayerId, respawn.Spawn);
                     break;
                 default:
                     GD.Print($"Got unexpected client action: {action.Type}");
@@ -137,6 +135,7 @@ public partial class MessageBroker : Node
         var msg = new Proto.ClientAction()
         {
             Type = type,
+            PlayerId = this.players.LocalPlayerId,
             Payload = Google.Protobuf.ByteString.CopyFrom(bytes),
         };
 
@@ -154,7 +153,7 @@ public partial class MessageBroker : Node
         actionStream.Dispose();
     }
 
-    public void PlayerRequestedMove(Vector3 target)
+    public void PlayerRequestedMove(Vector3 target, Proto.ClientAction queued = null)
     {
         var path = this.players.SetMoving(
             this.players.LocalPlayerId,
@@ -162,7 +161,7 @@ public partial class MessageBroker : Node
 
         var moveAction = new Proto.Move()
         {
-            PlayerId = this.players.LocalPlayerId,
+            Queued = queued,
         };
         foreach (var vector3 in path)
         {
@@ -186,7 +185,6 @@ public partial class MessageBroker : Node
     {
         var attackAction = new Proto.Attack()
         {
-            SourcePlayerId = this.players.LocalPlayerId,
             SourcePlayerLocation = this.players.CurrentLocation(this.players.LocalPlayerId),
             TargetPlayerId = targetPlayerId,
             TargetPlayerLocation = this.players.CurrentLocation(targetPlayerId),
@@ -197,18 +195,66 @@ public partial class MessageBroker : Node
         attackAction.WriteTo(attackStream);
         attackStream.Flush();
 
-        this.writeClientActionToServer(
-            Proto.ClientActionType.ActionAttack,
-            attackStreamMem.ToArray());
+        this.PlayerRequestedMove(
+            this.locationToVector3d(this.players.CurrentLocation(targetPlayerId)),
+            new Proto.ClientAction()
+            {
+                Type = Proto.ClientActionType.ActionAttack,
+                PlayerId = this.players.LocalPlayerId,
+                Payload = Google.Protobuf.ByteString.CopyFrom(attackStreamMem.ToArray()),
+            });
 
         attackStream.Dispose();
+    }
+
+    public void PlayerRequestedCollect(Vector3 target, Proto.ResourceType type)
+    {
+        var collectAction = new Proto.Collect()
+        {
+            Location = vector3ToLocation(target),
+            Type = type,
+        };
+
+        var collectStreamMem = new MemoryStream();
+        var collectStream = new Google.Protobuf.CodedOutputStream(collectStreamMem, false);
+        collectAction.WriteTo(collectStream);
+        collectStream.Flush();
+
+        this.PlayerRequestedMove(
+            target,
+            new Proto.ClientAction()
+            {
+                Type = Proto.ClientActionType.ActionCollect,
+                PlayerId = this.players.LocalPlayerId,
+                Payload = Google.Protobuf.ByteString.CopyFrom(collectStreamMem.ToArray()),
+            });
+
+        collectStream.Dispose();
+    }
+
+    public void PlayerRequestedBuild(Vector3 target)
+    {
+        var buildAction = new Proto.Build()
+        {
+            Location = vector3ToLocation(target),
+        };
+
+        var buildStreamMem = new MemoryStream();
+        var buildStream = new Google.Protobuf.CodedOutputStream(buildStreamMem, false);
+        buildAction.WriteTo(buildStream);
+        buildStream.Flush();
+
+        this.writeClientActionToServer(
+            Proto.ClientActionType.ActionMove,
+            buildStreamMem.ToArray());
+
+        buildStream.Dispose();
     }
 
     public void PlayerRequestedDamage(ulong targetPlayerId)
     {
         var damageAction = new Proto.Damage()
         {
-            SourcePlayerId = this.players.LocalPlayerId,
             TargetPlayerId = targetPlayerId,
             DamageDealt = 1,
         };

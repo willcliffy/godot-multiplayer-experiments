@@ -104,7 +104,7 @@ func (mb *MessageBroker) unregisterConnection(playerId uint64) {
 // This satifies the MessageBroadcaster interface
 func (mb *MessageBroker) OnPlayerJoinGame(gameId, playerId uint64, response *pb.JoinGameResponse) {
 	if len(response.Others) == 0 {
-		response.Others = []*pb.Connect{}
+		response.Others = []*pb.ClientAction{}
 	}
 
 	responseBytes, err := proto.Marshal(response)
