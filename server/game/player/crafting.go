@@ -13,6 +13,16 @@ type PlayerCrafting struct {
 	copies    []*pb.Location
 }
 
+func NewPlayerCrafting(player *Player) *PlayerCrafting {
+	return &PlayerCrafting{
+		resources: make(map[pb.ResourceType]int),
+	}
+}
+
+func (p *PlayerCrafting) Tick() {
+
+}
+
 func (p *PlayerCrafting) AddResource(resourceType pb.ResourceType, amount int) {
 	p.resources[resourceType] += amount
 }

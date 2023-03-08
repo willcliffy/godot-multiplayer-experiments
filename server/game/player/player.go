@@ -35,11 +35,9 @@ func NewPlayer(playerId uint64, color string) *Player {
 		Color: color,
 	}
 
-	combat := NewPlayerCombat(player)
-	player.combat = combat
-
-	movement := NewPlayerMovement(player)
-	player.movement = movement
+	player.combat = NewPlayerCombat(player)
+	player.movement = NewPlayerMovement(player)
+	player.crafting = NewPlayerCrafting(player)
 
 	return player
 }

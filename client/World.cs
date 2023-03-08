@@ -40,12 +40,21 @@ public partial class World : Node3D
             Z = Mathf.RoundToInt(targetVec3.Z),
         };
 
-        var targetPlayer = result["collider"].AsGodotObject();
-        if (targetPlayer is Player)
+        var targetCollider = result["collider"].AsGodotObject();
+        if (targetCollider is Player targetPlayer)
         {
-            this.mb.PlayerRequestedAttack(((Player)targetPlayer).Id);
+            this.mb.PlayerRequestedAttack(targetPlayer.Id);
             return;
         }
+        else if (targetCollider is Resource targetResource)
+        {
+            GD.Print("is resource");
+            GD.Print(!targetResource.IsDepleted);
+            this.mb.PlayerRequestedCollect(targetVec3, targetResource.Type);
+            return;
+        }
+
+        GD.Print($"{targetCollider.GetType()}");
 
         this.mb.PlayerRequestedMove(targetVec3);
     }

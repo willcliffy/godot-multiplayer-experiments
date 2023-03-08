@@ -121,6 +121,12 @@ public partial class MessageBroker : Node
                     var respawn = Proto.Respawn.Parser.ParseFrom(action.Payload);
                     this.players.Spawn(action.PlayerId, respawn.Spawn);
                     break;
+                case Proto.ClientActionType.ActionCollect:
+                    GD.Print("collect nyi");
+                    break;
+                case Proto.ClientActionType.ActionBuild:
+                    GD.Print("build nyi");
+                    break;
                 default:
                     GD.Print($"Got unexpected client action: {action.Type}");
                     break;
