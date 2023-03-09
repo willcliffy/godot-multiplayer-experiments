@@ -63,7 +63,7 @@ func (p *Player) HandleMovement(move *pb.Move) {
 	p.movement.QueueAction(move.Queued)
 }
 
-func (p *Player) HandleCollection(collect *pb.Collect) {
+func (p *Player) HandleCollect(collect *pb.Collect) {
 	p.crafting.AddResource(collect.Type, 1)
 }
 

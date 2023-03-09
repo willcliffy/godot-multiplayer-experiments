@@ -48,13 +48,11 @@ public partial class World : Node3D
         }
         else if (targetCollider is Resource targetResource)
         {
-            GD.Print("is resource");
             GD.Print(!targetResource.IsDepleted);
+            targetResource.Collect();
             this.mb.PlayerRequestedCollect(targetVec3, targetResource.Type);
             return;
         }
-
-        GD.Print($"{targetCollider.GetType()}");
 
         this.mb.PlayerRequestedMove(targetVec3);
     }

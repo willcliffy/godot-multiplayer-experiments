@@ -205,7 +205,7 @@ func (g *Game) processQueue() *pb.GameTick {
 			case pb.ClientActionType_ACTION_COLLECT:
 				var collect pb.Collect
 				_ = proto.Unmarshal(action.Payload, &collect)
-				g.players[playerId].HandleCollection(&collect)
+				g.players[playerId].HandleCollect(&collect)
 			case pb.ClientActionType_ACTION_BUILD:
 				var build pb.Build
 				_ = proto.Unmarshal(action.Payload, &build)

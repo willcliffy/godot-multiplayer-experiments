@@ -52,7 +52,6 @@ public partial class Player : CharacterBody3D
         if (!this.moving) return;
         if (this.Nav.IsTargetReached())
         {
-            GD.Print($"{DateTime.Now.Second}.{DateTime.Now.Millisecond} Target Reached");
             if (attacking) this.setAttackingTargetReached();
             else if (moving) this.setIdle();
             return;
@@ -123,7 +122,6 @@ public partial class Player : CharacterBody3D
 
     private void setIdle()
     {
-        GD.Print("idle");
         if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
