@@ -48,6 +48,7 @@ public partial class World : Node3D
         }
         else if (targetCollider is Resource targetResource)
         {
+            // TODO - find closest point to player from resource and make that the target
             GD.Print(!targetResource.IsDepleted);
             targetResource.Collect();
             this.mb.PlayerRequestedCollect(targetVec3, targetResource.Type);

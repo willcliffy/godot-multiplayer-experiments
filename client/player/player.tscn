@@ -6,12 +6,12 @@
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_8yi0v"]
 material = SubResource("StandardMaterial3D_i22qn")
-radius = 0.4
-height = 1.5
+radius = 0.25
+height = 1.0
 
 [sub_resource type="CapsuleShape3D" id="34"]
-radius = 0.4
-height = 1.5
+radius = 0.25
+height = 1.0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hywig"]
 albedo_color = Color(1, 0, 0, 1)
@@ -34,26 +34,27 @@ radial_segments = 10
 rings = 5
 
 [node name="Player" type="CharacterBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 axis_lock_angular_x = true
 axis_lock_angular_z = true
 script = ExtResource("1_66xf5")
 
 [node name="Mesh" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
 mesh = SubResource("CapsuleMesh_8yi0v")
 
 [node name="CollisionShape" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
 shape = SubResource("34")
 disabled = true
 
 [node name="NavigationAgent" type="NavigationAgent3D" parent="."]
 path_desired_distance = 0.25
+path_max_distance = 1.01
 avoidance_enabled = true
+neighbor_distance = 10.0
 debug_enabled = true
 
 [node name="HealthBar" type="Node3D" parent="."]
-transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 2.08165e-12, 1.75, 2.08165e-12)
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0.75, 0)
 
 [node name="Base" type="MeshInstance3D" parent="HealthBar"]
 cast_shadow = 0

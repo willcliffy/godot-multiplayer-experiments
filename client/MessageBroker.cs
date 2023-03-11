@@ -1,5 +1,4 @@
 using Godot;
-using System;
 using System.IO;
 
 public partial class MessageBroker : Node
@@ -10,10 +9,12 @@ public partial class MessageBroker : Node
     private WebSocketPeer client = new WebSocketPeer();
     private WebSocketPeer.State websocketState = WebSocketPeer.State.Closed;
     private PlayerController players;
+    private MeshInstance3D serverPosition;
 
     public override void _Ready()
     {
-        this.players = GetNode<PlayerController>("PlayerController");
+        this.players = this.GetNode<PlayerController>("PlayerController");
+        this.serverPosition = this.GetNode<MeshInstance3D>("ServerPosition");
 
         if (OS.HasEnvironment("GAMESERVER_WEBSOCKET_URL"))
         {
@@ -100,7 +101,8 @@ public partial class MessageBroker : Node
                 case Proto.ClientActionType.ActionMove:
                     var move = Proto.Move.Parser.ParseFrom(action.Payload);
                     var player = players.LocalPlayer.Position;
-                    GD.Print($"{player.DistanceTo(LocationToVector3d(move.Path[0]))}");
+                    GD.Print(player.DistanceTo(LocationToVector3d(move.Path[0])));
+                    this.serverPosition.Position = LocationToVector3d(move.Path[0]);
                     break;
                 case Proto.ClientActionType.ActionAttack:
                     var attack = Proto.Attack.Parser.ParseFrom(action.Payload);
@@ -164,6 +166,7 @@ public partial class MessageBroker : Node
             this.players.LocalPlayerId,
             Vector3ToLocation(target));
 
+        GD.Print();
         var moveAction = new Proto.Move()
         {
             Queued = queued,

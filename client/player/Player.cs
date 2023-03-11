@@ -60,6 +60,7 @@ public partial class Player : CharacterBody3D
         var next = this.Nav.GetNextPathPosition();
         var direction = this.GlobalPosition.DirectionTo(next);
         var velocity = direction * (float)delta * SPEED;
+        //GD.Print(velocity.Length());
         this.Nav.SetVelocity(velocity);
         this.Velocity = velocity;
         this.MoveAndSlide();
