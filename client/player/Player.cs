@@ -1,6 +1,5 @@
 using Proto;
 using Godot;
-using System;
 
 public partial class Player : CharacterBody3D
 {
@@ -23,7 +22,7 @@ public partial class Player : CharacterBody3D
         }
     }
 
-    public NavigationAgent3D Nav;
+    public Environment Nav;
     private MeshInstance3D healthBar;
     private MeshInstance3D healthBarBase;
     private CollisionShape3D collider;
@@ -36,7 +35,7 @@ public partial class Player : CharacterBody3D
 
     public override void _Ready()
     {
-        this.Nav = GetNode<NavigationAgent3D>("NavigationAgent");
+        this.Nav = this.GetNode<Environment>("../../../Environment");
 
         this.alive = true;
         this.Hp = MAX_HP;
@@ -50,18 +49,17 @@ public partial class Player : CharacterBody3D
     public override void _PhysicsProcess(double delta)
     {
         if (!this.moving) return;
-        if (this.Nav.IsTargetReached())
+        if (this.Nav.IsTargetReached(this.Position))
         {
             if (attacking) this.setAttackingTargetReached();
             else if (moving) this.setIdle();
             return;
         }
 
-        var next = this.Nav.GetNextPathPosition();
+        var next = this.Nav.GetNextPathPosition(this.Position);
         var direction = this.GlobalPosition.DirectionTo(next);
         var velocity = direction * (float)delta * SPEED;
-        //GD.Print(velocity.Length());
-        this.Nav.SetVelocity(velocity);
+        velocity.Y = 0;
         this.Velocity = velocity;
         this.MoveAndSlide();
     }
@@ -75,24 +73,22 @@ public partial class Player : CharacterBody3D
         mesh.SetSurfaceOverrideMaterial(0, material);
     }
 
-    public Vector3[] SetMoving(Vector3 targetVec3)
+    public Vector3I[] SetMoving(Vector3I targetVec3)
     {
         if (!this.alive) return null;
         this.moving = true;
         this.attacking = false;
         this.targetPlayerId = null;
-        this.Nav.TargetPosition = targetVec3;
-        this.Nav.GetNextPathPosition();
-        return this.Nav.GetCurrentNavigationPath();
+        return this.Nav.SetTargetPosition(this.Position, targetVec3);
     }
 
-    public void SetAttacking(ulong targetPlayerId, Vector3 targetVec3)
+    public Vector3I[] SetAttacking(ulong targetPlayerId, Vector3I targetVec3)
     {
-        if (!this.alive) return;
+        if (!this.alive) return null;
         this.moving = true;
         this.attacking = true;
         this.targetPlayerId = targetPlayerId;
-        this.Nav.TargetPosition = targetVec3;
+        return this.Nav.SetTargetPosition(this.Position, targetVec3);
     }
 
     public bool IsAttacking(ulong? playerId)
@@ -123,11 +119,11 @@ public partial class Player : CharacterBody3D
 
     private void setIdle()
     {
+        GD.Print($"idle at {this.Position}");
         if (!this.alive) return;
         this.moving = false;
         this.attacking = false;
         this.targetPlayerId = null;
-        this.Nav.SetVelocity(Vector3.Zero);
         this.Velocity = Vector3.Zero;
     }
 

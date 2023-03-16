@@ -1,10 +1,8 @@
-using Proto;
 using Godot;
-using System.Collections.Generic;
 
 public partial class World : Node3D
 {
-    const int CAMERA_RAY_CAST_DISTANCE = 1000;
+    const int CAMERA_RAY_CAST_DISTANCE = 800;
     private Camera3D camera;
     private MessageBroker mb;
 
@@ -33,13 +31,8 @@ public partial class World : Node3D
         var result = this.GetWorld3D().DirectSpaceState.IntersectRay(param);
         if (result == null || !result.ContainsKey("position")) return;
 
-        var targetVec3 = (Vector3)result["position"];
-        var targetLocation = new Location()
-        {
-            X = Mathf.RoundToInt(targetVec3.X),
-            Z = Mathf.RoundToInt(targetVec3.Z),
-        };
-
+        Vector3I targetVec3 = (Vector3I)((Vector3)result["position"]).Round();
+        //GD.Print(targetVec3);
         var targetCollider = result["collider"].AsGodotObject();
         if (targetCollider is Player targetPlayer)
         {
@@ -49,7 +42,6 @@ public partial class World : Node3D
         else if (targetCollider is Resource targetResource)
         {
             // TODO - find closest point to player from resource and make that the target
-            GD.Print(!targetResource.IsDepleted);
             targetResource.Collect();
             this.mb.PlayerRequestedCollect(targetVec3, targetResource.Type);
             return;

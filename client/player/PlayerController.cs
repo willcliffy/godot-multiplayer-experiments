@@ -83,21 +83,20 @@ public partial class PlayerController : Node
         return p.CurrentLocation;
     }
 
-    public Vector3[] SetMoving(ulong id, Proto.Location target)
+    public void SetMoving(ulong id, Vector3I target)
     {
-        if (!this.players.TryGetValue(id, out var p)) return null;
-        var targetVec3 = new Vector3(target.X, 0, target.Z);
-        if (id == this.LocalPlayerId) this.target.SetLocation(targetVec3);
-        return p.SetMoving(targetVec3);
+        if (!this.players.TryGetValue(id, out var p)) return;
+        if (id == this.LocalPlayerId) this.target.SetLocation(target);
+        p.SetMoving(target);
     }
 
-    public void SetAttacking(ulong sourcePlayerId, ulong targetPlayerId, Proto.Location target)
-    {
-        if (!this.players.TryGetValue(sourcePlayerId, out var p)) return;
-        var targetVec3 = new Vector3(target.X, 0, target.Z);
-        p.SetAttacking(targetPlayerId, targetVec3);
-        if (sourcePlayerId == this.LocalPlayerId) this.target.SetLocation(targetVec3, true);
-    }
+    // public void SetAttacking(ulong sourcePlayerId, ulong targetPlayerId, Proto.Location target)
+    // {
+    //     if (!this.players.TryGetValue(sourcePlayerId, out var p)) return;
+    //     var targetVec3 = new Vector3(target.X, 0, target.Z);
+    //     p.SetAttacking(targetPlayerId, targetVec3);
+    //     if (sourcePlayerId == this.LocalPlayerId) this.target.SetLocation(targetVec3, true);
+    // }
 
     public void StopAttacking(ulong playerId)
     {

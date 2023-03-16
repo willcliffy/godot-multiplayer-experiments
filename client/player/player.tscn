@@ -46,13 +46,6 @@ mesh = SubResource("CapsuleMesh_8yi0v")
 shape = SubResource("34")
 disabled = true
 
-[node name="NavigationAgent" type="NavigationAgent3D" parent="."]
-path_desired_distance = 0.25
-path_max_distance = 1.01
-avoidance_enabled = true
-neighbor_distance = 10.0
-debug_enabled = true
-
 [node name="HealthBar" type="Node3D" parent="."]
 transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0, 0.75, 0)
 

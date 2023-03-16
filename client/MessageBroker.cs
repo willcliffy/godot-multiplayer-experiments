@@ -14,7 +14,7 @@ public partial class MessageBroker : Node
     public override void _Ready()
     {
         this.players = this.GetNode<PlayerController>("PlayerController");
-        this.serverPosition = this.GetNode<MeshInstance3D>("ServerPosition");
+        this.serverPosition = this.GetNode<MeshInstance3D>("PlayerController/ServerPosition");
 
         if (OS.HasEnvironment("GAMESERVER_WEBSOCKET_URL"))
         {
@@ -45,7 +45,7 @@ public partial class MessageBroker : Node
     }
 
     #region UTILS
-    public static Proto.Location Vector3ToLocation(Vector3 vector3)
+    public static Proto.Location Vector3IToLocation(Vector3I vector3)
     {
         return new Proto.Location()
         {
@@ -54,9 +54,9 @@ public partial class MessageBroker : Node
         };
     }
 
-    public static Vector3 LocationToVector3d(Proto.Location location)
+    public static Vector3I LocationToVector3I(Proto.Location location)
     {
-        return new Vector3(location.X, 0, location.Z);
+        return new Vector3I(location.X, 0, location.Z);
     }
     #endregion
 
@@ -101,15 +101,16 @@ public partial class MessageBroker : Node
                 case Proto.ClientActionType.ActionMove:
                     var move = Proto.Move.Parser.ParseFrom(action.Payload);
                     var player = players.LocalPlayer.Position;
-                    GD.Print(player.DistanceTo(LocationToVector3d(move.Path[0])));
-                    this.serverPosition.Position = LocationToVector3d(move.Path[0]);
+                    //GD.Print(player.DistanceTo(LocationToVector3I(move.Path[0])));
+                    var locVec3 = new Vector3(move.Path[0].X, 0.5f, move.Path[0].Z);
+                    this.serverPosition.Position = locVec3;
                     break;
                 case Proto.ClientActionType.ActionAttack:
                     var attack = Proto.Attack.Parser.ParseFrom(action.Payload);
-                    this.players.SetAttacking(
-                        action.PlayerId,
-                        attack.TargetPlayerId,
-                        attack.TargetPlayerLocation);
+                    // this.players.SetAttacking(
+                    //     action.PlayerId,
+                    //     attack.TargetPlayerId,
+                    //     attack.TargetPlayerLocation);
                     break;
                 case Proto.ClientActionType.ActionDamage:
                     var damage = Proto.Damage.Parser.ParseFrom(action.Payload);
@@ -160,20 +161,16 @@ public partial class MessageBroker : Node
         actionStream.Dispose();
     }
 
-    public void PlayerRequestedMove(Vector3 target, Proto.ClientAction queued = null)
+    public void PlayerRequestedMove(Vector3I target, Proto.ClientAction queued = null)
     {
-        var path = this.players.SetMoving(
-            this.players.LocalPlayerId,
-            Vector3ToLocation(target));
-
-        GD.Print();
+        var path = this.players.LocalPlayer.SetMoving(target);
         var moveAction = new Proto.Move()
         {
             Queued = queued,
         };
         foreach (var vector3 in path)
         {
-            moveAction.Path.Add(Vector3ToLocation(vector3));
+            moveAction.Path.Add(Vector3IToLocation(vector3));
         }
 
         var moveStreamMem = new MemoryStream();
@@ -204,7 +201,7 @@ public partial class MessageBroker : Node
         attackStream.Flush();
 
         this.PlayerRequestedMove(
-            LocationToVector3d(this.players.CurrentLocation(targetPlayerId)),
+            LocationToVector3I(this.players.CurrentLocation(targetPlayerId)),
             new Proto.ClientAction()
             {
                 Type = Proto.ClientActionType.ActionAttack,
@@ -215,11 +212,11 @@ public partial class MessageBroker : Node
         attackStream.Dispose();
     }
 
-    public void PlayerRequestedCollect(Vector3 target, Proto.ResourceType type)
+    public void PlayerRequestedCollect(Vector3I target, Proto.ResourceType type)
     {
         var collectAction = new Proto.Collect()
         {
-            Location = Vector3ToLocation(target),
+            Location = Vector3IToLocation(target),
             Type = type,
         };
 
@@ -240,11 +237,11 @@ public partial class MessageBroker : Node
         collectStream.Dispose();
     }
 
-    public void PlayerRequestedBuild(Vector3 target)
+    public void PlayerRequestedBuild(Vector3I target)
     {
         var buildAction = new Proto.Build()
         {
-            Location = Vector3ToLocation(target),
+            Location = Vector3IToLocation(target),
         };
 
         var buildStreamMem = new MemoryStream();
